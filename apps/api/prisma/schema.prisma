@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Course {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  title         String
+  subtitle      String
+  track         String
+  level         String
+  deliveryMode  String
+  overview      String
+  published     Boolean  @default(true)
+  sortOrder     Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SiteContent {
+  id        String   @id @default(cuid())
+  pageKey   String   @unique
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactEnquiry {
+  id           String   @id @default(cuid())
+  name         String
+  email        String?
+  organization String?
+  interest     String
+  message      String
+  status       String   @default("new")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model LearningPlan {
+  id        String           @id @default(cuid())
+  sessionId String           @unique
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  items     LearningPlanItem[]
+}
+
+model LearningPlanItem {
+  id             String       @id @default(cuid())
+  learningPlanId String
+  courseId       String
+  createdAt      DateTime     @default(now())
+  learningPlan   LearningPlan @relation(fields: [learningPlanId], references: [id], onDelete: Cascade)
+
+  @@unique([learningPlanId, courseId])
+}

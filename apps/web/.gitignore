@@ -1,0 +1,57 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+
+# Next.js
+.next
+out
+build
+dist
+
+# Production
+*.tsbuildinfo
+
+# Misc
+.DS_Store
+Thumbs.db
+*.pem
+*.log
+.vercel
+.turbo
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store
+
+# Local env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+
+# CDRL project-specific
+.cdrl-backup
+build-final.txt
+build-output.txt
+build-verify.txt
+
+# Reference material (not part of the app)
+uplods
+uploads
+reference-screenshots
