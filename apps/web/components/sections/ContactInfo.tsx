@@ -8,7 +8,7 @@ export default function ContactInfo() {
                 <Mail aria-hidden="true" /> <a href="mailto:training@cdrl.africa">training@cdrl.africa</a>
             </p>
             <p>
-                <Phone aria-hidden="true" /> <a href="tel:+2340000000000">+234 (0) 000 000 0000</a>
+                <Phone aria-hidden="true" /> <a href="tel:+2348060533847">+2348060533847</a>
             </p>
             <p>
                 <MapPin aria-hidden="true" /> Lagos, Nigeria

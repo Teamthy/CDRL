@@ -23,7 +23,7 @@ const columns = [
         ],
     },
     {
-        heading: 'CDRL',
+        heading: 'YKAY Consult',
         links: [
             { label: 'About', href: '/about' },
             { label: 'Research', href: '/research' },
@@ -60,20 +60,15 @@ export default function Footer() {
                         <Mail /> <a href="mailto:training@cdrl.africa">training@cdrl.africa</a>
                     </p>
                     <p>
-                        <Phone /> +234 (0) 000 000 0000
+                        <Phone /> <a href="tel:+2348060533847">+2348060533847</a>
                     </p>
                     <p>
                         <MapPin /> Lagos, Nigeria · Serving Africa
                     </p>
-                    <p>
-                        <a href="https://www.linkedin.com" target="_blank" rel="noreferrer noopener">
-                            LinkedIn ↗
-                        </a>
-                    </p>
                 </div>
             </div>
             <div className="wrap legal">
-                <span>© {year} Centre for Digital Risk &amp; Leadership.</span>
+                <span>© {year} YKAY Consult · Centre for Digital Risk &amp; Leadership.</span>
                 <span className="legal-links">
                     <Link href={'/privacy'}>Privacy</Link>
                     <Link href={'/terms'}>Terms</Link>

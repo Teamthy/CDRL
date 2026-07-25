@@ -16,7 +16,7 @@ type Props = {
 export default function LeaderPortrait({
     className = '',
     alt = 'Adeyinka Oladimeji, Founder and Lead Trainer',
-    src = '/assets/ade-yinka-leadership.webp',
+    src = '/assets/founder-portrait.jpg',
 }: Props) {
     const [failed, setFailed] = useState(false);
 
@@ -36,8 +36,8 @@ export default function LeaderPortrait({
             className={className}
             src={src}
             alt={alt}
-            width={730}
-            height={1316}
+            width={900}
+            height={1500}
             sizes="(max-width: 900px) 100vw, 40vw"
             onError={() => setFailed(true)}
         />

@@ -40,7 +40,7 @@ export default function Header({ initialCount = 0 }: { initialCount?: number }) 
         <header className="site-header">
             <div className="wrap mainnav">
                 <div className="header-inner">
-                    <Link href={'/'} className="logo-btn" aria-label="CDRL home">
+                    <Link href={'/'} className="logo-btn" aria-label="YKAY Consult home">
                         <Logo />
                     </Link>
                     <nav className="header-nav" aria-label="Primary navigation">
