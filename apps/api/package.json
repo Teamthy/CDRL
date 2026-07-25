@@ -6,9 +6,13 @@
     "scripts": {
         "dev": "tsx watch src/index.ts",
         "build": "tsc -p tsconfig.json",
+        "start": "node dist/index.js",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
         "lint": "eslint .",
+        "test": "vitest run",
         "prisma": "prisma",
         "prisma:migrate": "prisma migrate dev",
+        "prisma:migrate:deploy": "prisma migrate deploy",
         "prisma:seed": "prisma db seed"
     },
     "dependencies": {
@@ -17,21 +21,29 @@
         "dotenv": "^16.4.0",
         "express": "^4.21.0",
         "helmet": "^8.1.0",
-        "nodemailer": "^6.9.4",
+        "nodemailer": "^9.0.3",
         "rate-limiter-flexible": "^5.0.0",
-        "zod": "^3.23.0"
+        "zod": "^3.23.0",
+        "pino": "^10.3.1",
+        "ioredis": "^5.4.0"
     },
     "devDependencies": {
         "@types/cors": "^2.8.0",
-        "@types/express": "^5.0.1",
+        "@types/express": "^4.17.21",
         "@types/node": "^22.10.1",
-        "@types/nodemailer": "^6.4.7",
+        "@types/nodemailer": "^8.0.1",
         "prisma": "^5.9.0",
-        "ts-node": "^10.9.2",
         "tsx": "^4.20.0",
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "eslint": "^8.57.1",
+        "@typescript-eslint/parser": "^7.18.0",
+        "@typescript-eslint/eslint-plugin": "^7.18.0",
+        "vitest": "^4.1.10"
     },
     "prisma": {
-        "seed": "ts-node ./src/seed.ts"
+        "seed": "tsx ./src/seed.ts"
+    },
+    "engines": {
+        "node": ">=20"
     }
 }

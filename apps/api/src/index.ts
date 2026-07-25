@@ -1,138 +1,332 @@
-import express from 'express';
+import express, { type NextFunction, type Request, type RequestHandler, type Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
-import { z } from 'zod';
-import { RateLimiterMemory } from 'rate-limiter-flexible';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible';
+import { Redis } from 'ioredis';
 import nodemailer from 'nodemailer';
+import { config, corsOrigins } from './config.js';
+import { logger } from './logger.js';
+import { contactSchema, isValidSessionId, learningPlanItemSchema } from './validation.js';
 
-dotenv.config();
+// ────────────────────────────────────────────────────────────────────────────
+// Core plumbing
+// ────────────────────────────────────────────────────────────────────────────
+
+const prisma = new PrismaClient();
+
+/** Wrap async route handlers so rejections reach the error middleware
+ *  instead of becoming unhandled rejections that kill the process. */
+const ah =
+    (fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>): RequestHandler =>
+    (req, res, next) => {
+        fn(req, res, next).catch(next);
+    };
+
+// ────────────────────────────────────────────────────────────────────────────
+// Rate limiting (shared via Redis when REDIS_URL is set)
+// ────────────────────────────────────────────────────────────────────────────
+
+let redis: Redis | null = null;
+const mutationLimiter = (() => {
+    if (config.REDIS_URL) {
+        redis = new Redis(config.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 1 });
+        redis.on('error', (err) => logger.warn({ err }, 'redis error (rate limiter store)'));
+        logger.info('rate limiting backed by Redis');
+        return new RateLimiterRedis({
+            storeClient: redis,
+            points: config.RATE_LIMIT_POINTS,
+            duration: config.RATE_LIMIT_DURATION,
+            keyPrefix: 'cdrl:rl',
+        });
+    }
+    if (config.NODE_ENV === 'production') {
+        logger.warn('REDIS_URL not set — in-memory rate limiting only works correctly on a single instance');
+    }
+    return new RateLimiterMemory({ points: config.RATE_LIMIT_POINTS, duration: config.RATE_LIMIT_DURATION });
+})();
+
+async function rateLimitMutations(req: Request, res: Response, next: NextFunction) {
+    try {
+        await mutationLimiter.consume(req.ip ?? 'unknown');
+        next();
+    } catch (err) {
+        if (err instanceof Error) {
+            // rate-limiter store failure — treat as a server error, not a 429
+            next(err);
+            return;
+        }
+        res.status(429).json({ message: 'Too many requests. Please try again shortly.' });
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Optional contact-notification mailer
+// ────────────────────────────────────────────────────────────────────────────
+
+const transporter: nodemailer.Transporter | null =
+    config.SMTP_HOST && config.SMTP_USER
+        ? nodemailer.createTransport({
+              host: config.SMTP_HOST,
+              port: config.SMTP_PORT,
+              secure: config.SMTP_SECURE === 'true',
+              auth: { user: config.SMTP_USER, pass: config.SMTP_PASS },
+          })
+        : null;
+
+// ────────────────────────────────────────────────────────────────────────────
+// App wiring
+// ────────────────────────────────────────────────────────────────────────────
 
 const app = express();
-const prisma = new PrismaClient();
-const port = Number(process.env.PORT || 4000);
-
+app.set('trust proxy', 1); // one reverse proxy in front; req.ip is the real client IP
+app.disable('x-powered-by');
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000' }));
-app.use(express.json());
+app.use(cors({ origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins }));
+app.use(express.json({ limit: '50kb' }));
 
-// rate limiter for contact submissions: default 6 requests per minute per IP
-const rateLimiter = new RateLimiterMemory({ points: Number(process.env.RATE_LIMIT_POINTS || 6), duration: Number(process.env.RATE_LIMIT_DURATION || 60) });
-
-// setup optional email transporter if SMTP env is present
-let transporter: nodemailer.Transporter | null = null;
-if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-    transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT || 587),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        },
+// Structured request logging
+app.use((req, res, next) => {
+    const start = process.hrtime.bigint();
+    res.on('finish', () => {
+        const ms = Math.round(Number(process.hrtime.bigint() - start) / 1e5) / 10;
+        logger.info({ method: req.method, path: req.originalUrl, status: res.statusCode, ms }, 'request');
     });
-}
+    next();
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Health: shallow liveness + deep readiness
+// ────────────────────────────────────────────────────────────────────────────
 
 app.get('/api/v1/health', (_req, res) => {
     res.json({ status: 'ok' });
 });
 
-app.get('/api/v1/courses', async (req, res) => {
-    const search = typeof req.query.search === 'string' ? req.query.search : '';
-    const track = typeof req.query.track === 'string' ? req.query.track : '';
-    const courses = await prisma.course.findMany({
-        where: {
-            published: true,
-            ...(track ? { track } : {}),
-            ...(search ? { OR: [{ title: { contains: search, mode: 'insensitive' } }, { subtitle: { contains: search, mode: 'insensitive' } }] } : {}),
-        },
-        orderBy: { sortOrder: 'asc' },
-    });
-    res.json(courses);
-});
+app.get(
+    '/api/v1/ready',
+    ah(async (_req, res) => {
+        await prisma.$queryRaw`SELECT 1`;
+        res.json({ status: 'ready' });
+    }),
+);
 
-app.get('/api/v1/courses/:slug', async (req, res) => {
-    const course = await prisma.course.findUnique({ where: { slug: req.params.slug } });
-    if (!course) return res.status(404).json({ message: 'Course not found' });
-    res.json(course);
-});
+// ────────────────────────────────────────────────────────────────────────────
+// Courses & content (public, cacheable)
+// ────────────────────────────────────────────────────────────────────────────
 
-app.get('/api/v1/content/:page', async (req, res) => {
-    const content = await prisma.siteContent.findUnique({ where: { pageKey: req.params.page } });
-    if (!content) return res.status(404).json({ message: 'Content not found' });
-    res.json(content.content);
-});
+app.get(
+    '/api/v1/courses',
+    ah(async (req, res) => {
+        const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+        const track = typeof req.query.track === 'string' ? req.query.track.trim() : '';
+        const courses = await prisma.course.findMany({
+            where: {
+                published: true,
+                ...(track ? { track } : {}),
+                ...(search
+                    ? {
+                          OR: [
+                              { title: { contains: search, mode: 'insensitive' } },
+                              { subtitle: { contains: search, mode: 'insensitive' } },
+                          ],
+                      }
+                    : {}),
+            },
+            orderBy: { sortOrder: 'asc' },
+            take: 200,
+        });
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        res.json(courses);
+    }),
+);
 
-const contactSchema = z.object({
-    name: z.string().min(1),
-    email: z.string().email().optional(),
-    organization: z.string().optional(),
-    interest: z.string().min(1),
-    message: z.string().min(1),
-});
+app.get(
+    '/api/v1/courses/:slug',
+    ah(async (req, res) => {
+        const course = await prisma.course.findFirst({
+            where: { slug: req.params.slug, published: true },
+        });
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        res.json(course);
+    }),
+);
 
-app.post('/api/v1/contact', async (req, res) => {
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    try {
-        await rateLimiter.consume(String(ip));
-    } catch {
-        return res.status(429).json({ message: 'Too many requests' });
-    }
-    const parsed = contactSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
-    const enquiry = await prisma.contactEnquiry.create({ data: parsed.data });
+app.get(
+    '/api/v1/content/:page',
+    ah(async (req, res) => {
+        const content = await prisma.siteContent.findUnique({ where: { pageKey: req.params.page } });
+        if (!content) return res.status(404).json({ message: 'Content not found' });
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        res.json(content.content);
+    }),
+);
 
-    // send optional notification email to site owner
-    if (transporter) {
-        try {
-            await transporter.sendMail({
-                from: process.env.SMTP_FROM || 'no-reply@cdrl.local',
-                to: process.env.NOTIFY_EMAIL || process.env.SMTP_USER,
-                subject: `New contact enquiry: ${parsed.data.interest}`,
-                text: `Name: ${parsed.data.name}\nEmail: ${parsed.data.email || 'N/A'}\nOrganization: ${parsed.data.organization || 'N/A'}\nMessage:\n${parsed.data.message}`,
-            });
-        } catch (e) {
-            console.error('Failed to send contact notification', e);
+// ────────────────────────────────────────────────────────────────────────────
+// Contact enquiries
+// ────────────────────────────────────────────────────────────────────────────
+
+app.post(
+    '/api/v1/contact',
+    rateLimitMutations,
+    ah(async (req, res) => {
+        const parsed = contactSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
         }
+        const enquiry = await prisma.contactEnquiry.create({ data: parsed.data });
+        logger.info({ enquiryId: enquiry.id, interest: enquiry.interest }, 'contact enquiry received');
+
+        if (transporter) {
+            try {
+                await transporter.sendMail({
+                    from: config.SMTP_FROM,
+                    to: config.NOTIFY_EMAIL || config.SMTP_USER,
+                    subject: `New contact enquiry: ${parsed.data.interest}`,
+                    // NOTE: real newlines — NOT the literal "\n" characters the old code emitted
+                    text: [
+                        `Name: ${parsed.data.name}`,
+                        `Email: ${parsed.data.email || 'N/A'}`,
+                        `Organization: ${parsed.data.organization || 'N/A'}`,
+                        `Interest: ${parsed.data.interest}`,
+                        '',
+                        'Message:',
+                        parsed.data.message,
+                    ].join('\n'),
+                });
+            } catch (err) {
+                logger.error({ err, enquiryId: enquiry.id }, 'failed to send contact notification email');
+            }
+        }
+        // Do not echo the full enquiry (PII) back to the caller.
+        res.status(201).json({ id: enquiry.id, status: enquiry.status, createdAt: enquiry.createdAt });
+    }),
+);
+
+// ────────────────────────────────────────────────────────────────────────────
+// Learning plan (anonymous, keyed by opaque client-session header)
+// ────────────────────────────────────────────────────────────────────────────
+
+app.get(
+    '/api/v1/learning-plan',
+    ah(async (req, res) => {
+        const sessionId = req.headers['x-session-id'];
+        if (!isValidSessionId(sessionId)) return res.json({ items: [] });
+        const plan = await prisma.learningPlan.findUnique({
+            where: { sessionId },
+            include: { items: true },
+        });
+        res.json({ items: plan?.items ?? [] });
+    }),
+);
+
+app.post(
+    '/api/v1/learning-plan/items',
+    rateLimitMutations,
+    ah(async (req, res) => {
+        const sessionId = req.headers['x-session-id'];
+        const parsed = learningPlanItemSchema.safeParse(req.body);
+        if (!isValidSessionId(sessionId) || !parsed.success) {
+            return res.status(400).json({ message: 'Invalid request' });
+        }
+        const { courseId } = parsed.data;
+
+        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
+        if (!course) return res.status(400).json({ message: 'Unknown course' });
+
+        // Race-safe: single upsert instead of find-then-create (two concurrent
+        // first-adds for a session no longer throw P2002).
+        const plan = await prisma.learningPlan.upsert({
+            where: { sessionId },
+            update: {},
+            create: { sessionId },
+        });
+
+        try {
+            const item = await prisma.learningPlanItem.upsert({
+                where: { learningPlanId_courseId: { learningPlanId: plan.id, courseId } },
+                update: {},
+                create: { learningPlanId: plan.id, courseId },
+            });
+            res.status(201).json(item);
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
+                return res.status(400).json({ message: 'Unknown course' });
+            }
+            throw err;
+        }
+    }),
+);
+
+app.delete(
+    '/api/v1/learning-plan/items/:courseId',
+    rateLimitMutations,
+    ah(async (req, res) => {
+        const sessionId = req.headers['x-session-id'];
+        if (!isValidSessionId(sessionId)) return res.status(404).json({ message: 'Plan not found' });
+        const plan = await prisma.learningPlan.findUnique({ where: { sessionId } });
+        if (!plan) return res.status(404).json({ message: 'Plan not found' });
+        await prisma.learningPlanItem.deleteMany({
+            where: { learningPlanId: plan.id, courseId: req.params.courseId },
+        });
+        res.status(204).send();
+    }),
+);
+
+// ────────────────────────────────────────────────────────────────────────────
+// 404 + centralized JSON error handling (must be LAST)
+// ────────────────────────────────────────────────────────────────────────────
+
+app.use((_req, res) => {
+    res.status(404).json({ message: 'Not found' });
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
+    if (err instanceof SyntaxError && 'body' in err) {
+        return res.status(400).json({ message: 'Malformed JSON body' });
     }
-    res.status(201).json(enquiry);
+    logger.error({ err, method: req.method, path: req.originalUrl }, 'unhandled request error');
+    res.status(500).json({ message: 'Internal server error' });
 });
 
-app.get('/api/v1/learning-plan', async (req, res) => {
-    const sessionId = req.headers['x-session-id'] as string | undefined;
-    if (!sessionId) return res.json({ items: [] });
-    const plan = await prisma.learningPlan.findUnique({ where: { sessionId }, include: { items: true } });
-    res.json({ items: plan?.items ?? [] });
+// ────────────────────────────────────────────────────────────────────────────
+// Startup + graceful shutdown
+// ────────────────────────────────────────────────────────────────────────────
+
+const server = app.listen(config.PORT, () => {
+    logger.info({ port: config.PORT, env: config.NODE_ENV }, 'API listening');
 });
 
-app.post('/api/v1/learning-plan/items', async (req, res) => {
-    const sessionId = req.headers['x-session-id'] as string | undefined;
-    const courseId = typeof req.body?.courseId === 'string' ? req.body.courseId : '';
-    if (!sessionId || !courseId) return res.status(400).json({ message: 'Invalid request' });
-
-    let plan = await prisma.learningPlan.findUnique({ where: { sessionId } });
-    if (!plan) {
-        plan = await prisma.learningPlan.create({ data: { sessionId } });
-    }
-
-    try {
-        const item = await prisma.learningPlanItem.create({ data: { learningPlanId: plan.id, courseId } });
-        res.status(201).json(item);
-    } catch {
-        res.status(409).json({ message: 'Course already exists in learning plan' });
-    }
-});
-
-app.delete('/api/v1/learning-plan/items/:courseId', async (req, res) => {
-    const sessionId = req.headers['x-session-id'] as string | undefined;
-    if (!sessionId) return res.status(404).json({ message: 'Plan not found' });
-    const plan = await prisma.learningPlan.findUnique({ where: { sessionId } });
-    if (!plan) return res.status(404).json({ message: 'Plan not found' });
-    await prisma.learningPlanItem.deleteMany({ where: { learningPlanId: plan.id, courseId: req.params.courseId } });
-    res.status(204).send();
-});
-
-app.listen(port, () => {
-    console.log(`API listening on port ${port}`);
+let shuttingDown = false;
+async function shutdown(signal: string) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    logger.info({ signal }, 'shutdown requested');
+    server.close(async () => {
+        try {
+            await prisma.$disconnect();
+            if (redis) await redis.quit();
+            logger.info('shutdown complete');
+            process.exit(0);
+        } catch (err) {
+            logger.error({ err }, 'error during shutdown');
+            process.exit(1);
+        }
+    });
+    // Force-exit if connections linger beyond the grace period.
+    setTimeout(() => {
+        logger.warn('forced shutdown after timeout');
+        process.exit(1);
+    }, 10_000).unref();
+}
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));
+// Last-resort visibility: with the async wrapper above these should be rare,
+// but never let a rejection/exception pass silently again.
+process.on('unhandledRejection', (reason) => logger.error({ err: reason }, 'unhandled promise rejection'));
+process.on('uncaughtException', (err) => {
+    logger.fatal({ err }, 'uncaught exception');
+    void shutdown('uncaughtException');
 });
