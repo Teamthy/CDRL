@@ -48,7 +48,7 @@ export default function Footer() {
                     <div key={col.heading}>
                         <h4>{col.heading}</h4>
                         {col.links.map((link) => (
-                            <Link key={`${col.heading}-${link.label}`} href={link.href as any}>
+                            <Link key={`${col.heading}-${link.label}`} href={link.href}>
                                 {link.label}
                             </Link>
                         ))}
@@ -75,9 +75,9 @@ export default function Footer() {
             <div className="wrap legal">
                 <span>© {year} Centre for Digital Risk &amp; Leadership.</span>
                 <span className="legal-links">
-                    <Link href={'/privacy' as any}>Privacy</Link>
-                    <Link href={'/terms' as any}>Terms</Link>
-                    <Link href={'/accessibility' as any}>Accessibility</Link>
+                    <Link href={'/privacy'}>Privacy</Link>
+                    <Link href={'/terms'}>Terms</Link>
+                    <Link href={'/accessibility'}>Accessibility</Link>
                 </span>
             </div>
         </footer>

@@ -7,8 +7,8 @@ export default function UtilityBar() {
             <div className="wrap">
                 <span>Advancing Trust in the Digital Age</span>
                 <div className="spacer">
-                    <Link href={'/partnerships' as any}>Partner With Us</Link>
-                    <Link href={'/learning-plan' as any}>Learning Portal</Link>
+                    <Link href={'/partnerships'}>Partner With Us</Link>
+                    <Link href={'/learning-plan'}>Learning Portal</Link>
                     <span>
                         EN <ChevronDown />
                     </span>

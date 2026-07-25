@@ -1,5 +1,7 @@
 'use client';
 
+import type { Route } from 'next';
+
 import Link from 'next/link';
 import { ArrowRight, Landmark, ShieldCheck, Sparkles, Users, type LucideIcon } from 'lucide-react';
 
@@ -17,13 +19,13 @@ type Props = {
     title: string;
     description: string;
     icon: TrackIconName;
-    href: string;
+    href: Route;
 };
 
 export default function TrainingTrackCard({ number, title, description, icon, href }: Props) {
     const Icon = iconMap[icon];
     return (
-        <Link href={href as any} className="track-card">
+        <Link href={href} className="track-card">
             <span className="track-num">0{number}</span>
             <Icon className="track-icon" aria-hidden="true" />
             <h3>{title}</h3>

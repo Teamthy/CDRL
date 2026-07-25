@@ -11,9 +11,16 @@ type Props = {
     as?: 'div' | 'section' | 'article' | 'span';
 };
 
+const motionTags = {
+    div: motion.div,
+    section: motion.section,
+    article: motion.article,
+    span: motion.span,
+} as const;
+
 export default function Reveal({ children, delay = 0, className, as = 'div' }: Props) {
     const reduce = useReducedMotion();
-    const MotionTag = motion[as] as any;
+    const MotionTag = motionTags[as];
 
     if (reduce) {
         return <MotionTag className={className}>{children}</MotionTag>;

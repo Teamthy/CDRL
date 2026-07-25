@@ -39,7 +39,7 @@ export default function RouteError({ error, reset }: Props) {
                             <span>Try again</span>
                             <RefreshCcw size={16} />
                         </button>
-                        <Link href={'/' as any} className="btn btn-secondary">
+                        <Link href={'/'} className="btn btn-secondary">
                             <span>Back to home</span>
                             <ArrowRight size={16} />
                         </Link>

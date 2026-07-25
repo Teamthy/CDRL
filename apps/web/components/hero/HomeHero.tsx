@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { motionTokens } from '../../lib/motion/tokens';
 
@@ -34,11 +34,11 @@ export default function HomeHero() {
                     </motion.p>
 
                     <motion.div className="hero-ctas" {...fade(0.28)}>
-                        <Link href={'/training' as any} className="btn btn-primary">
+                        <Link href={'/training'} className="btn btn-primary">
                             <span>Explore Training Programs</span>
                             <ArrowRight />
                         </Link>
-                        <Link href={'/corporate-training' as any} className="btn btn-secondary">
+                        <Link href={'/corporate-training'} className="btn btn-secondary">
                             <span>Book Corporate Training</span>
                         </Link>
                     </motion.div>

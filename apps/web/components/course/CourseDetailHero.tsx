@@ -7,7 +7,7 @@ export default function CourseDetailHero({ course }: { course: Course }) {
     return (
         <section className="course-detail">
             <div className="wrap">
-                <Link href={'/training' as any} className="back">
+                <Link href={'/training'} className="back">
                     <ArrowLeft aria-hidden="true" /> Back to training
                 </Link>
                 <Reveal>

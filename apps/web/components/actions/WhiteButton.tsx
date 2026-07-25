@@ -1,12 +1,14 @@
 'use client';
 
+import type { Route } from 'next';
+
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { ReactNode, MouseEventHandler } from 'react';
 
 type Props = {
     children: ReactNode;
-    href?: string;
+    href?: Route;
     onClick?: MouseEventHandler<HTMLButtonElement>;
     className?: string;
 };
@@ -22,7 +24,7 @@ export default function WhiteButton({ children, href, onClick, className = '' }:
     );
     if (href) {
         return (
-            <Link href={href as any} className={cls}>
+            <Link href={href} className={cls}>
                 {content}
             </Link>
         );

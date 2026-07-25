@@ -1,3 +1,4 @@
+import type { Route } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import Reveal from '../motion/Reveal';
@@ -5,7 +6,7 @@ import Reveal from '../motion/Reveal';
 type Props = {
     heading?: string;
     ctaLabel?: string;
-    ctaHref?: string;
+    ctaHref?: Route;
 };
 
 export default function CTASection({
@@ -20,7 +21,7 @@ export default function CTASection({
                     <h2>{heading}</h2>
                 </Reveal>
                 <Reveal delay={0.08}>
-                    <Link href={ctaHref as any} className="btn btn-primary">
+                    <Link href={ctaHref} className="btn btn-primary">
                         <span>{ctaLabel}</span>
                         <ArrowRight />
                     </Link>

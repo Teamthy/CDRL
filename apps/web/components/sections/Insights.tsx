@@ -1,29 +1,30 @@
+import type { Route } from 'next';
 import TextLink from '../actions/TextLink';
 import InsightCard from '../cards/InsightCard';
 import Reveal from '../motion/Reveal';
 import StaggerGroup from '../motion/StaggerGroup';
 import StaggerItem from '../motion/StaggerItem';
 
-const items = [
+const items: Array<{ category: string; readTime: string; title: string; excerpt: string; href: Route }> = [
     {
         category: 'AI GOVERNANCE',
         readTime: '6 MIN READ',
         title: 'The Future of AI Governance in Africa',
-        excerpt: 'Practical perspective for leaders navigating an increasingly complex digital landscape.',
+        excerpt: 'What responsible AI oversight looks like as African regulators, boards, and builders define the rules of the road.',
         href: '/research',
     },
     {
         category: 'LEADERSHIP',
         readTime: '6 MIN READ',
         title: 'Why Cybersecurity Leadership Matters',
-        excerpt: 'Practical perspective for leaders navigating an increasingly complex digital landscape.',
+        excerpt: 'Boards increasingly treat cyber risk as a standing agenda item — here is the leadership fluency they now expect.',
         href: '/research',
     },
     {
         category: 'CYBERSECURITY',
         readTime: '6 MIN READ',
         title: 'Understanding ISO 27001 for Organizations',
-        excerpt: 'Practical perspective for leaders navigating an increasingly complex digital landscape.',
+        excerpt: 'From scoping your ISMS to surviving the certification audit — the practical sequence that actually works.',
         href: '/research',
     },
 ];

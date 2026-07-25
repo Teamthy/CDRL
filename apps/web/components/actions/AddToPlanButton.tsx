@@ -21,7 +21,7 @@ export default function AddToPlanButton({ courseId, label = 'Add to Learning Pla
         try {
             await addLearningPlanItem(courseId);
             setState('added');
-            setTimeout(() => router.push('/learning-plan' as any), 550);
+            setTimeout(() => router.push('/learning-plan'), 550);
         } catch {
             setState('error');
             setTimeout(() => setState('idle'), 2000);
