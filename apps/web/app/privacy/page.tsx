@@ -6,6 +6,8 @@ import CTASection from '../../components/sections/CTASection';
 export const metadata = {
     title: 'Privacy Policy',
     description: 'How CDRL collects, uses, and protects personal data across our learning and advisory services.',
+
+    alternates: { canonical: '/privacy' },
 };
 
 const sections = [

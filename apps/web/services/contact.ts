@@ -14,32 +14,31 @@ export type ContactResult = {
     message?: string;
 };
 
+/**
+ * Submits a contact enquiry and tells the truth about the outcome.
+ * The old implementation silently stored the message in localStorage and
+ * returned success when the API failed — losing real customer enquiries
+ * while telling users "our team will respond shortly". That is gone.
+ */
 export async function submitContact(payload: ContactSubmission): Promise<ContactResult> {
-    // Attempt real backend first
+    let res: Response;
     try {
-        const res = await fetch(`${API_BASE}/contact`, {
+        res = await fetch(`${API_BASE}/contact`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
-        if (res.ok) return { ok: true };
-        // fall through to graceful success in prototype mode
     } catch {
-        /* silent — prototype fallback */
+        return {
+            ok: false,
+            message: 'Unable to reach the server. Please check your connection and try again.',
+        };
     }
 
-    // Prototype fallback: accept optimistically
-    if (typeof window !== 'undefined') {
-        try {
-            const key = 'cdrl-contact-drafts';
-            const raw = window.localStorage.getItem(key);
-            const arr = raw ? JSON.parse(raw) : [];
-            arr.push({ ...payload, submittedAt: new Date().toISOString() });
-            window.localStorage.setItem(key, JSON.stringify(arr));
-        } catch {
-            /* silent */
-        }
-    }
+    if (res.ok) return { ok: true };
 
-    return { ok: true };
+    if (res.status === 429) {
+        return { ok: false, message: 'Too many attempts. Please wait a minute and try again.' };
+    }
+    return { ok: false, message: 'Something went wrong. Please try again.' };
 }

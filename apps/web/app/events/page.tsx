@@ -2,7 +2,7 @@ import SiteLayout from '../../components/SiteLayout';
 import PageHero from '../../components/sections/PageHero';
 import EditorialRows from '../../components/sections/EditorialRows';
 import CTASection from '../../components/sections/CTASection';
-import { getContent } from '../../lib/api';
+import { getPageContent } from '../../lib/data';
 import { pageData } from '../../lib/content';
 
 export const revalidate = 1800;
@@ -10,16 +10,11 @@ export const revalidate = 1800;
 export const metadata = {
     title: 'Events & Masterclasses',
     description: 'Upcoming certification programs, executive briefings, and practitioner masterclasses.',
+    alternates: { canonical: '/events' },
 };
 
 export default async function EventsPage() {
-    let content = pageData.Events;
-    try {
-        const remote = await getContent('Events');
-        if (remote) content = remote;
-    } catch {
-        /* fallback */
-    }
+    const content = (await getPageContent('Events')) ?? pageData['Events'];
 
     return (
         <SiteLayout>

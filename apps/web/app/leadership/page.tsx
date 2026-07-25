@@ -7,6 +7,8 @@ export const metadata = {
     title: 'Leadership',
     description:
         'Meet the practitioner behind CDRL — Adeyinka Oladimeji MSc, Founder and Lead Trainer.',
+
+    alternates: { canonical: '/leadership' },
 };
 
 export default function LeadershipPage() {

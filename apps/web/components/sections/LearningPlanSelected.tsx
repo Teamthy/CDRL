@@ -78,7 +78,7 @@ export default function LearningPlanSelected({ courses }: Props) {
                                     {c.title} — {c.subtitle}
                                 </div>
                                 <div className="meta">
-                                    {c.track} · {c.level} · {c.mode}
+                                    {c.track} · {c.level} · {c.deliveryMode}
                                 </div>
                             </div>
                             <button type="button" onClick={() => remove(c.id)} aria-label={`Remove ${c.title} ${c.subtitle}`}>

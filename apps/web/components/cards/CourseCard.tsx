@@ -15,7 +15,7 @@ export default function CourseCard({ course, href }: Props) {
         <Link href={target as any} className="course-card" aria-label={`${course.title} ${course.subtitle}`}>
             <div className="course-meta">
                 <span>{course.track}</span>
-                <span>{course.mode}</span>
+                <span>{course.deliveryMode}</span>
             </div>
             <div className="course-icon" aria-hidden="true">
                 <BookOpen />

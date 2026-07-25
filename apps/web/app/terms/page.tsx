@@ -6,6 +6,8 @@ import CTASection from '../../components/sections/CTASection';
 export const metadata = {
     title: 'Terms of Use',
     description: 'The terms that govern your use of the CDRL platform, learning content, and services.',
+
+    alternates: { canonical: '/terms' },
 };
 
 const sections = [
