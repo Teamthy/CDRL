@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Logo from '../../../components/brand/Logo';
 import { useState, type FormEvent } from 'react';
 import { Lock } from 'lucide-react';
 import { adminLogin } from '../../../lib/adminClient';
@@ -28,11 +29,11 @@ export default function AdminLoginPage() {
     return (
         <div className="admin-login">
             <form className="admin-login-card" onSubmit={onSubmit}>
-                <div className="admin-brand admin-login-brand">
-                    <span className="admin-brand-mark">Y</span>
+                <div className="admin-brand admin-login-brand admin-brand-lockup">
+                    <Logo size={44} />
                     <div>
                         <strong>YKAY Console</strong>
-                        <span>Ykay Consulting Hub</span>
+                        <span>Centre for Digital Risk & Leadership</span>
                     </div>
                 </div>
                 <h1>Sign in</h1>

@@ -2414,3 +2414,23 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 }
 .toc-fact-cta:hover { background: var(--cdrl-green); }
 @media (max-width: 1180px) { .toc-fact-card { display: none; } }
+
+
+/* ── patch-42: console polish — CDRL lockup + composer contrast ── */
+.admin-brand-lockup { gap: 10px; }
+.admin-brand-lockup .brand { pointer-events: none; }
+
+/* PECB composer: white panes must carry dark text, never body-inherited */
+.pecb-exam-row { color: var(--cdrl-text-dark); }
+.pecb-exam-row p, .pecb-exam-row pre { color: var(--cdrl-text-dark); }
+.pecb-exam-row pre { background: var(--cdrl-peach); border: 1px solid var(--cdrl-line,#ece5d8); border-radius: 10px; padding: 12px 14px; }
+.pecb-btn { color: var(--cdrl-text-dark); }
+
+/* admin fields on light cards */
+.admin-field label, .admin-field > span:first-child,
+.admin-field input, .admin-field textarea { color: var(--cdrl-text-dark); }
+.admin-field input:focus, .admin-field textarea:focus { color: var(--cdrl-text-dark); }
+.pecb-exam-form .kicker, .pecb-exam-grid .kicker { color: var(--cdrl-text-dark); }
+
+/* details/summary cards inside admin editors */
+.editor-card, .resource-table div { color: var(--cdrl-text-dark); }

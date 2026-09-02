@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Logo from '../brand/Logo';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
@@ -70,11 +71,11 @@ export default function AdminGuard({ children }: { children: ReactNode }) {
     return (
         <div className="admin-shell">
             <aside className="admin-sidebar">
-                <div className="admin-brand">
-                    <span className="admin-brand-mark">Y</span>
+                <div className="admin-brand admin-brand-lockup">
+                    <Logo size={40} />
                     <div>
                         <strong>YKAY Console</strong>
-                        <span>Ykay Consulting Hub</span>
+                        <span>Centre for Digital Risk & Leadership</span>
                     </div>
                 </div>
                 <nav aria-label="Console navigation">
