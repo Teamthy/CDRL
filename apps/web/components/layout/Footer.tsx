@@ -66,6 +66,19 @@ export default function Footer() {
                         <MapPin /> Lagos, Nigeria · Serving Africa
                     </p>
                 </div>
+                <div className="footer-partner">
+                    <h4>Our Partner</h4>
+                    <a
+                        href="https://pecb.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Ykay Consulting Hub is a PECB Authorized Partner — visit pecb.com"
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/assets/pecb-authorized-partner.jpg" alt="PECB Authorized Partner" width={92} height={110} />
+                        <span>PECB Authorized Partner</span>
+                    </a>
+                </div>
             </div>
             <div className="wrap legal">
                 <span>© {year} YKAY Consult · Centre for Digital Risk &amp; Leadership.</span>

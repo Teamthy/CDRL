@@ -13,6 +13,8 @@ const staticRoutes = [
     '/events',
     '/partnerships',
     '/leadership',
+    '/news',
+    '/pecb-signs-partnership-agreement-with-ykay-consulting-hub',
     '/contact',
     '/privacy',
     '/terms',

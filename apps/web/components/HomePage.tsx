@@ -6,6 +6,7 @@ import CorporateBand from './sections/CorporateBand';
 import UpcomingProgram from './sections/UpcomingProgram';
 import Insights from './sections/Insights';
 import LeadershipPreview from './sections/LeadershipPreview';
+import PecbPartner from './sections/PecbPartner';
 import type { Course } from '../lib/content';
 
 type Props = { courses: Course[] };
@@ -21,6 +22,7 @@ export default function HomePage({ courses }: Props) {
             <WhoWeAre />
             <TrainingTracks />
             <FeaturedCertifications courses={courses} />
+            <PecbPartner />
             <CorporateBand />
             <UpcomingProgram />
             <Insights />

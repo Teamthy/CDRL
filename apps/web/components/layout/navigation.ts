@@ -8,6 +8,7 @@ export const navigationLinks = [
     { label: 'Events', href: '/events' },
     { label: 'Partnerships', href: '/partnerships' },
     { label: 'Leadership', href: '/leadership' },
+    { label: 'News', href: '/news' },
     { label: 'Contact', href: '/contact' },
 ] as const;
 
