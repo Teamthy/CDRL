@@ -1923,9 +1923,12 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .course-main-col { max-width: 680px; }
 @media (max-width: 1180px) { .course-body-grid { grid-template-columns: 1fr 340px; } .course-toc-wrap { display: none; } }
 @media (max-width: 880px) { .course-body-grid { grid-template-columns: 1fr; } }
-.course-toc {
+.course-toc-wrap {
     position: sticky;
     top: 88px;
+    align-self: start;
+}
+.course-toc {
     padding: 16px 14px;
     border-left: 2px solid var(--cdrl-line, #d9d2c4);
     font-size: 13.5px;
@@ -2059,7 +2062,7 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .market-pager span { font-size: 13px; color: var(--cdrl-text-muted-light); }
 
 /* ── patch-31: career outcomes, waitlist, corporate quote ── */
-.career-outcomes { padding: 48px 0; }
+.career-outcomes { padding: 48px 0; background: var(--cdrl-peach); border-top: 1px solid var(--cdrl-line,#ece5d8); }
 .outcomes-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; align-items: start; }
 @media (max-width: 900px) { .outcomes-grid { grid-template-columns: 1fr; } }
 .role-pill {
