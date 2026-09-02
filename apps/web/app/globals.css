@@ -2046,7 +2046,8 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 
 /* Market pagination */
 .market-count { font-size: 13px; color: var(--cdrl-text-muted-light); margin: 0 0 14px; }
-.market-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.market-grid .wrap { display: block; }
+.market-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-top: 18px; }
 .market-pager { display: inline-flex; gap: 12px; align-items: center; margin-top: 22px; }
 .market-pager button {
     display: inline-flex; align-items: center; gap: 6px;
@@ -2331,8 +2332,8 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .pager-ellipsis { padding: 0 4px; color: var(--cdrl-text-muted-light); }
 
 /* ── patch-37: 4×4 catalogue grid, course meta band, hard contrast ── */
-@media (min-width: 1180px) { .market-grid .wrap { grid-template-columns: repeat(4, 1fr); } }
-@media (min-width: 700px) and (max-width: 1179px) { .market-grid .wrap { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1180px) { .market-cards { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 900px) and (max-width: 1179px) { .market-cards { grid-template-columns: repeat(3, 1fr); } }
 
 .detail-meta-band {
     list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
@@ -2356,3 +2357,23 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .course-detail-img h1, .course-detail-img h1 em, .course-detail-img .kicker,
 .course-detail-img p, .course-detail-img .crumbs { color: #fff; }
 .cat-tile h3, .cat-tile strong, .cat-tile small, .cat-tile svg { color: #fff; }
+
+
+/* ── patch-38: light-section text must be dark (body defaults to cdrl-text-light) ── */
+.family-ladder, .family-ladder h2, .family-ladder .kicker, .family-ladder .family-sub { color: var(--cdrl-text-dark); }
+.family-chip strong { color: var(--cdrl-text-dark); }
+.family-chip.current strong, .family-chip.current span { color: #fff; }
+
+.course-body, .course-body h2, .course-body h3, .course-body p, .course-body li { color: var(--cdrl-text-dark); }
+.course-toc .toc-label { color: var(--cdrl-text-muted-light); }
+.course-toc a { color: var(--cdrl-text-dark); }
+
+.cat-launch, .cat-launch h2, .cat-launch .cat-sub { color: var(--cdrl-text-dark); }
+.cat-launch h2 em { color: var(--cdrl-green); }
+.market-grid p.market-count, .market-grid p.market-count strong { color: var(--cdrl-text-dark); }
+.empty-state p { color: var(--cdrl-deep-green); }
+
+.detail-meta-band li { min-height: 72px; flex-direction: row; align-items: center; text-align: left; }
+
+/* PECB parity touch: trust-band divider under the white section */
+.cat-launch { background: var(--cdrl-peach); }

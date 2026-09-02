@@ -20,9 +20,21 @@ export default function CategoryLaunchpad({ courses, onPick }: Props) {
     }, [courses]);
 
     if (byTrack.length === 0) return null;
-    const a = byTrack.slice(0, 2);
-    const b = byTrack.slice(2, 6);
-    const c = byTrack.slice(6);
+    const heroes = byTrack.slice(0, 2);
+    const rest = byTrack.slice(2, 6);
+
+    const Tile = ({ track, n, hero }: { track: string; n: number; hero?: boolean }) => (
+        <button key={track} type="button" className={`cat-tile${hero ? ' hero' : ''}`} onClick={() => onPick(track)}>
+            <span className="cat-bg" aria-hidden="true" style={{ backgroundImage: `url(${courseImageFor(track)})` }} />
+            <span className="cat-meta">
+                <strong>{track}</strong>
+                <small>
+                    {n} programme{n === 1 ? '' : 's'}
+                </small>
+            </span>
+            <ArrowRight aria-hidden="true" />
+        </button>
+    );
 
     return (
         <section className="cat-launch" aria-label="Browse by category">
@@ -37,45 +49,15 @@ export default function CategoryLaunchpad({ courses, onPick }: Props) {
                 </p>
 
                 <div className="cat-row heroes">
-                    {a.map(([track, n]) => (
-                        <button key={track} type="button" className="cat-tile hero" onClick={() => onPick(track)}>
-                            <span
-                                className="cat-bg"
-                                aria-hidden="true"
-                                style={{ backgroundImage: `url(${courseImageFor(track)})` }}
-                            />
-                            <span className="cat-meta">
-                                <strong>{track}</strong>
-                                <small>{n} programmes</small>
-                            </span>
-                            <ArrowRight aria-hidden="true" />
-                        </button>
+                    {heroes.map(([t, n]) => (
+                        <Tile key={t} track={t} n={n} hero />
                     ))}
                 </div>
                 <div className="cat-row">
-                    {b.map(([track, n]) => (
-                        <button key={track} type="button" className="cat-tile" onClick={() => onPick(track)}>
-                            <span
-                                className="cat-bg"
-                                aria-hidden="true"
-                                style={{ backgroundImage: `url(${courseImageFor(track)})` }}
-                            />
-                            <span className="cat-meta">
-                                <strong>{track}</strong>
-                                <small>{n}</small>
-                            </span>
-                        </button>
+                    {rest.map(([t, n]) => (
+                        <Tile key={t} track={t} n={n} />
                     ))}
                 </div>
-                {c.length > 0 && (
-                    <div className="cat-chips">
-                        {c.map(([track, n]) => (
-                            <button key={track} type="button" className="filter-btn" onClick={() => onPick(track)}>
-                                {track} <span className="filter-count">{n}</span>
-                            </button>
-                        ))}
-                    </div>
-                )}
             </div>
         </section>
     );
