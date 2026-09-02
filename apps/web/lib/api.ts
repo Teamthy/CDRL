@@ -8,7 +8,12 @@ import { courseSchema, pageContentSchema, type Course, type PageContent } from '
  * `mode` vs `deliveryMode` mismatch unguarded.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+// Server-side fetches can target an internal address (e.g. the api service
+// name inside a container network); the browser always uses the public URL.
+const API_BASE =
+    process.env.API_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'http://localhost:4000/api/v1';
 
 /** ISR: revalidate periodically so pages can be statically generated and
  *  cached instead of SSR-per-request (the old `cache: 'no-store'` nullified
