@@ -2434,3 +2434,45 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 
 /* details/summary cards inside admin editors */
 .editor-card, .resource-table div { color: var(--cdrl-text-dark); }
+
+
+/* ── patch-43: console polish — surfaces, sticky preview, real lockup ── */
+.admin-shell { background: #07090c; }
+
+/* distinct sidebar rail */
+.admin-sidebar {
+  background: linear-gradient(180deg, rgba(112,242,80,.05), rgba(112,242,80,0) 240px);
+  border-right: 1px solid var(--cdrl-border-dark);
+}
+.admin-sidebar .admin-brand-lockup {
+  padding: 4px 4px 14px;
+  border-bottom: 1px solid var(--cdrl-border-dark);
+}
+.admin-sidebar nav a.active { box-shadow: inset 0 0 0 1px rgba(8,36,15,.3); }
+
+/* real card surfaces for stats */
+.admin-card {
+  background: linear-gradient(180deg, rgba(112,242,80,.06), rgba(1,57,32,.18));
+  border-color: rgba(112,242,80,.18);
+  box-shadow: 0 1px 0 rgba(112,242,80,.08) inset;
+}
+.admin-card strong { font-variant-numeric: tabular-nums; }
+
+/* login card */
+.admin-login-card {
+  background: linear-gradient(180deg, rgba(1,57,32,.45), rgba(1,25,16,.6));
+  border-color: rgba(112,242,80,.22);
+  box-shadow: 0 30px 60px -20px rgba(0,0,0,.6), 0 0 0 1px rgba(112,242,80,.06) inset;
+}
+.admin-login-card h1 { font-weight: 700; letter-spacing: -0.01em; }
+
+/* PECB composer: pin preview so form scrolls alongside */
+.pecb-exam-preview { position: sticky; top: 24px; }
+.pecb-exam-row pre { font-family: ui-monospace, 'Segoe UI', Consolas, monospace; }
+
+/* admin tables: zebra + highlight */
+.admin-tr:nth-child(even) { background: rgba(255,255,255,.015); }
+.admin-tr:hover { background: rgba(112,242,80,.06); }
+
+/* buttons across console hover consistently */
+button.admin-btn, .admin-pagination button { transition: border-color 140ms ease, color 140ms ease; }
