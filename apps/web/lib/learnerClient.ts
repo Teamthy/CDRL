@@ -167,6 +167,7 @@ export interface LearnerCourseView {
     enrollment: { id: string; status: string; progress: number };
     modules: LearnerModule[];
     recordings: LearnerRecording[];
+    completedModuleIds: string[];
 }
 
 export class NotEnrolledError extends Error {
@@ -211,4 +212,47 @@ export async function learnerCourseModules(slug: string): Promise<LearnerCourseV
     if (res.status === 404) throw new Error('Course not found');
     if (!res.ok) throw new Error(`Failed to load modules (${res.status})`);
     return (await res.json()) as LearnerCourseView;
+}
+
+/* ── patch-44: learner self-service profile + progress ── */
+
+/** PATCH /learner/me — rename profile */
+export async function learnerUpdateName(name: string): Promise<LearnerUser | null> {
+    const res = await authFetch('/learner/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { user: LearnerUser };
+    return body.user;
+}
+
+/** POST /learner/me/change-password — rotates sessions server-side; current one survives */
+export async function learnerChangePassword(currentPassword: string, newPassword: string): Promise<PostResult> {
+    const res = await authFetch('/learner/me/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const body = (await res.json().catch(() => ({}))) as PostResult;
+    if (!res.ok) return { ok: false, message: body.message ?? `Failed (${res.status})` };
+    return { ok: true, message: body.message ?? 'Password changed' };
+}
+
+export interface ProgressResult {
+    ok: boolean;
+    progress: number;
+    completedCount: number;
+    totalModules: number;
+}
+
+/** POST /learner/courses/:slug/modules/:id/complete */
+export async function learnerMarkModuleComplete(slug: string, moduleId: string): Promise<ProgressResult> {
+    const res = await authFetch(`/learner/courses/${slug}/modules/${moduleId}/complete`, { method: 'POST' });
+    if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(body.message ?? `Failed (${res.status})`);
+    }
+    return (await res.json()) as ProgressResult;
 }

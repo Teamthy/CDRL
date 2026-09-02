@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ExternalLink } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Circle, ExternalLink, Loader2 } from 'lucide-react';
 
 import {
     LearnerUnauthorizedError,
     NotEnrolledError,
     learnerCourseModules,
+    learnerMarkModuleComplete,
     type LearnerCourseView,
     type LearnerRecording,
 } from '../../../lib/learnerClient';
@@ -21,6 +22,21 @@ export default function CoursePlayer({ slug }: { slug: string }) {
     const [data, setData] = useState<LearnerCourseView | null>(null);
     const [problem, setProblem] = useState<'none' | 'not-enrolled' | 'error'>('none');
     const [openId, setOpenId] = useState<string | null>(null);
+    const [progress, setProgress] = useState<number | null>(null);
+    const [doneIds, setDoneIds] = useState<string[] | null>(null);
+    const [marking, setMarking] = useState<string | null>(null);
+
+    async function tick(moduleId: string) {
+        if (marking) return;
+        setMarking(moduleId);
+        try {
+            const res = await learnerMarkModuleComplete(slug, moduleId);
+            setProgress(res.progress);
+            setDoneIds((prev) => [...(prev ?? data?.completedModuleIds ?? []), moduleId]);
+        } finally {
+            setMarking(null);
+        }
+    }
 
     useEffect(() => {
         learnerCourseModules(slug)
@@ -56,14 +72,14 @@ export default function CoursePlayer({ slug }: { slug: string }) {
                     <span className="kicker">{data.course.track.toUpperCase()}</span>
                     <h1>{data.course.title}</h1>
                     <p className="auth-sub">
-                        {data.enrollment.progress}% complete · status: {data.enrollment.status}
+                        {(progress ?? data.enrollment.progress)}% complete · status: {data.enrollment.status}
                     </p>
                 </div>
                 <Link href="/learner" className="auth-ghost">← My learning</Link>
             </header>
 
-            <div className="learn-progress" role="progressbar" aria-valuenow={data.enrollment.progress} aria-valuemin={0} aria-valuemax={100}>
-                <span style={{ width: `${data.enrollment.progress}%` }} />
+            <div className="learn-progress" role="progressbar" aria-valuenow={progress ?? data.enrollment.progress} aria-valuemin={0} aria-valuemax={100}>
+                <span style={{ width: `${progress ?? data.enrollment.progress}%` }} />
             </div>
 
             {data.modules.length === 0 ? (
@@ -76,11 +92,29 @@ export default function CoursePlayer({ slug }: { slug: string }) {
                         const open = openId === m.id;
                         return (
                             <li key={m.id} className={`learn-card module-item ${open ? 'open' : ''}`}>
-                                <button type="button" className="module-head" onClick={() => setOpenId(open ? null : m.id)} aria-expanded={open}>
-                                    <span className="module-num">{String(i + 1).padStart(2, '0')}</span>
-                                    <span className="module-title">{m.title}</span>
-                                    <ChevronDown aria-hidden="true" />
-                                </button>
+                                <div className="module-head-row">
+                                    <button type="button" className="module-head" onClick={() => setOpenId(open ? null : m.id)} aria-expanded={open}>
+                                        <span className="module-num">{String(i + 1).padStart(2, '0')}</span>
+                                        <span className="module-title">{m.title}</span>
+                                        <ChevronDown aria-hidden="true" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`module-tick${(doneIds ?? data.completedModuleIds).includes(m.id) ? ' on' : ''}`}
+                                        onClick={(e) => { e.stopPropagation(); void tick(m.id); }}
+                                        disabled={(doneIds ?? data.completedModuleIds).includes(m.id) || marking === m.id}
+                                        aria-pressed={(doneIds ?? data.completedModuleIds).includes(m.id)}
+                                        title={(doneIds ?? data.completedModuleIds).includes(m.id) ? 'Completed' : 'Mark as complete'}
+                                    >
+                                        {marking === m.id ? (
+                                            <Loader2 aria-hidden="true" className="spin" />
+                                        ) : (doneIds ?? data.completedModuleIds).includes(m.id) ? (
+                                            <CheckCircle2 aria-hidden="true" />
+                                        ) : (
+                                            <Circle aria-hidden="true" />
+                                        )}
+                                    </button>
+                                </div>
                                 {open && (
                                     <div className="module-body">
                                         {!m.body?.trim() ? (

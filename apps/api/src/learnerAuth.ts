@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import nodemailer from 'nodemailer';
 import { config, corsOrigins } from './config.js';
+import { z } from 'zod';
 import { prisma } from './db.js';
 import { logger } from './logger.js';
 import { JWT_ISSUER, signScopedToken, verifyScopedToken } from './rbac.js';
@@ -241,6 +242,46 @@ learnerRouter.get(
     }),
 );
 
+// PATCH /me — rename the profile (email changes are deliberately NOT self-service).
+learnerRouter.patch(
+    '/me',
+    requireLearner,
+    ah(async (req, res) => {
+        const parsed = z.object({ name: z.string().trim().min(2).max(80) }).safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Name must be 2–80 characters' });
+        const user = await prisma.lmsUser.update({
+            where: { id: res.locals.learnerUserId as string },
+            data: { name: parsed.data.name },
+        });
+        return res.json({ user: publicUser(user) });
+    }),
+);
+
+// POST /me/change-password — verifies the current one, then rotates every session.
+learnerRouter.post(
+    '/me/change-password',
+    requireLearner,
+    ah(async (req, res) => {
+        const parsed = z
+            .object({ currentPassword: z.string().min(1), newPassword: z.string().min(8).max(128) })
+            .safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Current password required; new password ≥ 8 chars' });
+        const user = await prisma.lmsUser.findUnique({ where: { id: res.locals.learnerUserId as string } });
+        if (!user?.passwordHash) return res.status(400).json({ message: 'This account uses passwordless sign-in' });
+        const ok = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
+        if (!ok) return res.status(401).json({ message: 'Current password is wrong' });
+        await prisma.lmsUser.update({
+            where: { id: user.id },
+            data: { passwordHash: await bcrypt.hash(parsed.data.newPassword, 10) },
+        });
+        await revokeAllForUser(user.id); // other devices forced to re-auth
+        const refresh = await issueRefreshToken(user.id); // but the current session survives
+        setRefreshCookie(res, refresh);
+        logger.info({ userId: user.id }, 'learner password changed');
+        return res.json({ ok: true, message: 'Password changed' });
+    }),
+);
+
 // GET /courses/:slug/modules — enrolled learners only; published modules only.
 learnerRouter.get(
     '/courses/:slug/modules',
@@ -270,12 +311,53 @@ learnerRouter.get(
             orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
             select: { id: true, title: true, url: true, description: true, order: true },
         });
+        const done = await prisma.moduleCompletion.findMany({
+            where: { studentId: user.id, courseId: course.id },
+            select: { moduleId: true },
+        });
         return res.json({
             course: { title: course.title, slug: course.slug, track: course.track },
             enrollment: { id: enrollment.id, status: enrollment.status, progress: enrollment.progress },
             modules,
             recordings,
+            completedModuleIds: done.map((d) => d.moduleId),
         });
+    }),
+);
+
+// POST /courses/:slug/modules/:moduleId/complete — learners tick modules off themselves.
+// Progress recomputes from completions so tutors/admin see live state.
+learnerRouter.post(
+    '/courses/:slug/modules/:moduleId/complete',
+    requireLearner,
+    ah(async (req, res) => {
+        const userId = res.locals.learnerUserId as string;
+        const course = await prisma.course.findUnique({ where: { slug: req.params.slug } });
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+        const enrollment = await prisma.enrollment.findUnique({
+            where: { studentId_courseId: { studentId: userId, courseId: course.id } },
+        });
+        if (!enrollment) return res.status(403).json({ message: 'Not enrolled' });
+        const module = await prisma.courseModule.findFirst({
+            where: { id: req.params.moduleId, courseId: course.id },
+        });
+        if (!module) return res.status(404).json({ message: 'Module not found' });
+
+        await prisma.moduleCompletion.upsert({
+            where: { studentId_moduleId: { studentId: userId, moduleId: module.id } },
+            create: { studentId: userId, moduleId: module.id, courseId: course.id },
+            update: {},
+        });
+        const [done, total] = await Promise.all([
+            prisma.moduleCompletion.count({ where: { studentId: userId, courseId: course.id } }),
+            prisma.courseModule.count({ where: { courseId: course.id, published: true } }),
+        ]);
+        const progress = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+        await prisma.enrollment.update({
+            where: { id: enrollment.id },
+            data: { progress, ...(progress === 100 && enrollment.status === 'active' ? { status: 'completed' } : {}) },
+        });
+        return res.json({ ok: true, progress, completedCount: done, totalModules: total });
     }),
 );
 

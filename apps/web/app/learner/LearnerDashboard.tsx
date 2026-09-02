@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { KeyRound, LogOut, UserPen } from 'lucide-react';
 import {
     LearnerUnauthorizedError,
+    learnerChangePassword,
     learnerMe,
     learnerSignOut,
+    learnerUpdateName,
     tutorEnrollments,
     tutorGrade,
     type LearnerMe,
@@ -71,6 +73,48 @@ export default function LearnerDashboard() {
                     <LogOut aria-hidden="true" /> Sign out
                 </button>
             </header>
+
+            {/* patch-44: profile card — rename + change password inline */}
+            <section className="profile-card" aria-label="Profile and security">
+                <div className="profile-row">
+                    <UserPen aria-hidden="true" />
+                    <strong>Profile</strong>
+                    <span className="learn-track">{data.user.name} · student</span>
+                </div>
+                <form
+                    className="profile-form"
+                    onSubmit={async (ev) => {
+                        ev.preventDefault();
+                        const fd = new FormData(ev.currentTarget);
+                        const name = String(fd.get('name') ?? '').trim();
+                        if (name && name !== data.user.name) {
+                            const updated = await learnerUpdateName(name);
+                            if (updated) setData({ ...data, user: updated });
+                        }
+                    }}
+                >
+                    <input name="name" defaultValue={data.user.name} aria-label="Display name" minLength={2} maxLength={80} />
+                    <button type="submit" className="auth-ghost small">Save name</button>
+                </form>
+                <details className="pwchange">
+                    <summary><KeyRound aria-hidden="true" /> Change password</summary>
+                    <form
+                        onSubmit={async (ev) => {
+                            ev.preventDefault();
+                            const fd = new FormData(ev.currentTarget);
+                            const cur = String(fd.get('current') ?? '');
+                            const next = String(fd.get('next') ?? '');
+                            const r = await learnerChangePassword(cur, next);
+                            setError(r.ok ? null : (r.message ?? 'Change failed'));
+                            if (r.ok) ev.currentTarget.reset();
+                        }}
+                    >
+                        <input type="password" name="current" placeholder="Current password" required autoComplete="current-password" />
+                        <input type="password" name="next" placeholder="New password (8+ characters)" required minLength={8} autoComplete="new-password" />
+                        <button type="submit">Update password</button>
+                    </form>
+                </details>
+            </section>
 
             <h2 className="learner-h">Your enrolments</h2>
             {data.enrollments.length === 0 ? (

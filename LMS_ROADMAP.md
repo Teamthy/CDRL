@@ -232,3 +232,26 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
 - ✅ Contrast lock: heavy dark scrim over every image hero and tile; text forced to
   light tokens there, dark tokens on light surfaces — no light-on-light anywhere.
 - ✅ TOC and body share the same source (`richDetailsFor`), so anchors can never drift.
+
+## Patch-44 — Learner self-service profile, progress & sessions (2026-09-02)
+
+### API
+- ✅ **`POST /learner/courses/:slug/modules/:moduleId/complete`** — enrolled learners
+  mark modules done themselves; progress recomputes from `ModuleCompletion` rows and
+  auto-flips the enrollment to `completed` at 100%
+- ✅ **`PATCH /learner/me`** — rename profile (email change stays admin-only by design)
+- ✅ **`POST /learner/me/change-password`** — verifies current password, rotates all
+  refresh tokens server-side, keeps the current session alive
+- ✅ Prisma `ModuleCompletion` model + migration `20260902160000_module_completions`
+  (unique(studentId,moduleId), cascade on student/course)
+- ✅ `/courses/:slug/modules` now returns `completedModuleIds` for resume-anywhere
+
+### Web
+- ✅ New Profile card on My Learning: rename inline, change-password accordion
+- ✅ Course player gains per-module tick control (circle → green check) with live
+  progress bar updates
+- ✅ `learnerClient` gets `learnerUpdateName`, `learnerChangePassword`,
+  `learnerMarkModuleComplete`
+
+Auth stack pre-existed (12h access token in localStorage + rotating HttpOnly refresh
+cookie with reuse-detection) — this fills the comprehension/profile gap.

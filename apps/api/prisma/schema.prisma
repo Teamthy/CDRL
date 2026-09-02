@@ -139,6 +139,7 @@ model LmsUser {
   enrollments  Enrollment[] @relation("StudentEnrollments")
   tutoring     Enrollment[] @relation("TutorAssignments")
   refreshTokens RefreshToken[]
+  moduleCompletions ModuleCompletion[]
 }
 
 model Enrollment {
@@ -168,6 +169,8 @@ model CourseModule {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  moduleCompletions ModuleCompletion[]
 
   @@index([courseId, order])
 }
@@ -202,6 +205,7 @@ model Recording {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
 
   @@index([courseId, order])
 }
@@ -298,4 +302,17 @@ model AuditLog {
 
   @@index([createdAt])
   @@index([resource, createdAt])
+}
+
+model ModuleCompletion {
+  id        String   @id @default(cuid())
+  studentId String
+  moduleId  String
+  courseId  String
+  createdAt DateTime @default(now())
+  student   LmsUser      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  module    CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, moduleId])
+  @@index([studentId, courseId])
 }
