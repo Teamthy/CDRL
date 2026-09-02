@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getCourses } from '../lib/data';
+import { getCourses, getPublishedPosts } from '../lib/data';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
@@ -40,5 +40,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         /* courses are additive — never fail the sitemap */
     }
 
-    return [...staticEntries, ...courseEntries];
+    let postEntries: MetadataRoute.Sitemap = [];
+    try {
+        const posts = await getPublishedPosts();
+        postEntries = posts.map((p) => ({
+            url: `${SITE_URL}/news/${p.slug}`,
+            lastModified: p.publishedAt ?? p.createdAt,
+            changeFrequency: 'monthly',
+            priority: 0.5,
+        }));
+    } catch {
+        /* posts are additive — never fail the sitemap */
+    }
+
+    return [...staticEntries, ...courseEntries, ...postEntries];
 }

@@ -50,3 +50,15 @@ no phase breaks an earlier one.
 - Render (API) auto-deploys migrations on push; Neon is permanent-free.
 - Keep `NEXT_PUBLIC_API_URL` pointed at the onrender.com URL; CORS allowlist lives in API env.
 - Admin console is protected by `ADMIN_TOKEN` (dev fallback `dev-admin-token`) — set it in Netlify + Render.
+
+## Seeding the database
+
+`apps/api/src/seed.ts` upserts the 14 catalogue courses (by slug) plus all page
+content blocks — idempotent, safe to re-run. It requires `DATABASE_URL`:
+
+```bash
+cd apps/api
+DATABASE_URL="<your Neon string>" pnpm prisma:seed
+```
+
+Run once after the patch-15 migration so LMS enrollments can resolve course slugs.
