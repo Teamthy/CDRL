@@ -1,0 +1,19 @@
+# Netlify deploy config for the monorepo web app (apps/web).
+#
+# Why this file exists: with only UI settings, Netlify's build image treated
+# top-level app files (next.config.js, next-env.d.ts) as serverless functions
+# and failed the deploy ("function names may only contain alphanumeric
+# characters, hyphens or underscores"). An explicit [functions] directory that
+# does not exist keeps user-function packaging off, while the Next.js runtime
+# plugin below owns all server-side rendering.
+[build]
+  base = "apps/web"
+  command = "pnpm --filter web build"
+  publish = "apps/web/.next"
+
+[functions]
+  # Conventional-but-absent on purpose: no user functions in this app.
+  directory = "apps/web/netlify/functions"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
