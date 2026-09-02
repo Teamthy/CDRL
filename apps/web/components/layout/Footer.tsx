@@ -88,6 +88,12 @@ export default function Footer() {
                     <Link href={'/accessibility'}>Accessibility</Link>
                 </span>
             </div>
+            <div className="wrap trademark">
+                <span>
+                    PECB®, ISO/IEC 27001® and related marks are trademarks of PECB Group Inc. Ykay Consulting Hub is an
+                    Authorized Partner of PECB.
+                </span>
+            </div>
         </footer>
     );
 }

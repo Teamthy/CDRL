@@ -26,6 +26,13 @@ export default function PecbPartner() {
                         <span>Read the press release</span>
                         <ArrowRight />
                     </Link>
+                    <p className="pecb-credit">
+                        PECB®, ISO/IEC 27001® and related marks are trademarks of PECB Group Inc. Ykay Consulting Hub
+                        is an Authorized Partner of PECB; courses are delivered per PECB brand guidelines.{' '}
+                        <a href="https://pecb.com" target="_blank" rel="noopener noreferrer">
+                            pecb.com
+                        </a>
+                    </p>
                 </Reveal>
                 <Reveal className="pecb-badge-wrap" delay={0.1}>
                     <a

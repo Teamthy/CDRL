@@ -59,8 +59,10 @@ no phase breaks an earlier one.
 - ✅ Course pages show a **Pay & Enroll** card whenever a price is set; `/pay/callback` verifies and deep-links into the portal
 - **Dormant until configured:** Render env `PAYSTACK_SECRET_KEY` (paystack.com — free account, no card needed).
   Set the Paystack dashboard webhook URL to `https://<api>/api/v1/payments/webhook`. Prices are set per course in the console first.
-- PECB partnership: map PECB course catalogue to `Course` rows; keep artboard/credit requirements on partner pages;
-  event/organic integration per PECB brand guidelines
+- ✅ Trademark credit lines on homepage PECB band + site-wide footer (patch-24)
+- Catalogue mapping (console, no code): for each PECB-delivered course row, set partner-aligned title/subtitle
+  (e.g. "ISO/IEC 27001 Lead Implementer — PECB Certified"), add "PECB Certified" to overview first line,
+  keep exam/artboard credits per PECB brand guidelines
 
 ## Ops notes
 

@@ -1709,3 +1709,8 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .tutor-zone { display: grid; gap: 14px; margin-top: 10px; padding-top: 18px; border-top: 1px solid var(--cdrl-border-light, rgba(15,30,20,0.14)); }
 .tutor-controls { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
 .tutor-controls label { display: grid; gap: 4px; font-size: 11.5px; font-weight: 650; opacity: 0.85; }
+
+/* ─── PATCH-24: PECB trademark credit lines ──────────────────────────────── */
+.pecb-credit { margin-top: 22px; font-size: 12px; line-height: 1.6; opacity: 0.75; max-width: 52ch; }
+.pecb-credit a { color: inherit; font-weight: 650; }
+.site-footer .trademark { padding-bottom: 22px; font-size: 11px; line-height: 1.6; opacity: 0.6; }
