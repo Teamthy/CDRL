@@ -1735,6 +1735,8 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .course-details p,
 .course-details ul {
     max-width: 62ch;
+    list-style: none;
+    padding-left: 0;
 }
 .course-details li {
     position: relative;
