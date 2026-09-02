@@ -189,6 +189,38 @@ learnerRouter.get(
     }),
 );
 
+// GET /courses/:slug/modules — enrolled learners only; published modules only.
+learnerRouter.get(
+    '/courses/:slug/modules',
+    requireLearner,
+    ah(async (req, res) => {
+        const user = await prisma.lmsUser.findUnique({ where: { id: res.locals.learnerUserId as string } });
+        if (!user) return res.status(401).json({ message: 'Account no longer exists' });
+        if (user.status === 'suspended') return res.status(403).json({ message: 'This account is suspended — contact the school.' });
+
+        const course = await prisma.course.findUnique({ where: { slug: req.params.slug } });
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+
+        const enrollment = await prisma.enrollment.findUnique({
+            where: { studentId_courseId: { studentId: user.id, courseId: course.id } },
+        });
+        if (!enrollment) {
+            return res.status(403).json({ message: 'You are not enrolled in this course yet — apply from the course page.' });
+        }
+
+        const modules = await prisma.courseModule.findMany({
+            where: { courseId: course.id, published: true },
+            orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+            select: { id: true, title: true, order: true, body: true },
+        });
+        return res.json({
+            course: { title: course.title, slug: course.slug, track: course.track },
+            enrollment: { id: enrollment.id, status: enrollment.status, progress: enrollment.progress },
+            modules,
+        });
+    }),
+);
+
 // POST /forgot-password — always 200 so emails cannot be enumerated.
 learnerRouter.post(
     '/forgot-password',

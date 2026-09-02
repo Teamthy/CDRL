@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { contactSchema, isValidSessionId, learningPlanItemSchema } from './validation.js';
+import {
+    contactSchema,
+    isValidSessionId,
+    learningPlanItemSchema,
+    courseModuleUpdateSchema,
+    courseModuleUpsertSchema,
+} from './validation.js';
 
 describe('contactSchema', () => {
     const valid = {
@@ -68,5 +74,19 @@ describe('isValidSessionId', () => {
         expect(isValidSessionId(42)).toBe(false);
         expect(isValidSessionId('')).toBe(false);
         expect(isValidSessionId('x'.repeat(129))).toBe(false);
+    });
+});
+
+
+describe('course module schemas (patch-19)', () => {
+    it('upsert defaults published=true when omitted', () => {
+        const r = courseModuleUpsertSchema.parse({ courseSlug: 'x', title: 'M1' });
+        expect(r.published).toBe(true);
+    });
+    it('update accepts a pure publish toggle', () => {
+        expect(courseModuleUpdateSchema.parse({ published: false })).toEqual({ published: false });
+    });
+    it('update rejects empty payloads is fine but title must be non-empty when present', () => {
+        expect(courseModuleUpdateSchema.safeParse({ title: '' }).success).toBe(false);
     });
 });

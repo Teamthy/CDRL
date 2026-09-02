@@ -69,7 +69,7 @@ export default function LearnerDashboard() {
                             <div className="learn-row">
                                 <div>
                                     <strong>
-                                        <Link href={`/training/${e.course.slug}` as Route}>{e.course.title}</Link>
+                                        <Link href={`/learner/${e.course.slug}` as Route}>{e.course.title}</Link>
                                     </strong>
                                     <span className="learn-track">{e.course.track}</span>
                                 </div>
@@ -79,7 +79,8 @@ export default function LearnerDashboard() {
                                 <span style={{ width: `${e.progress}%` }} />
                             </div>
                             <p className="learn-meta">
-                                {e.progress}% complete{e.tutor ? ` · Tutor: ${e.tutor}` : ''}
+                                {e.progress}% complete{e.tutor ? ` · Tutor: ${e.tutor}` : ''} ·{' '}
+                                <Link href={`/learner/${e.course.slug}` as Route}>Open modules →</Link>
                             </p>
                         </li>
                     ))}

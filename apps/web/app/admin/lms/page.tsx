@@ -293,19 +293,27 @@ function EnrollmentsSection() {
 
 /* ── Modules (course outlines) ───────────────────────────────────────────── */
 
+interface ModuleRowFull extends ModuleRow {
+    body: string | null;
+    published: boolean;
+}
+
 function ModulesSection() {
     const [courseSlug, setCourseSlug] = useState('');
     const [title, setTitle] = useState('');
     const [order, setOrder] = useState('0');
     const [body, setBody] = useState('');
-    const [rows, setRows] = useState<ModuleRow[]>([]);
+    const [published, setPublished] = useState(true);
+    const [rows, setRows] = useState<ModuleRowFull[]>([]);
+    const [openId, setOpenId] = useState<string | null>(null);
+    const [drafts, setDrafts] = useState<Record<string, { title: string; order: string; body: string; published: boolean }>>({});
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
 
     const reload = useCallback(async () => {
         try {
-            const res = await adminFetch<ListResponse<ModuleRow>>('/admin/lms/modules');
+            const res = await adminFetch<ListResponse<ModuleRowFull>>('/admin/lms/modules');
             setRows(res.items);
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
@@ -329,6 +337,7 @@ function ModulesSection() {
                     title: title.trim(),
                     order: Number.parseInt(order, 10) || 0,
                     body: body.trim() || null,
+                    published,
                 }),
             });
             setNotice(`Module "${title.trim()}" added to ${courseSlug.trim()}.`);
@@ -342,6 +351,48 @@ function ModulesSection() {
         }
     }
 
+    function openRow(m: ModuleRowFull) {
+        setOpenId((cur) => (cur === m.id ? null : m.id));
+        setDrafts((d) => ({
+            ...d,
+            [m.id]: { title: m.title, order: String(m.order), body: m.body ?? '', published: m.published },
+        }));
+    }
+
+    async function save(m: ModuleRowFull) {
+        const draft = drafts[m.id];
+        if (!draft) return;
+        setError(null);
+        setNotice(null);
+        try {
+            await adminFetch(`/admin/lms/modules/${m.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    title: draft.title.trim(),
+                    order: Number.parseInt(draft.order, 10) || 0,
+                    body: draft.body.trim() || null,
+                    published: draft.published,
+                }),
+            });
+            setNotice(`Module "${draft.title.trim()}" saved.`);
+            await reload();
+        } catch (err) {
+            if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
+        }
+    }
+
+    async function remove(m: ModuleRowFull) {
+        if (!window.confirm(`Delete module "${m.title}"? This cannot be undone.`)) return;
+        setError(null);
+        try {
+            await adminFetch(`/admin/lms/modules/${m.id}`, { method: 'DELETE' });
+            setNotice(`Module "${m.title}" deleted.`);
+            await reload();
+        } catch (err) {
+            if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
+        }
+    }
+
     return (
         <section className="admin-editor-panel">
             <h2 className="admin-lms-h">Add a course module</h2>
@@ -349,6 +400,7 @@ function ModulesSection() {
                 <TextInput label="Course slug" value={courseSlug} onChange={setCourseSlug} required placeholder="iso-iec-27001-foundation" />
                 <TextInput label="Module title" value={title} onChange={setTitle} required placeholder="Module 1 — Introduction" />
                 <TextInput label="Order" type="number" value={order} onChange={setOrder} />
+                <Checkbox label="Published" checked={published} onChange={setPublished} hint="Visible to enrolled learners immediately" />
                 <TextArea label="Module content / notes (optional)" value={body} onChange={setBody} rows={4} />
                 <div className="admin-form-actions">
                     <button type="submit" className="admin-save" disabled={busy}>
@@ -356,7 +408,7 @@ function ModulesSection() {
                     </button>
                 </div>
             </form>
-            <p className="admin-hint">Ordered outlines per course — the skeleton the student portal will render.</p>
+            <p className="admin-hint">Ordered outlines per course. Unpublished modules stay hidden from learners until you publish them.</p>
             {error && <p className="admin-error">{error}</p>}
             {notice && <p className="admin-notice">{notice}</p>}
             <div className="admin-table admin-table-plain">
@@ -364,18 +416,42 @@ function ModulesSection() {
                     <span>Course</span>
                     <span>Module</span>
                     <span>Order</span>
-                    <span aria-hidden="true" />
+                    <span>Visibility</span>
                     <span aria-hidden="true" />
                 </div>
-                {rows.map((m) => (
-                    <div key={m.id} className="admin-tr admin-tr-static admin-tr-lms">
-                        <span>{m.course.slug}</span>
-                        <span><strong>{m.title}</strong></span>
-                        <span>{m.order}</span>
-                        <span />
-                        <span />
-                    </div>
-                ))}
+                {rows.map((m) => {
+                    const draft = drafts[m.id];
+                    const open = openId === m.id;
+                    return (
+                        <div key={m.id} className={`admin-row ${open ? 'open' : ''}`}>
+                            <button type="button" className="admin-tr admin-tr-lms" onClick={() => openRow(m)} aria-expanded={open}>
+                                <span>{m.course.slug}</span>
+                                <span><strong>{m.title}</strong></span>
+                                <span>{m.order}</span>
+                                <span>
+                                    <span className={`status-pill ${m.published ? 's-qualified' : 's-closed'}`}>
+                                        {m.published ? 'published' : 'draft'}
+                                    </span>
+                                </span>
+                                <span className="admin-ghost">Edit</span>
+                            </button>
+                            {open && draft && (
+                                <div className="admin-detail">
+                                    <div className="admin-form">
+                                        <TextInput label="Title" value={draft.title} onChange={(v) => setDrafts((d) => ({ ...d, [m.id]: { ...draft, title: v } }))} />
+                                        <TextInput label="Order" type="number" value={draft.order} onChange={(v) => setDrafts((d) => ({ ...d, [m.id]: { ...draft, order: v } }))} />
+                                        <Checkbox label="Published" checked={draft.published} onChange={(v) => setDrafts((d) => ({ ...d, [m.id]: { ...draft, published: v } }))} />
+                                        <TextArea label="Content / notes (blank-line = new paragraph)" value={draft.body} onChange={(v) => setDrafts((d) => ({ ...d, [m.id]: { ...draft, body: v } }))} rows={8} />
+                                    </div>
+                                    <div className="admin-form-actions">
+                                        <button type="button" className="admin-save" onClick={() => void save(m)}>Save module</button>
+                                        <button type="button" className="admin-ghost admin-danger" onClick={() => void remove(m)}>Delete</button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
                 {rows.length === 0 && <p className="admin-empty">No modules yet.</p>}
             </div>
         </section>

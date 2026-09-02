@@ -32,16 +32,18 @@ no phase breaks an earlier one.
 - Web: `/sign-in` (sign in / create account / forgot / reset) + `/learner` dashboard (enrollments + progress); both noindexed
 - Config: set `LEARNER_JWT_SECRET` (32+ chars) in Render; `PUBLIC_WEB_URL` optional for reset links
 
-## Phase 3 — Content hosting
+## Phase 3 — Content delivery (PARTIAL, patch-19)
 
-- Module content beyond text: PDF/video links or object storage (Cloudflare R2 free tier)
-- Per-lesson structure under modules; attachments
-- Draft/publish lifecycle for modules
+- ✅ Per-module text content (`CourseModule.body`) rendered to enrolled learners
+- ✅ Draft/publish lifecycle for modules (`published` flag; admin edit/delete/publish in console → LMS → Modules)
+- ✅ Learner module viewer: `/learner/<course-slug>` (ordered, expandable; enrollment-gated on the API)
+- ⏭ Deferred: rich attachments (PDF/video) — recommended: unlisted YouTube embeds pasted into module bodies, or Cloudflare R2 free tier for files
 
-## Phase 4 — Student portal UI
+## Phase 4 — Student portal UI (PARTIAL, patch-18/19)
 
-- `/portal` on the web app: dashboard (enrollments, progress), module player, certificates of completion
-- PWA shell (offline outline caching) — site is already responsive
+- ✅ `/learner` dashboard (enrollments, progress bars, tutor) + `/learner/<slug>` module list
+- ⏭ Remaining: certificates of completion, session recordings area, PWA offline caching
+- Hardening backlog: refresh-cookie rotation, argon2 policy review
 
 ## Phase 5 — Payments & PECB notes
 

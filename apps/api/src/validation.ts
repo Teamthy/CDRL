@@ -134,6 +134,14 @@ export const courseModuleUpsertSchema = z.object({
     title: z.string().min(1).max(200),
     order: z.number().int().min(0).optional().default(0),
     body: z.string().max(50000).nullable().optional(),
+    published: z.boolean().optional().default(true),
+});
+
+export const courseModuleUpdateSchema = z.object({
+    title: z.string().min(1).max(200).optional(),
+    order: z.number().int().min(0).optional(),
+    body: z.string().max(50000).nullable().optional(),
+    published: z.boolean().optional(),
 });
 
 // ─── Learner auth (patch-18) ────────────────────────────────────────────────

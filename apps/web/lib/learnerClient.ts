@@ -107,3 +107,39 @@ export async function learnerMe(): Promise<LearnerMe> {
     if (!res.ok) throw new Error(`Failed to load your account (${res.status})`);
     return (await res.json()) as LearnerMe;
 }
+
+export interface LearnerModule {
+    id: string;
+    title: string;
+    order: number;
+    body: string | null;
+}
+
+export interface LearnerCourseView {
+    course: { title: string; slug: string; track: string };
+    enrollment: { id: string; status: string; progress: number };
+    modules: LearnerModule[];
+}
+
+export class NotEnrolledError extends Error {
+    constructor() {
+        super('Not enrolled');
+    }
+}
+
+/** Published modules for a course the learner is enrolled in. */
+export async function learnerCourseModules(slug: string): Promise<LearnerCourseView> {
+    const token = getLearnerToken();
+    if (!token) throw new LearnerUnauthorizedError();
+    const res = await fetch(`${API_BASE}/learner/courses/${encodeURIComponent(slug)}/modules`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401) {
+        clearLearnerToken();
+        throw new LearnerUnauthorizedError();
+    }
+    if (res.status === 403) throw new NotEnrolledError();
+    if (res.status === 404) throw new Error('Course not found');
+    if (!res.ok) throw new Error(`Failed to load modules (${res.status})`);
+    return (await res.json()) as LearnerCourseView;
+}

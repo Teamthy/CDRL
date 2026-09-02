@@ -12,6 +12,7 @@ import {
     adminLoginSchema,
     applicationUpdateSchema,
     courseModuleUpsertSchema,
+    courseModuleUpdateSchema,
     enrollmentUpdateSchema,
     enrollmentUpsertSchema,
     lmsUserUpdateSchema,
@@ -437,5 +438,37 @@ adminRouter.post(
         if (!course) return res.status(404).json({ message: `No course with slug "${courseSlug}"` });
         const mod = await prisma.courseModule.create({ data: { ...data, courseId: course.id } });
         return res.status(201).json(mod);
+    }),
+);
+
+adminRouter.patch(
+    '/lms/modules/:id',
+    ah(async (req, res) => {
+        const parsed = courseModuleUpdateSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        try {
+            const mod = await prisma.courseModule.update({ where: { id: req.params.id }, data: parsed.data });
+            return res.json(mod);
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                return res.status(404).json({ message: 'Module not found' });
+            }
+            throw err;
+        }
+    }),
+);
+
+adminRouter.delete(
+    '/lms/modules/:id',
+    ah(async (req, res) => {
+        try {
+            await prisma.courseModule.delete({ where: { id: req.params.id } });
+            return res.status(204).end();
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                return res.status(404).json({ message: 'Module not found' });
+            }
+            throw err;
+        }
     }),
 );
