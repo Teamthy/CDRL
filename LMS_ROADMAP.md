@@ -37,12 +37,14 @@ no phase breaks an earlier one.
 - ✅ Per-module text content (`CourseModule.body`) rendered to enrolled learners
 - ✅ Draft/publish lifecycle for modules (`published` flag; admin edit/delete/publish in console → LMS → Modules)
 - ✅ Learner module viewer: `/learner/<course-slug>` (ordered, expandable; enrollment-gated on the API)
-- ⏭ Deferred: rich attachments (PDF/video) — recommended: unlisted YouTube embeds pasted into module bodies, or Cloudflare R2 free tier for files
+- ✅ Rich module bodies (patch-21): `##`/`###` headings, `-` bullets, `**bold**`, `[links](https://…)`, bare YouTube URL → responsive embed (no raw HTML, React-escaped; parser covered by unit tests)
+- ⏭ Deferred: file attachments (PDFs) — Cloudflare R2 free tier when needed
 
-## Phase 4 — Student portal UI (PARTIAL, patch-18/19)
+## Phase 4 — Student portal UI (MOSTLY DONE, patch-18/19/21)
 
 - ✅ `/learner` dashboard (enrollments, progress bars, tutor) + `/learner/<slug>` module list
-- ⏭ Remaining: certificates of completion, session recordings area, PWA offline caching
+- ✅ Certificates: `/learner/<slug>/certificate` — printable, verification ID, print-to-PDF; unlocks when enrollment = completed (patch-21)
+- ⏭ Remaining: session recordings area, PWA offline caching
 - Hardening backlog: refresh-cookie rotation, argon2 policy review
 
 ## Phase 5 — Payments & PECB notes (PARTIAL, patch-20)

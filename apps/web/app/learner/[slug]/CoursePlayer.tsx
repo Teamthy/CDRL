@@ -10,6 +10,7 @@ import {
     learnerCourseModules,
     type LearnerCourseView,
 } from '../../../lib/learnerClient';
+import ModuleText from '../../../components/learn/ModuleText';
 
 /** Module player (Phase 3/4): ordered published modules; click a row to read the module notes. */
 export default function CoursePlayer({ slug }: { slug: string }) {
@@ -70,7 +71,6 @@ export default function CoursePlayer({ slug }: { slug: string }) {
                 <ol className="module-list">
                     {data.modules.map((m, i) => {
                         const open = openId === m.id;
-                        const paragraphs = (m.body ?? '').split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
                         return (
                             <li key={m.id} className={`learn-card module-item ${open ? 'open' : ''}`}>
                                 <button type="button" className="module-head" onClick={() => setOpenId(open ? null : m.id)} aria-expanded={open}>
@@ -80,10 +80,10 @@ export default function CoursePlayer({ slug }: { slug: string }) {
                                 </button>
                                 {open && (
                                     <div className="module-body">
-                                        {paragraphs.length === 0 ? (
+                                        {!m.body?.trim() ? (
                                             <p className="auth-sub">Module notes are being prepared.</p>
                                         ) : (
-                                            paragraphs.map((p, j) => <p key={j}>{p}</p>)
+                                            <ModuleText text={m.body} />
                                         )}
                                     </div>
                                 )}

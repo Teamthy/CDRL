@@ -184,6 +184,7 @@ learnerRouter.get(
                 progress: e.progress,
                 course: e.course,
                 tutor: e.tutor?.name ?? null,
+                updatedAt: e.updatedAt,
             })),
         });
     }),

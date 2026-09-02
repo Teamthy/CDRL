@@ -22,6 +22,7 @@ export interface LearnerEnrollment {
     progress: number;
     course: { title: string; slug: string; track: string };
     tutor: string | null;
+    updatedAt?: string;
 }
 
 export interface LearnerMe {

@@ -81,6 +81,12 @@ export default function LearnerDashboard() {
                             <p className="learn-meta">
                                 {e.progress}% complete{e.tutor ? ` · Tutor: ${e.tutor}` : ''} ·{' '}
                                 <Link href={`/learner/${e.course.slug}` as Route}>Open modules →</Link>
+                                {e.status === 'completed' && (
+                                    <>
+                                        {' '}·{' '}
+                                        <Link href={`/learner/${e.course.slug}/certificate` as Route}>Certificate 🎓</Link>
+                                    </>
+                                )}
                             </p>
                         </li>
                     ))}
