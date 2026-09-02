@@ -21,12 +21,16 @@ no phase breaks an earlier one.
 - Admin console: Applications CRM, LMS tabs (People / Enrollments / Modules)
 - Public `/events` and `/news` render published console rows; `/news/[slug]` article pages
 
-## Phase 2 — Learner authentication
+## Phase 2 — Learner authentication (DONE, patch-18)
 
-- `passwordHash` (argon2) on `LmsUser`; credential sign-up/login endpoints
-- Session strategy: short-lived JWT + httpOnly refresh cookie
-- Password reset via email (single-use tokens)
-- Role gate middleware for `/learner/*` API routes
+- `passwordHash` (bcryptjs — already a dependency; swap to argon2 later if policy demands) on `LmsUser`
+- Endpoints on `/api/v1/learner`: `POST /signup` (also claims admin-created accounts), `POST /login`,
+  `GET /me` (profile + enrollments), `POST /forgot-password`, `POST /reset-password`
+- Session: 12h JWT in localStorage (console parity); refresh-cookie rotation deferred to hardening phase
+- Password reset: **single-use JWT fingerprinted to the current password hash** — expires 30 min, dies on use, no DB table
+- Email enumeration impossible (uniform 200s); suspended users blocked at login and `/me`
+- Web: `/sign-in` (sign in / create account / forgot / reset) + `/learner` dashboard (enrollments + progress); both noindexed
+- Config: set `LEARNER_JWT_SECRET` (32+ chars) in Render; `PUBLIC_WEB_URL` optional for reset links
 
 ## Phase 3 — Content hosting
 

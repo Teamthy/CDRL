@@ -25,6 +25,10 @@ const envSchema = z.object({
     ADMIN_EMAIL: z.string().email().optional(),
     ADMIN_PASSWORD: z.string().min(10).optional(),
     ADMIN_JWT_SECRET: z.string().min(32).optional(),
+    // Learner portal auth (patch-18). Without this, /learner endpoints answer 503.
+    LEARNER_JWT_SECRET: z.string().min(32).optional(),
+    // Used for learner-facing links (password reset). Defaults to first CORS origin.
+    PUBLIC_WEB_URL: z.string().url().optional(),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

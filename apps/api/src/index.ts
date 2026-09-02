@@ -8,6 +8,7 @@ import nodemailer from 'nodemailer';
 import { config, corsOrigins } from './config.js';
 import { prisma } from './db.js';
 import { adminRouter } from './admin.js';
+import { learnerRouter } from './learnerAuth.js';
 import { logger } from './logger.js';
 import { applicationSchema, contactSchema, isValidSessionId, learningPlanItemSchema } from './validation.js';
 
@@ -365,6 +366,9 @@ app.post(
 // ────────────────────────────────────────────────────────────────────────────
 
 app.use('/api/v1/admin', adminRouter);
+
+// Learner portal auth (LMS Phase 2): signup, login, /me, password reset
+app.use('/api/v1/learner', learnerRouter);
 
 // ────────────────────────────────────────────────────────────────────────────
 // 404 + centralized JSON error handling (must be LAST)

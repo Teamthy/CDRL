@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ChevronDown, Menu, Search, ShoppingBag, X } from 'lucide-react';
+import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X } from 'lucide-react';
 import Logo from '../brand/Logo';
 import { navigationLinks } from './navigation';
 import SearchPanel from './SearchPanel';
@@ -97,6 +97,9 @@ export default function Header({ initialCount = 0 }: { initialCount?: number }) 
                         >
                             <ShoppingBag />
                             <span className="badge">{count}</span>
+                        </Link>
+                        <Link href={'/sign-in'} className="bag signin-btn" aria-label="Learner sign in">
+                            <UserRound />
                         </Link>
                         <button
                             className="menu"

@@ -135,3 +135,26 @@ export const courseModuleUpsertSchema = z.object({
     order: z.number().int().min(0).optional().default(0),
     body: z.string().max(50000).nullable().optional(),
 });
+
+// ─── Learner auth (patch-18) ────────────────────────────────────────────────
+// bcrypt silently truncates at 72 bytes → hard cap; 8-char floor for learners.
+
+export const learnerSignupSchema = z.object({
+    name: z.string().trim().min(2).max(80),
+    email: z.string().trim().email().max(320),
+    password: z.string().min(8).max(72),
+});
+
+export const learnerLoginSchema = z.object({
+    email: z.string().trim().email().max(320),
+    password: z.string().min(1).max(72),
+});
+
+export const learnerResetRequestSchema = z.object({
+    email: z.string().trim().email().max(320),
+});
+
+export const learnerResetSchema = z.object({
+    token: z.string().min(10).max(2000),
+    password: z.string().min(8).max(72),
+});
