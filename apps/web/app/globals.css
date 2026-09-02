@@ -1755,3 +1755,51 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
     border-radius: 999px;
     background: var(--accent, #b08d57);
 }
+
+
+/* ── patch-28: PECB exam & credit request composer ── */
+.pecb-exam-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 22px; align-items: start; }
+.pecb-exam-form { display: grid; gap: 14px; }
+@media (max-width: 960px) { .pecb-exam-grid { grid-template-columns: 1fr; } }
+.admin-field select {
+    font: inherit;
+    padding: 10px 12px;
+    border: 1px solid var(--cdrl-line, #d9d2c4);
+    border-radius: 8px;
+    background: #fff;
+}
+.admin-field select:focus { outline: 2px solid var(--cdrl-green); outline-offset: 1px; border-color: var(--cdrl-green); }
+.pecb-exam-preview { display: grid; gap: 14px; }
+.pecb-exam-row {
+    border: 1px solid var(--cdrl-line, #d9d2c4);
+    border-radius: 12px;
+    padding: 14px;
+    display: grid;
+    gap: 8px;
+    background: #fff;
+}
+.pecb-exam-row > span { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cdrl-text-muted-light); }
+.pecb-exam-row p { margin: 0; font-weight: 600; }
+.pecb-exam-row pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+    max-height: 420px;
+    overflow: auto;
+}
+.pecb-exam-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pecb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: inherit;
+    font-size: 13px;
+    padding: 7px 12px;
+    border: 1px solid var(--cdrl-line, #d9d2c4);
+    border-radius: 999px;
+    background: #fff;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+.pecb-btn:hover { border-color: var(--cdrl-green); color: var(--cdrl-green); }

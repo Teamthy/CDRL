@@ -100,3 +100,15 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
 - ✅ Tracks follow PECB's own category names, so the /training filter chips mirror their site.
 - Ops docs: press-release email + partner exam-credit request templates ship in
   `docs/PECB_OPS_PACK.md`.
+
+
+## Patch-28 — Console: PECB exam & credit request composer (2026-09-02)
+
+- ✅ New console section **PECB Exams** (`/admin/pecb-exams`, nav: "PECB Exams"):
+  - **Exam provisioning** composer: pick any PECB-coded course, enter cohort dates,
+    trainer, delivery mode, exam window/format, paste candidates (`name, email` per
+    line) → generates the PECB-format request email with copy + `mailto:` actions.
+  - **Credit purchase** composer for partner exam-credit top-ups.
+  - Pre-send checklist surfacing PECB's rules (attendance recorded, candidate emails
+    match PECB profiles, credit balance/PO cover, exam-rules briefing).
+- ✅ No backend surface added — client-side only; templates mirror `docs/PECB_OPS_PACK.md`.
