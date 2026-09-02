@@ -4,6 +4,8 @@ import ModuleText from '../learn/ModuleText';
 import AddToPlanButton from '../actions/AddToPlanButton';
 import ApplyCard from './ApplyCard';
 import PayCard from './PayCard';
+import CourseToc from './CourseToc';
+import EmployerFunding from './EmployerFunding';
 import type { Course } from '../../lib/content';
 
 const receiveItems = [
@@ -17,36 +19,39 @@ const receiveItems = [
 export default function CourseBody({ course }: { course: Course }) {
     return (
         <section className="course-body">
-            <div className="wrap">
-                <Reveal>
+            <div className="wrap course-body-grid">
+                <Reveal className="course-toc-wrap">
+                    <CourseToc course={course} />
+                </Reveal>
+                <Reveal className="course-main-col">
                     <div>
-                        <h2>Course overview</h2>
+                        <h2 id="overview">Course overview</h2>
                         <p>
                             {course.overview ||
                                 'This professional program equips participants with the knowledge, tools, and confidence to apply internationally recognized practices within their organizations.'}
                         </p>
                         {course.details ? (
                             <div className="course-details">
-                                <ModuleText text={course.details} />
+                                <ModuleText text={course.details} anchorIds />
                             </div>
                         ) : null}
-                        <h3>What you receive</h3>
+                        <h3 id="what-you-receive">What you receive</h3>
                         {receiveItems.map((item) => (
                             <p key={item} className="tick">
                                 <Check aria-hidden="true" />
                                 {item}
                             </p>
                         ))}
-                        <h3>Delivery &amp; flexibility</h3>
+                        <h3 id="delivery">Delivery &amp; flexibility</h3>
                         <p>
                             Programs run on a flexible schedule with virtual, in-person, and hybrid delivery
                             options tailored to the audience. Corporate enrollment is available for teams.
                         </p>
                     </div>
                 </Reveal>
-                <Reveal delay={0.08}>
+                <Reveal delay={0.08} className="course-aside-col">
                     <div className="course-side-stack">
-                        <aside>
+                        <aside id="enrol">
                             <span>DELIVERY</span>
                             <h4>Enrollment</h4>
                             <p>
@@ -63,6 +68,7 @@ export default function CourseBody({ course }: { course: Course }) {
                             <PayCard course={course} />
                             <small>Corporate enrollment available for teams.</small>
                         </aside>
+                        <EmployerFunding courseTitle={`${course.title} ${course.subtitle}`} />
                     </div>
                 </Reveal>
             </div>

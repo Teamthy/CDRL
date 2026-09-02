@@ -142,3 +142,16 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
 - ✅ **Form polish**: contextual placeholders across Apply card, Pay card, and
   contact enquiry; consistent focus ring (accent halo), rounded corners, and a
   custom chevron on all dropdowns across public + console surfaces.
+
+## Patch-31 — PECB-parity course pages & sales surfaces (2026-09-02)
+
+- ✅ **Course detail redesign (PECB-parity)**: sticky in-page table of contents,
+  sibling "credential level" ladder (Foundation/LI/LA/Transition per family),
+  PECB-style action strip (View brochures / View all training events / Get
+  started / partner note), Career outcomes section, waitlist notifier, and an
+  employer funding letter builder (name/employer/role → personalized letter,
+  download as .txt or print-to-PDF).
+- ✅ **Pagination** on /training (24 per page, page numbers, prev/next).
+- ✅ **Auto-scrolling "Related programmes" rail** on course pages — same family
+  first, then same track; pause-on-hover + manual controls.
+- ✅ **Corporate quote form** on /corporate-training (posts to the CRM).

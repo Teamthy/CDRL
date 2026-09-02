@@ -19,15 +19,18 @@ function Inline({ tokens }: { tokens: InlineToken[] }) {
 }
 
 /** Renders a module body parsed by lib/moduleText (markdown-lite). */
-export default function ModuleText({ text }: { text: string }) {
+export default function ModuleText({ text, anchorIds = false }: { text: string; anchorIds?: boolean }) {
     const blocks = parseModuleText(text);
     return (
         <>
             {blocks.map((b, i) => {
                 switch (b.kind) {
-                    case 'heading':
+                    case 'heading': {
+                        const id = anchorIds
+                            ? b.text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+                            : undefined;
                         return b.level === 2 ? (
-                            <h3 key={i} className="mod-h2">
+                            <h3 key={i} className="mod-h2" id={id}>
                                 <Inline tokens={inlineTokens(b.text)} />
                             </h3>
                         ) : (
@@ -35,6 +38,7 @@ export default function ModuleText({ text }: { text: string }) {
                                 <Inline tokens={inlineTokens(b.text)} />
                             </h4>
                         );
+                    }
                     case 'list':
                         return (
                             <ul key={i} className="mod-ul">

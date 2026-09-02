@@ -2,6 +2,7 @@ import SiteLayout from '../../components/SiteLayout';
 import PageHero from '../../components/sections/PageHero';
 import EditorialRows from '../../components/sections/EditorialRows';
 import CTASection from '../../components/sections/CTASection';
+import CorporateQuote from '../../components/sections/CorporateQuote';
 import { getPageContent } from '../../lib/data';
 import { pageData } from '../../lib/content';
 
@@ -20,6 +21,11 @@ export default async function CorporateTrainingPage() {
         <SiteLayout>
             <PageHero eyebrow={content.kicker} title={content.title} description={content.description} />
             <EditorialRows blocks={content.blocks} />
+            <section className="corp-quote-wrap">
+                <div className="wrap">
+                    <CorporateQuote />
+                </div>
+            </section>
             <CTASection heading="Bring CDRL to your organization." ctaLabel="Request a proposal" />
         </SiteLayout>
     );
