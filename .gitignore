@@ -1,0 +1,47 @@
+# ── Dependencies ──────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.pnpm-store/
+
+# ── Builds & caches ───────────────────────────────────────────
+dist/
+build/
+out/
+.next/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# ── Secrets & local env — NEVER commit real values ───────────
+.env
+.env.local
+.env.*.local
+apps/*/.env
+apps/*/.env.local
+!.env.example
+!.env.*.example
+
+# ── Logs & OS noise ───────────────────────────────────────────
+*.log
+.DS_Store
+Thumbs.db
+*.pem
+
+# ── Editors ──────────────────────────────────────────────────
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# ── Local dev artifacts ──────────────────────────────────────
+.cdrl-backup
+build-final.txt
+build-output.txt
+build-verify.txt
+uplods/
+uploads/
+reference-screenshots/
+.vercel/
