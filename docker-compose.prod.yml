@@ -47,6 +47,16 @@ services:
       CORS_ORIGIN: ${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL is required}
       LOG_LEVEL: info
       REDIS_URL: redis://redis:6379
+      # Optional contact-enquiry email notifier. Empty strings = notifier
+      # stays disabled; the API only builds a mailer when SMTP_HOST and
+      # SMTP_USER are non-empty (see apps/api/src/index.ts).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      NOTIFY_EMAIL: ${NOTIFY_EMAIL:-}
     depends_on:
       migrate:
         condition: service_completed_successfully
