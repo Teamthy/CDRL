@@ -19,7 +19,7 @@ const envSchema = z.object({
     SMTP_SECURE: z.enum(['true', 'false']).default('false'),
     SMTP_USER: z.string().optional(),
     SMTP_PASS: z.string().optional(),
-    SMTP_FROM: z.string().default('no-reply@cdrl.africa'),
+    SMTP_FROM: z.string().default('no-reply@ykayconsultinghub.com.ng'),
     NOTIFY_EMAIL: z.string().optional(),
 });
 

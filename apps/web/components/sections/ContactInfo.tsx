@@ -5,7 +5,7 @@ export default function ContactInfo() {
         <div className="contact-info">
             <h2>Training enquiries</h2>
             <p>
-                <Mail aria-hidden="true" /> <a href="mailto:training@cdrl.africa">training@cdrl.africa</a>
+                <Mail aria-hidden="true" /> <a href="mailto:info@ykayconsultinghub.com.ng">info@ykayconsultinghub.com.ng</a>
             </p>
             <p>
                 <Phone aria-hidden="true" /> <a href="tel:+2348060533847">+2348060533847</a>

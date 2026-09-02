@@ -48,8 +48,8 @@ seed against a fresh database and a gitleaks secrets scan.
 ## Production deployment (docker)
 
 ```bash
-export POSTGRES_PASSWORD=... NEXT_PUBLIC_SITE_URL=https://cdrl.africa \
-       NEXT_PUBLIC_API_URL=https://api.cdrl.africa/api/v1
+export POSTGRES_PASSWORD=... NEXT_PUBLIC_SITE_URL=https://ykayconsultinghub.com.ng \
+       NEXT_PUBLIC_API_URL=https://api.ykayconsultinghub.com.ng/api/v1
 docker compose -f docker-compose.prod.yml build
 docker compose -f docker-compose.prod.yml up -d
 ```

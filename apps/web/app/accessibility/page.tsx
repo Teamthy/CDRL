@@ -45,7 +45,7 @@ const sections = [
         body: (
             <p>
                 For accessibility feedback or to request content in an alternative format, email
-                training@cdrl.africa and we will respond as promptly as we can.
+                info@ykayconsultinghub.com.ng and we will respond as promptly as we can.
             </p>
         ),
     },

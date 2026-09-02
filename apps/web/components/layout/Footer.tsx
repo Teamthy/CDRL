@@ -57,7 +57,7 @@ export default function Footer() {
                 <div className="footer-contact">
                     <h4>Contact</h4>
                     <p>
-                        <Mail /> <a href="mailto:training@cdrl.africa">training@cdrl.africa</a>
+                        <Mail /> <a href="mailto:info@ykayconsultinghub.com.ng">info@ykayconsultinghub.com.ng</a>
                     </p>
                     <p>
                         <Phone /> <a href="tel:+2348060533847">+2348060533847</a>

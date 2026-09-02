@@ -44,8 +44,8 @@ export default function GlobalError({ error, reset }: Props) {
                         </h1>
                         <p style={{ maxWidth: 600, opacity: 0.8, lineHeight: 1.7, marginBottom: 32 }}>
                             Please try again. If the problem persists, contact our team at{' '}
-                            <a href="mailto:training@cdrl.africa" style={{ color: '#70F250' }}>
-                                training@cdrl.africa
+                            <a href="mailto:info@ykayconsultinghub.com.ng" style={{ color: '#70F250' }}>
+                                info@ykayconsultinghub.com.ng
                             </a>
                             .
                         </p>

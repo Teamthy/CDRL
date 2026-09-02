@@ -55,7 +55,7 @@ const sections = [
         body: (
             <p>
                 You may request access to, correction of, or deletion of your personal data by contacting
-                training@cdrl.africa. We aim to respond within a reasonable time in line with applicable law.
+                info@ykayconsultinghub.com.ng. We aim to respond within a reasonable time in line with applicable law.
             </p>
         ),
     },
