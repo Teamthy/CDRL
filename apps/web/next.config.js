@@ -29,9 +29,7 @@ const nextConfig = {
     output: 'standalone',
     // pnpm monorepo: trace from the workspace root so server node_modules resolve.
     outputFileTracingRoot: path.join(__dirname, '../../'),
-    experimental: {
-        typedRoutes: true,
-    },
+    typedRoutes: true,
     async headers() {
         return [{ source: '/:path*', headers: securityHeaders }];
     },
