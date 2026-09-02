@@ -10,6 +10,12 @@ import { prisma } from './db.js';
 import { logger } from './logger.js';
 import {
     adminLoginSchema,
+    applicationUpdateSchema,
+    courseModuleUpsertSchema,
+    enrollmentUpdateSchema,
+    enrollmentUpsertSchema,
+    lmsUserUpdateSchema,
+    lmsUserUpsertSchema,
     courseUpsertSchema,
     enquiryUpdateSchema,
     eventUpsertSchema,
@@ -227,3 +233,209 @@ function crudRoutes(path: string, delegate: Delegate, schema: z.ZodObject<z.ZodR
 crudRoutes('courses', prisma.course as unknown as Delegate, courseUpsertSchema, { sortOrder: 'asc' });
 crudRoutes('events', prisma.event as unknown as Delegate, eventUpsertSchema, { startsAt: 'desc' });
 crudRoutes('posts', prisma.post as unknown as Delegate, postUpsertSchema, { publishedAt: 'desc' });
+
+// ────────────────────────────────────────────────────────────────────────────
+// Applications (training intake)
+// ────────────────────────────────────────────────────────────────────────────
+
+adminRouter.get(
+    '/applications',
+    ah(async (req, res) => {
+        const q = listQuerySchema.safeParse(req.query);
+        const { limit, offset, status } = q.success ? q.data : { limit: 50, offset: 0, status: undefined };
+        const [items, total] = await Promise.all([
+            prisma.application.findMany({
+                where: status ? { status } : {},
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset,
+            }),
+            prisma.application.count({ where: status ? { status } : {} }),
+        ]);
+        res.json({ items, total });
+    }),
+);
+
+adminRouter.patch(
+    '/applications/:id',
+    ah(async (req, res) => {
+        const parsed = applicationUpdateSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        try {
+            const application = await prisma.application.update({ where: { id: req.params.id }, data: parsed.data });
+            return res.json(application);
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                return res.status(404).json({ message: 'Application not found' });
+            }
+            throw err;
+        }
+    }),
+);
+
+// ────────────────────────────────────────────────────────────────────────────
+// LMS scaffold: people (students/tutors), enrollments, course modules
+// ────────────────────────────────────────────────────────────────────────────
+
+adminRouter.get(
+    '/lms/users',
+    ah(async (req, res) => {
+        const role = typeof req.query.role === 'string' ? req.query.role : undefined;
+        const users = await prisma.lmsUser.findMany({
+            where: role ? { role } : {},
+            orderBy: { createdAt: 'desc' },
+            take: 200,
+        });
+        res.json({ items: users, total: users.length });
+    }),
+);
+
+adminRouter.post(
+    '/lms/users',
+    ah(async (req, res) => {
+        const parsed = lmsUserUpsertSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        const email = parsed.data.email.toLowerCase();
+        const user = await prisma.lmsUser.upsert({
+            where: { email },
+            update: { name: parsed.data.name, role: parsed.data.role },
+            create: { ...parsed.data, email },
+        });
+        res.status(201).json(user);
+    }),
+);
+
+adminRouter.patch(
+    '/lms/users/:id',
+    ah(async (req, res) => {
+        const parsed = lmsUserUpdateSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        try {
+            const user = await prisma.lmsUser.update({ where: { id: req.params.id }, data: parsed.data });
+            return res.json(user);
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                return res.status(404).json({ message: 'User not found' });
+            }
+            throw err;
+        }
+    }),
+);
+
+adminRouter.get(
+    '/lms/enrollments',
+    ah(async (_req, res) => {
+        const items = await prisma.enrollment.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 200,
+            include: {
+                student: { select: { name: true, email: true } },
+                tutor: { select: { name: true, email: true } },
+                course: { select: { title: true, slug: true } },
+            },
+        });
+        res.json({ items, total: items.length });
+    }),
+);
+
+adminRouter.post(
+    '/lms/enrollments',
+    ah(async (req, res) => {
+        const parsed = enrollmentUpsertSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        const { studentEmail, courseSlug, tutorEmail, status, progress } = parsed.data;
+
+        const course = await prisma.course.findUnique({ where: { slug: courseSlug } });
+        if (!course) return res.status(404).json({ message: `No course with slug "${courseSlug}"` });
+
+        const student = await prisma.lmsUser.upsert({
+            where: { email: studentEmail.toLowerCase() },
+            update: {},
+            create: { email: studentEmail.toLowerCase(), name: studentEmail.split('@')[0], role: 'student' },
+        });
+
+        let tutorId: string | undefined;
+        if (tutorEmail) {
+            const tutor = await prisma.lmsUser.findUnique({ where: { email: tutorEmail.toLowerCase() } });
+            if (!tutor || tutor.role === 'student') {
+                return res.status(400).json({ message: `No tutor account for "${tutorEmail}" — create the tutor first` });
+            }
+            tutorId = tutor.id;
+        }
+
+        try {
+            const enrollment = await prisma.enrollment.create({
+                data: {
+                    courseId: course.id,
+                    studentId: student.id,
+                    tutorId,
+                    status: status ?? 'active',
+                    progress: progress ?? 0,
+                },
+            });
+            return res.status(201).json(enrollment);
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+                return res.status(409).json({ message: 'Student is already enrolled in this course' });
+            }
+            throw err;
+        }
+    }),
+);
+
+adminRouter.patch(
+    '/lms/enrollments/:id',
+    ah(async (req, res) => {
+        const parsed = enrollmentUpdateSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        const data: Record<string, unknown> = { ...parsed.data };
+        if ('tutorEmail' in parsed.data) {
+            delete data.tutorEmail;
+            if (parsed.data.tutorEmail === null) {
+                data.tutorId = null;
+            } else if (parsed.data.tutorEmail) {
+                const tutor = await prisma.lmsUser.findUnique({ where: { email: parsed.data.tutorEmail.toLowerCase() } });
+                if (!tutor || tutor.role === 'student') {
+                    return res.status(400).json({ message: `No tutor account for "${parsed.data.tutorEmail}"` });
+                }
+                data.tutorId = tutor.id;
+            }
+        }
+        try {
+            const enrollment = await prisma.enrollment.update({ where: { id: req.params.id }, data });
+            return res.json(enrollment);
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                return res.status(404).json({ message: 'Enrollment not found' });
+            }
+            throw err;
+        }
+    }),
+);
+
+adminRouter.get(
+    '/lms/modules',
+    ah(async (req, res) => {
+        const courseSlug = typeof req.query.courseSlug === 'string' ? req.query.courseSlug : undefined;
+        const items = await prisma.courseModule.findMany({
+            where: courseSlug ? { course: { slug: courseSlug } } : {},
+            orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
+            take: 500,
+            include: { course: { select: { slug: true, title: true } } },
+        });
+        res.json({ items, total: items.length });
+    }),
+);
+
+adminRouter.post(
+    '/lms/modules',
+    ah(async (req, res) => {
+        const parsed = courseModuleUpsertSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        const { courseSlug, ...data } = parsed.data;
+        const course = await prisma.course.findUnique({ where: { slug: courseSlug } });
+        if (!course) return res.status(404).json({ message: `No course with slug "${courseSlug}"` });
+        const mod = await prisma.courseModule.create({ data: { ...data, courseId: course.id } });
+        return res.status(201).json(mod);
+    }),
+);

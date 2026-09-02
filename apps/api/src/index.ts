@@ -9,7 +9,7 @@ import { config, corsOrigins } from './config.js';
 import { prisma } from './db.js';
 import { adminRouter } from './admin.js';
 import { logger } from './logger.js';
-import { contactSchema, isValidSessionId, learningPlanItemSchema } from './validation.js';
+import { applicationSchema, contactSchema, isValidSessionId, learningPlanItemSchema } from './validation.js';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Core plumbing
@@ -271,6 +271,92 @@ app.delete(
             where: { learningPlanId: plan.id, courseId: req.params.courseId },
         });
         res.status(204).send();
+    }),
+);
+
+// ────────────────────────────────────────────────────────────────────────────
+// Published events & posts (public, cacheable)
+// ────────────────────────────────────────────────────────────────────────────
+
+app.get(
+    '/api/v1/events',
+    ah(async (_req, res) => {
+        const events = await prisma.event.findMany({
+            where: { published: true },
+            orderBy: { startsAt: 'asc' },
+            take: 100,
+        });
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        res.json(events);
+    }),
+);
+
+app.get(
+    '/api/v1/posts',
+    ah(async (_req, res) => {
+        const posts = await prisma.post.findMany({
+            where: { published: true },
+            orderBy: { publishedAt: 'desc' },
+            take: 100,
+        });
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        res.json(
+            // List view never ships full bodies.
+            posts.map(({ body: _body, ...rest }) => rest),
+        );
+    }),
+);
+
+app.get(
+    '/api/v1/posts/:slug',
+    ah(async (req, res) => {
+        const post = await prisma.post.findFirst({ where: { slug: req.params.slug, published: true } });
+        if (!post) return res.status(404).json({ message: 'Post not found' });
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        res.json(post);
+    }),
+);
+
+// ────────────────────────────────────────────────────────────────────────────
+// Training applications (public) — saved to DB + email notification
+// ────────────────────────────────────────────────────────────────────────────
+
+app.post(
+    '/api/v1/applications',
+    rateLimitMutations,
+    ah(async (req, res) => {
+        const parsed = applicationSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        }
+        const application = await prisma.application.create({ data: parsed.data });
+        logger.info({ applicationId: application.id, course: application.courseSlug }, 'application received');
+
+        if (transporter) {
+            try {
+                await transporter.sendMail({
+                    from: config.SMTP_FROM,
+                    to: config.NOTIFY_EMAIL || config.SMTP_USER,
+                    subject: `New application: ${application.courseTitle || application.track || 'General'} — ${application.name}`,
+                    text: [
+                        `Name: ${application.name}`,
+                        `Email: ${application.email}`,
+                        `Phone: ${application.phone || 'N/A'}`,
+                        `Course: ${application.courseTitle || 'N/A'} (${application.courseSlug || 'N/A'})`,
+                        `Track: ${application.track || 'N/A'}`,
+                        '',
+                        'Background / current level:',
+                        application.background || 'N/A',
+                        '',
+                        'Message:',
+                        application.message || 'N/A',
+                    ].join('\n'),
+                });
+            } catch (err) {
+                logger.error({ err, applicationId: application.id }, 'failed to send application notification email');
+            }
+        }
+        res.status(201).json({ id: application.id, status: application.status, createdAt: application.createdAt });
     }),
 );
 

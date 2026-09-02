@@ -81,3 +81,57 @@ export const listQuerySchema = z.object({
     limit: z.coerce.number().int().min(1).max(100).optional().default(50),
     offset: z.coerce.number().int().min(0).optional().default(0),
 });
+
+// ────────────────────────────────────────────────────────────────────────────
+// Applications + LMS scaffold (patch-15)
+// ────────────────────────────────────────────────────────────────────────────
+
+export const applicationSchema = z.object({
+    name: z.string().min(1).max(120),
+    email: z.string().email(),
+    phone: z.string().max(40).optional(),
+    courseSlug: z.string().max(120).optional(),
+    courseTitle: z.string().max(200).optional(),
+    track: z.string().max(100).optional(),
+    background: z.string().max(5000).optional(),
+    message: z.string().max(3000).optional(),
+});
+
+export const APPLICATION_STATUSES = ['new', 'contacted', 'admitted', 'enrolled', 'closed'] as const;
+
+export const applicationUpdateSchema = z.object({
+    status: z.enum(APPLICATION_STATUSES).optional(),
+    notes: z.string().max(5000).nullable().optional(),
+});
+
+export const lmsUserUpsertSchema = z.object({
+    name: z.string().min(1).max(120),
+    email: z.string().email(),
+    role: z.enum(['student', 'tutor']).default('student'),
+});
+
+export const lmsUserUpdateSchema = z.object({
+    name: z.string().min(1).max(120).optional(),
+    status: z.enum(['active', 'suspended', 'archived']).optional(),
+});
+
+export const enrollmentUpsertSchema = z.object({
+    studentEmail: z.string().email(),
+    courseSlug: z.string().min(1),
+    tutorEmail: z.string().email().nullable().optional(),
+    status: z.enum(['active', 'completed', 'paused']).optional(),
+    progress: z.number().int().min(0).max(100).optional(),
+});
+
+export const enrollmentUpdateSchema = z.object({
+    tutorEmail: z.string().email().nullable().optional(),
+    status: z.enum(['active', 'completed', 'paused']).optional(),
+    progress: z.number().int().min(0).max(100).optional(),
+});
+
+export const courseModuleUpsertSchema = z.object({
+    courseSlug: z.string().min(1),
+    title: z.string().min(1).max(200),
+    order: z.number().int().min(0).optional().default(0),
+    body: z.string().max(50000).nullable().optional(),
+});

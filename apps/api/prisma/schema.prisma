@@ -21,6 +21,8 @@ model Course {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   planItems     LearningPlanItem[]
+  enrollments   Enrollment[]
+  modules       CourseModule[]
 
   @@index([published, track])
 }
@@ -96,4 +98,65 @@ model Post {
   updatedAt     DateTime  @updatedAt
 
   @@index([published, publishedAt])
+}
+
+model Application {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  courseSlug  String?
+  courseTitle String?
+  track       String?
+  background  String?
+  message     String?
+  status      String   @default("new")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model LmsUser {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  role         String       @default("student")
+  status       String       @default("active")
+  passwordHash String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  enrollments  Enrollment[] @relation("StudentEnrollments")
+  tutoring     Enrollment[] @relation("TutorAssignments")
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  courseId  String
+  studentId String
+  tutorId   String?
+  status    String   @default("active")
+  progress  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student   LmsUser  @relation("StudentEnrollments", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor     LmsUser? @relation("TutorAssignments", fields: [tutorId], references: [id], onDelete: SetNull)
+
+  @@unique([studentId, courseId])
+  @@index([tutorId])
+}
+
+model CourseModule {
+  id        String   @id @default(cuid())
+  courseId  String
+  title     String
+  body      String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId, order])
 }
