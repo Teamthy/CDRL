@@ -27,13 +27,15 @@ function eventDate(iso: string) {
 async function PublishedEvents() {
     const events = await getPublishedEvents();
     if (events.length === 0) return null;
+    const exams = events.filter((e) => e.eventType === 'exam');
+    const others = events.filter((e) => e.eventType !== 'exam');
     return (
         <section className="db-events">
             <div className="wrap">
                 <span className="kicker">UPCOMING DATES</span>
                 <h2>Scheduled programs &amp; events</h2>
                 <div className="db-events-grid">
-                    {events.map((ev) => {
+                    {(others.length ? others : events).map((ev) => {
                         const d = eventDate(ev.startsAt);
                         return (
                             <Reveal key={ev.id}>
@@ -67,6 +69,30 @@ async function PublishedEvents() {
                         );
                     })}
                 </div>
+                {exams.length > 0 && (
+                    <div className="exam-strip">
+                        <span className="kicker">EXAM SESSIONS</span>
+                        <h3>Certification exams on the calendar</h3>
+                        <p className="exam-rules">
+                            PECB exams are online-proctored or in-person per cohort; they follow the current PECB
+                            Examination Rules and Policies, and one free retake is included in the standard policy.
+                        </p>
+                        <div className="exam-row-grid">
+                            {exams.map((ev) => {
+                                const d = eventDate(ev.startsAt);
+                                return (
+                                    <div key={ev.id} className="exam-card">
+                                        <strong>{ev.title}</strong>
+                                        <span>
+                                            {d.day}, {d.label}
+                                        </span>
+                                        {ev.location && <span>{ev.location}</span>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
         </section>
     );

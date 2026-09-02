@@ -298,6 +298,59 @@ app.get(
 );
 
 app.get(
+    '/api/v1/trainers',
+    ah(async (_req, res) => {
+        const trainers = await prisma.trainer.findMany({
+            where: { published: true },
+            orderBy: { sortOrder: 'asc' },
+            take: 100,
+            include: { courses: { include: { course: { select: { slug: true, title: true, subtitle: true, track: true, level: true } } } } },
+        });
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        res.json(trainers);
+    }),
+);
+
+app.get(
+    '/api/v1/trainers/:slug',
+    ah(async (req, res) => {
+        const trainer = await prisma.trainer.findFirst({
+            where: { slug: req.params.slug, published: true },
+            include: { courses: { include: { course: true } } },
+        });
+        if (!trainer) return res.status(404).json({ message: 'Trainer not found' });
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        res.json(trainer);
+    }),
+);
+
+app.get(
+    '/api/v1/bundles',
+    ah(async (_req, res) => {
+        const bundles = await prisma.bundle.findMany({
+            where: { published: true },
+            orderBy: { sortOrder: 'asc' },
+            include: { courses: { orderBy: { order: 'asc' }, include: { course: true } } },
+        });
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        res.json(bundles.map((b) => ({ ...b, courseCount: b.courses.length })));
+    }),
+);
+
+app.get(
+    '/api/v1/bundles/:slug',
+    ah(async (req, res) => {
+        const bundle = await prisma.bundle.findFirst({
+            where: { slug: req.params.slug, published: true },
+            include: { courses: { orderBy: { order: 'asc' }, include: { course: true } } },
+        });
+        if (!bundle) return res.status(404).json({ message: 'Bundle not found' });
+        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        res.json(bundle);
+    }),
+);
+
+app.get(
     '/api/v1/posts',
     ah(async (_req, res) => {
         const posts = await prisma.post.findMany({

@@ -19,8 +19,11 @@ import {
     lmsUserUpsertSchema,
     recordingUpsertSchema,
     recordingUpdateSchema,
+    bundleUpsertSchema,
+    courseTrainerUpsertSchema,
     courseUpsertSchema,
     enquiryUpdateSchema,
+    trainerUpsertSchema,
     eventUpsertSchema,
     listQuerySchema,
     postUpsertSchema,
@@ -229,6 +232,76 @@ function crudRoutes(path: string, delegate: Delegate, schema: z.ZodObject<z.ZodR
 }
 
 crudRoutes('courses', prisma.course as unknown as Delegate, courseUpsertSchema, { sortOrder: 'asc' });
+
+// patch-33: trainers, course<>trainer links, bundles (with course-membership sync)
+crudRoutes('trainers', prisma.trainer as unknown as Delegate, trainerUpsertSchema, { sortOrder: 'asc' });
+crudRoutes('course-trainers', prisma.courseTrainer as unknown as Delegate, courseTrainerUpsertSchema, { id: 'asc' });
+
+adminRouter.post(
+    '/bundles',
+    ah(async (req, res) => {
+        const parsed = bundleUpsertSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        const { courseIds, ...data } = parsed.data;
+        try {
+            const bundle = await prisma.bundle.create({ data });
+            if (courseIds.length) {
+                await prisma.bundleCourse.createMany({
+                    data: courseIds.map((courseId, i) => ({ bundleId: bundle.id, courseId, order: i })),
+                });
+            }
+            const full = await prisma.bundle.findUnique({ where: { id: bundle.id }, include: { courses: { include: { course: true } } } });
+            return res.status(201).json(full);
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') return res.status(409).json({ message: 'Slug already in use' });
+            throw err;
+        }
+    }),
+);
+
+adminRouter.patch(
+    '/bundles/:id',
+    ah(async (req, res) => {
+        const parsed = bundleUpsertSchema.partial().safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        const { courseIds, ...data } = parsed.data;
+        try {
+            await prisma.bundle.update({ where: { id: req.params.id }, data: data as Record<string, unknown> });
+            if (courseIds !== undefined) {
+                await prisma.$transaction([
+                    prisma.bundleCourse.deleteMany({ where: { bundleId: req.params.id } }),
+                    prisma.bundleCourse.createMany({ data: courseIds.map((courseId, i) => ({ bundleId: req.params.id as string, courseId, order: i })) }),
+                ]);
+            }
+            const full = await prisma.bundle.findUnique({ where: { id: req.params.id }, include: { courses: { include: { course: true } } } });
+            return res.json(full);
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') return res.status(404).json({ message: 'Not found' });
+            throw err;
+        }
+    }),
+);
+
+adminRouter.get(
+    '/bundles',
+    ah(async (req, res) => {
+        const q = listQuerySchema.safeParse(req.query);
+        const { limit, offset } = q.success ? q.data : { limit: 50, offset: 0 };
+        const [items, total] = await Promise.all([
+            prisma.bundle.findMany({ orderBy: { sortOrder: 'asc' }, take: limit, skip: offset, include: { courses: { include: { course: true } } } }),
+            prisma.bundle.count(),
+        ]);
+        res.json({ items, total });
+    }),
+);
+
+adminRouter.delete(
+    '/bundles/:id',
+    ah(async (req, res) => {
+        await prisma.bundle.delete({ where: { id: req.params.id } });
+        res.status(204).end();
+    }),
+);
 crudRoutes('events', prisma.event as unknown as Delegate, eventUpsertSchema, { startsAt: 'desc' });
 crudRoutes('posts', prisma.post as unknown as Delegate, postUpsertSchema, { publishedAt: 'desc' });
 

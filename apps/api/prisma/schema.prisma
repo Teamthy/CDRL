@@ -18,6 +18,8 @@ model Course {
   overview      String
   details       String?            // patch-27: long-form markdown-lite body for detail pages
   priceKobo     Int?               // null/0 = not payable online (apply flow)
+  priceBand     Json?              // patch-33: ROI/pricing bands, e.g. {individual: "₦...", corporate: "per-person"}
+  trainers      CourseTrainer[]    // patch-33: instructors with trainer sub-pages
   currency      String             @default("NGN")
   published     Boolean            @default(true)
   sortOrder     Int
@@ -28,6 +30,7 @@ model Course {
   modules       CourseModule[]
   purchases     Purchase[]
   recordings    Recording[]
+  bundles       BundleCourse[]
 
   @@index([published, track])
 }
@@ -82,6 +85,7 @@ model Event {
   startsAt        DateTime
   endsAt          DateTime?
   registrationUrl String?
+  eventType       String    @default("cohort") // patch-33: cohort | exam | webinar | briefing
   published       Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -215,4 +219,68 @@ model RefreshToken {
 
   @@index([userId])
   @@index([familyId])
+}
+
+
+// ── patch-33: PECB-parity surfaces ────────────────────────────────────────────
+
+model Trainer {
+  id        String          @id @default(cuid())
+  slug      String          @unique
+  name      String
+  title     String          // e.g. "Lead Auditor · Information Security"
+  bio       String
+  focus     String          // areas, e.g. "ISO/IEC 27001 · ISO 22301"
+  photoUrl  String?
+  linkedIn  String?
+  published Boolean         @default(true)
+  sortOrder Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  courses   CourseTrainer[]
+
+  @@index([published])
+}
+
+model CourseTrainer {
+  id        String  @id @default(cuid())
+  courseId  String
+  trainerId String
+  role      String  @default("Lead instructor") // Lead instructor | Co-tutor | Guest expert
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  trainer   Trainer @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, trainerId])
+  @@index([trainerId])
+}
+
+model Bundle {
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  title          String
+  subtitle       String
+  overview       String
+  details        String?
+  priceKobo      Int?           // null = quote/Enquire; 0 = free
+  currency       String         @default("NGN")
+  savingsNote    String?        // e.g. "Save ₦120,000 vs buying separately"
+  published      Boolean        @default(true)
+  sortOrder      Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  courses        BundleCourse[]
+
+  @@index([published])
+}
+
+model BundleCourse {
+  id       String @id @default(cuid())
+  bundleId String
+  courseId String
+  order    Int    @default(0)
+  bundle   Bundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleId, courseId])
+  @@index([courseId])
 }

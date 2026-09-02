@@ -51,6 +51,14 @@ export const courseUpsertSchema = z.object({
     overview: z.string().min(1),
     details: z.string().max(60000).nullable().optional(), // patch-27: long-form course body
     priceKobo: z.number().int().min(0).nullable().optional(), // null/0 = application-based
+    priceBand: z
+        .object({
+            individual: z.string().optional(),
+            corporate: z.string().optional(),
+            bundle: z.string().optional(),
+        })
+        .nullable()
+        .optional(), // patch-33: ROI/pricing band copy
     currency: z.string().min(3).max(3).optional().default('NGN'),
     published: z.boolean().optional().default(true),
     sortOrder: z.number().int().optional().default(0),
@@ -58,6 +66,7 @@ export const courseUpsertSchema = z.object({
 
 export const eventUpsertSchema = z.object({
     slug,
+    eventType: z.enum(['cohort', 'exam', 'webinar', 'briefing']).optional().default('cohort'), // patch-33
     title: z.string().min(1).max(200),
     summary: z.string().min(1).max(500),
     body: z.string().max(20000).nullable().optional(),
@@ -187,4 +196,38 @@ export const recordingUpdateSchema = z.object({
     description: z.string().max(2000).nullable().optional(),
     order: z.number().int().min(0).optional(),
     published: z.boolean().optional(),
+});
+
+
+// ── patch-33: trainers & bundles admin ───────────────────────────────────────
+export const trainerUpsertSchema = z.object({
+    slug,
+    name: z.string().min(1),
+    title: z.string().min(1),
+    bio: z.string().min(1),
+    focus: z.string().min(1),
+    photoUrl: z.string().url().nullable().optional(),
+    linkedIn: z.string().url().nullable().optional(),
+    published: z.boolean().default(true),
+    sortOrder: z.number().int().default(0),
+});
+
+export const courseTrainerUpsertSchema = z.object({
+    courseId: z.string().min(1),
+    trainerId: z.string().min(1),
+    role: z.string().default('Lead instructor'),
+});
+
+export const bundleUpsertSchema = z.object({
+    slug,
+    title: z.string().min(1),
+    subtitle: z.string().min(1),
+    overview: z.string().min(1),
+    details: z.string().max(60000).nullable().optional(),
+    priceKobo: z.number().int().min(0).nullable().optional(),
+    currency: z.string().default('NGN'),
+    savingsNote: z.string().nullable().optional(),
+    published: z.boolean().default(true),
+    sortOrder: z.number().int().default(0),
+    courseIds: z.array(z.string()).default([]), // BundleCourse sync on save
 });

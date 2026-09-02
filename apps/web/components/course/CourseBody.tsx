@@ -6,6 +6,7 @@ import ApplyCard from './ApplyCard';
 import PayCard from './PayCard';
 import CourseToc from './CourseToc';
 import EmployerFunding from './EmployerFunding';
+import PriceBandCard from './PriceBandCard';
 import type { Course } from '../../lib/content';
 
 const receiveItems = [
@@ -52,6 +53,7 @@ export default function CourseBody({ course }: { course: Course }) {
                 <Reveal delay={0.08} className="course-aside-col">
                     <div className="course-side-stack">
                         <aside id="enrol">
+                            <PriceBandCard course={course} />
                             <span>DELIVERY</span>
                             <h4>Enrollment</h4>
                             <p>

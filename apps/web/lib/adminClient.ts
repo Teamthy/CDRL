@@ -92,6 +92,8 @@ export interface AdminOverview {
 }
 
 export interface AdminCourse {
+    details?: string | null;
+    priceBand?: { individual?: string; corporate?: string; bundle?: string } | null;
     id: string;
     slug: string;
     title: string;
@@ -110,6 +112,7 @@ export interface AdminCourse {
 export interface AdminEvent {
     id: string;
     slug: string;
+    eventType?: string;
     title: string;
     summary: string;
     body: string | null;

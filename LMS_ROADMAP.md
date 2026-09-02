@@ -168,3 +168,17 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
   input; `total` items count in the header; notices self-dismiss after 4.5s;
   Escape closes the editor; unsaved-draft confirmation guard before closing;
   double-click delete already guarded by arm/confirm.
+
+## Patch-33 — PECB parity depth: trainers, bundles, exam events, ROI pricing (2026-09-02)
+
+- ✅ **Trainer model + pages** (`/trainers`, `/trainers/[slug]`) — published in console,
+  with per-person courses-taught sub-pages. Demo seed row included (editable).
+- ✅ **Bundle model + pages** (`/bundles`, `/bundles/[slug]`) with course membership
+  picker, group pricing field, savings note, and per-course pathway indexes. Demo
+  bundle (Security Foundations Pathway) seeded with three starter courses.
+- ✅ **Event.type** (`cohort | exam | webinar | briefing`): Events page splits exam
+  sessions into a dedicated "Exam sessions" strip with PECB exam-rules wording
+  (online-proctored, retake policy, rules link).
+- ✅ **Course `priceBand`** (JSON: individual/corporate/bundle copy) renders as an
+  "Investment — three ways" card on course pages; console editor added.
+- ✅ Admin client: AdminCourse/AdminEvent extended with the new fields.

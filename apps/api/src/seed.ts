@@ -59,6 +59,50 @@ async function main() {
         });
     }
 
+    // patch-33 demo rows (editable in console): 1 trainer + 1 bundle
+    const trainer = await prisma.trainer.upsert({
+        where: { slug: 'yinka-adebayo' },
+        update: {},
+        create: {
+            slug: 'yinka-adebayo',
+            name: 'Yinka Adebayo',
+            title: 'Lead Auditor · Information Security & AI Governance',
+            bio: 'Practitioner-instructor and founder of Ykay Consulting Hub. Leads CDRL\u2019s PECB-certified delivery with a focus on information security, AI governance, and organizational resilience across Africa.',
+            focus: 'ISO/IEC 27001 · ISO/IEC 42001 · Governance',
+            photoUrl: null,
+            linkedIn: null,
+            published: true,
+            sortOrder: 1,
+        },
+    });
+    const demoCourseSlugs = ['iso-iec-27001-foundation', 'iso-31000-risk-management', 'iso-iec-42001-ai-management-systems'];
+    const demoCourses = await prisma.course.findMany({ where: { slug: { in: demoCourseSlugs } }, select: { id: true, title: true } });
+    for (const c of demoCourses) {
+        await prisma.courseTrainer.upsert({
+            where: { courseId_trainerId: { courseId: c.id, trainerId: trainer.id } },
+            update: {},
+            create: { courseId: c.id, trainerId: trainer.id, role: 'Lead instructor' },
+        });
+    }
+    const isoFoundation = demoCourses.find((c) => c.title.includes('27001'));
+    if (isoFoundation) {
+        const bundle = await prisma.bundle.upsert({
+            where: { slug: 'security-foundations-pathway' },
+            update: {},
+            create: {
+                slug: 'security-foundations-pathway',
+                title: 'Security Foundations Pathway',
+                subtitle: 'Three certifications · one progression',
+                overview: 'Start with the fundamentals, deepen with risk management, and lock in AI governance — a three-credential pathway to operational security leadership.',
+                savingsNote: 'Bundle pricing available; group enrollment quotes on request',
+                published: true,
+                sortOrder: 1,
+            },
+        });
+        await prisma.bundleCourse.deleteMany({ where: { bundleId: bundle.id } });
+        await prisma.bundleCourse.createMany({ data: (isoFoundation ? [isoFoundation, ...demoCourses.filter((c) => c.id !== isoFoundation.id)] : demoCourses).map((c, i) => ({ bundleId: bundle.id, courseId: c.id, order: i })) });
+    }
+
     console.log('Seeded CDRL data');
 }
 

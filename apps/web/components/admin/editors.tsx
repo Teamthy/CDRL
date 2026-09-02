@@ -1,6 +1,6 @@
 'use client';
 
-import { Checkbox, Select, TextArea, TextInput } from './fields';
+import { Checkbox, Field, Select, TextArea, TextInput } from './fields';
 
 /** kebab-case helper for slugs (runs while the slug field is untouched). */
 export function kebab(s: string): string {
@@ -50,6 +50,9 @@ export interface CourseDraft {
     overview: string;
     details: string;
     priceNaira: string;
+    bandIndividual: string;
+    bandCorporate: string;
+    bandBundle: string;
     currency: string;
     published: boolean;
     sortOrder: string;
@@ -66,6 +69,9 @@ export const emptyCourseDraft = (): CourseDraft => ({
     overview: '',
     details: '',
     priceNaira: '',
+    bandIndividual: '',
+    bandCorporate: '',
+    bandBundle: '',
     currency: 'NGN',
     published: true,
     sortOrder: '0',
@@ -114,6 +120,25 @@ export function CourseFields({
                 onChange={(v) => setDraft({ ...draft, priceNaira: v })}
             />
             <TextInput label="Sort order" type="number" value={draft.sortOrder} onChange={(v) => setDraft({ ...draft, sortOrder: v })} />
+            <Field label="Pricing bands (ROI framing — optional)" wide hint="Shown as the 'Investment' card on the course page">
+                <div className="admin-bands">
+                    <input
+                        value={draft.bandIndividual}
+                        placeholder="Self-funded · e.g. ₦250,000 — stretch over two installments"
+                        onChange={(e) => setDraft({ ...draft, bandIndividual: e.target.value })}
+                    />
+                    <input
+                        value={draft.bandCorporate}
+                        placeholder="Employer/group · e.g. Group of 5+ — ₦… per person"
+                        onChange={(e) => setDraft({ ...draft, bandCorporate: e.target.value })}
+                    />
+                    <input
+                        value={draft.bandBundle}
+                        placeholder="Bundle note · e.g. Included in the Security Operator pathway"
+                        onChange={(e) => setDraft({ ...draft, bandBundle: e.target.value })}
+                    />
+                </div>
+            </Field>
             <TextArea label="Overview" value={draft.overview} required rows={5} placeholder="One sharp sentence on what the participant gets. PECB courses start with: A PECB Certified course delivered by Ykay Consulting Hub." onChange={(v) => setDraft({ ...draft, overview: v })} />
             <TextArea label="Long-form details (markdown-lite — shown on the course page)" value={draft.details} rows={10} hint="Supports ## headings, - bullets, **bold**, [label](url)" placeholder="## About this training
 
@@ -131,6 +156,7 @@ export function CourseFields({
 
 export interface EventDraft {
     slug: string;
+    eventType: string;
     title: string;
     summary: string;
     body: string;
@@ -144,6 +170,7 @@ export interface EventDraft {
 
 export const emptyEventDraft = (): EventDraft => ({
     slug: '',
+    eventType: 'cohort',
     title: '',
     summary: '',
     body: '',
@@ -175,6 +202,19 @@ export function EventFields({
                 }
             />
             <TextInput label="Slug" value={draft.slug} required onChange={(v) => setDraft({ ...draft, slug: v, slugTouched: true })} />
+<Select
+                label="Event type"
+                value={draft.eventType}
+                required
+                options={[
+                    { value: 'cohort', label: 'Cohort / programme run' },
+                    { value: 'exam', label: 'Exam session' },
+                    { value: 'webinar', label: 'Webinar' },
+                    { value: 'briefing', label: 'Briefing / masterclass' },
+                ]}
+                hint="Exam sessions list separately on the onboarding pages"
+                onChange={(v) => setDraft({ ...draft, eventType: v })}
+            />
             <TextInput label="Starts" type="datetime-local" value={draft.startsAt} required onChange={(v) => setDraft({ ...draft, startsAt: v })} />
             <TextInput label="Ends (optional)" type="datetime-local" value={draft.endsAt} onChange={(v) => setDraft({ ...draft, endsAt: v })} />
             <TextInput label="Location (optional)" value={draft.location} placeholder="Lagos / Online" onChange={(v) => setDraft({ ...draft, location: v })} />
@@ -268,6 +308,7 @@ export function coursePayload(d: CourseDraft) {
 export function eventPayload(d: EventDraft) {
     return {
         slug: d.slug.trim(),
+        eventType: d.eventType,
         title: d.title.trim(),
         summary: d.summary.trim(),
         body: nullIfEmpty(d.body),
@@ -294,6 +335,7 @@ export function postPayload(d: PostDraft) {
 
 export function eventDraftFrom(row: {
     slug: string;
+    eventType?: string;
     title: string;
     summary: string;
     body: string | null;
@@ -305,6 +347,7 @@ export function eventDraftFrom(row: {
 }): EventDraft {
     return {
         slug: row.slug,
+        eventType: row.eventType ?? 'cohort',
         title: row.title,
         summary: row.summary,
         body: row.body ?? '',
