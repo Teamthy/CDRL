@@ -7,7 +7,7 @@ import { courses as localCourses } from '../../../lib/content';
 
 export const revalidate = 1800;
 
-type Props = { params: { slug: string } };
+type Props = { params: Promise<{ slug: string }> };
 
 // Pre-render the known catalog from local fallback content; any additional
 // API-sourced slugs render on-demand (dynamicParams default) and are cached.
@@ -16,7 +16,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props) {
-    const course = await getCourseBySlug(params.slug);
+    const { slug } = await params;
+    const course = await getCourseBySlug(slug);
     if (!course) return { title: 'Course not found' };
     return {
         title: `${course.title} ${course.subtitle}`,
@@ -26,7 +27,8 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function CourseDetailPage({ params }: Props) {
-    const course = await getCourseBySlug(params.slug);
+    const { slug } = await params;
+    const course = await getCourseBySlug(slug);
     if (!course) notFound();
 
     return (

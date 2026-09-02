@@ -113,8 +113,3 @@ export async function removeLearningPlanItem(courseId: string): Promise<Mutation
     }
 }
 
-export default {
-    getLearningPlan,
-    addLearningPlanItem,
-    removeLearningPlanItem,
-};
