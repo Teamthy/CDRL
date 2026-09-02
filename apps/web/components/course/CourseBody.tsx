@@ -1,6 +1,7 @@
 import { Check, Clock3, Globe2, MonitorPlay } from 'lucide-react';
 import Reveal from '../motion/Reveal';
 import AddToPlanButton from '../actions/AddToPlanButton';
+import ApplyCard from './ApplyCard';
 import type { Course } from '../../lib/content';
 
 const receiveItems = [
@@ -37,21 +38,24 @@ export default function CourseBody({ course }: { course: Course }) {
                     </div>
                 </Reveal>
                 <Reveal delay={0.08}>
-                    <aside>
-                        <span>DELIVERY</span>
-                        <h4>Enrollment</h4>
-                        <p>
-                            <MonitorPlay aria-hidden="true" /> {course.deliveryMode}
-                        </p>
-                        <p>
-                            <Clock3 aria-hidden="true" /> Learn on a flexible schedule
-                        </p>
-                        <p>
-                            <Globe2 aria-hidden="true" /> Available across Africa
-                        </p>
-                        <AddToPlanButton courseId={course.id} />
-                        <small>Corporate enrollment available for teams.</small>
-                    </aside>
+                    <div className="course-side-stack">
+                        <aside>
+                            <span>DELIVERY</span>
+                            <h4>Enrollment</h4>
+                            <p>
+                                <MonitorPlay aria-hidden="true" /> {course.deliveryMode}
+                            </p>
+                            <p>
+                                <Clock3 aria-hidden="true" /> Learn on a flexible schedule
+                            </p>
+                            <p>
+                                <Globe2 aria-hidden="true" /> Available across Africa
+                            </p>
+                            <AddToPlanButton courseId={course.id} />
+                            <ApplyCard course={course} />
+                            <small>Corporate enrollment available for teams.</small>
+                        </aside>
+                    </div>
                 </Reveal>
             </div>
         </section>

@@ -6,8 +6,10 @@ import { useEffect, useState, type ReactNode } from 'react';
 import {
     BookOpen,
     CalendarDays,
+    ClipboardList,
     ExternalLink,
     FileText,
+    GraduationCap,
     Inbox,
     LayoutDashboard,
     LogOut,
@@ -17,6 +19,8 @@ import { clearToken, getToken } from '../../lib/adminClient';
 const navItems = [
     { label: 'Overview', href: '/admin', icon: LayoutDashboard },
     { label: 'Enquiries', href: '/admin/enquiries', icon: Inbox },
+    { label: 'Applications', href: '/admin/applications', icon: ClipboardList },
+    { label: 'LMS', href: '/admin/lms', icon: GraduationCap },
     { label: 'Courses', href: '/admin/courses', icon: BookOpen },
     { label: 'Events', href: '/admin/events', icon: CalendarDays },
     { label: 'Posts', href: '/admin/posts', icon: FileText },

@@ -1,7 +1,19 @@
 import { cache } from 'react';
-import { fetchCourse, fetchCourses, fetchPageContent } from './api';
+import {
+    fetchCourse,
+    fetchCourses,
+    fetchEvents,
+    fetchPageContent,
+    fetchPostBySlug,
+    fetchPosts,
+    type PublicEvent,
+    type PublicPost,
+    type PublicPostListItem,
+} from './api';
 import { courses as localCourses, pageData } from './content';
 import type { Course, PageContent } from './contracts';
+
+export type { PublicEvent, PublicPost, PublicPostListItem };
 
 /**
  * Application data loaders — the single place pages get data from.
@@ -40,4 +52,35 @@ export const getPageContent = cache(async (pageKey: string): Promise<PageContent
         /* fall through to local content */
     }
     return pageData[pageKey] ?? null;
+});
+
+/** Published events written through the admin console. Empty when API is down. */
+export const getPublishedEvents = cache(async (): Promise<PublicEvent[]> => {
+    try {
+        const remote = await fetchEvents();
+        if (remote) return remote;
+    } catch {
+        /* fall through */
+    }
+    return [];
+});
+
+/** Published posts (list view, no bodies) — merged above the pinned cards on /news. */
+export const getPublishedPosts = cache(async (): Promise<PublicPostListItem[]> => {
+    try {
+        const remote = await fetchPosts();
+        if (remote) return remote;
+    } catch {
+        /* fall through */
+    }
+    return [];
+});
+
+/** Full published post for /news/[slug]; null → 404. */
+export const getPostBySlug = cache(async (slug: string): Promise<PublicPost | null> => {
+    try {
+        return await fetchPostBySlug(slug);
+    } catch {
+        return null;
+    }
 });

@@ -3,7 +3,11 @@ import PageHero from '../../components/sections/PageHero';
 import CTASection from '../../components/sections/CTASection';
 import Reveal from '../../components/motion/Reveal';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { ArrowRight } from 'lucide-react';
+import { getPublishedPosts } from '../../lib/data';
+
+export const revalidate = 1800;
 
 export const metadata = {
     title: 'News & Updates',
@@ -23,7 +27,8 @@ const posts = [
     },
 ] as const;
 
-export default function NewsPage() {
+export default async function NewsPage() {
+    const dbPosts = await getPublishedPosts();
     return (
         <SiteLayout>
             <PageHero
@@ -31,6 +36,32 @@ export default function NewsPage() {
                 title="News from Ykay Consulting Hub"
                 description="Partnerships, programmes and milestones as we expand internationally recognized training and certification across Africa."
             />
+            {dbPosts.length > 0 && (
+                <section className="news-list news-list-db">
+                    <div className="wrap">
+                        {dbPosts.map((post) => (
+                            <Reveal key={post.id}>
+                                <article className="news-card">
+                                    <span className="news-meta">
+                                        {post.category.toUpperCase()} ·{' '}
+                                        <time dateTime={post.publishedAt ?? post.createdAt}>
+                                            {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString('en-NG', {
+                                                dateStyle: 'long',
+                                            })}
+                                        </time>
+                                    </span>
+                                    <h2>{post.title}</h2>
+                                    <p>{post.excerpt}</p>
+                                    <Link href={`/news/${post.slug}` as Route} className="text-link">
+                                        <span>Read article</span>
+                                        <ArrowRight />
+                                    </Link>
+                                </article>
+                            </Reveal>
+                        ))}
+                    </div>
+                </section>
+            )}
             <section className="news-list">
                 <div className="wrap">
                     {posts.map((post) => (
