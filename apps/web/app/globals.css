@@ -1459,7 +1459,7 @@ a.pecb-badge img { border-radius: 10px; }
 .admin-msg { color: var(--cdrl-text-light); font-size: 14px; line-height: 1.7; white-space: pre-wrap; max-width: 720px; }
 .admin-mailto { display: inline-flex; align-items: center; gap: 8px; color: var(--cdrl-green); font-size: 13px; font-weight: 600; margin: 8px 0 18px; }
 .admin-mailto svg { width: 14px; height: 14px; }
-.admin-edit { display: grid; grid-template-columns: 180px 1fr 120px; gap: 14px; align-items: end; max-width: 900px; }
+.admin-edit { display: grid; grid-template-columns: 180px 1fr 120px; gap: 14px; align-items: flex-end; max-width: 900px; }
 .admin-edit label { display: flex; flex-direction: column; gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cdrl-text-muted-light); }
 .admin-edit select, .admin-edit textarea {
   background: var(--cdrl-black); color: var(--cdrl-text-light);
@@ -1990,7 +1990,7 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 
 /* Related rail */
 .related-rail { padding: 44px 0 56px; background: #faf8f4; }
-.related-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 18px; }
+.related-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
 .related-controls { display: inline-flex; gap: 6px; }
 .related-controls button {
     width: 36px; height: 36px; border-radius: 999px;
