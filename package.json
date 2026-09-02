@@ -1,0 +1,17 @@
+{
+    "name": "cdrl-platform",
+    "private": true,
+    "packageManager": "pnpm@9.15.3",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "pnpm --filter web dev",
+        "dev:api": "pnpm --filter api dev",
+        "build": "pnpm --filter web build && pnpm --filter api build",
+        "lint": "pnpm --filter web lint && pnpm --filter api lint",
+        "prisma:migrate": "pnpm --filter api prisma migrate dev",
+        "prisma:seed": "pnpm --filter api prisma db seed"
+    }
+}
