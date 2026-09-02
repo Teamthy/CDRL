@@ -63,9 +63,10 @@ no phase breaks an earlier one.
 - **Dormant until configured:** Render env `PAYSTACK_SECRET_KEY` (paystack.com — free account, no card needed).
   Set the Paystack dashboard webhook URL to `https://<api>/api/v1/payments/webhook`. Prices are set per course in the console first.
 - ✅ Trademark credit lines on homepage PECB band + site-wide footer (patch-24)
-- Catalogue mapping (console, no code): for each PECB-delivered course row, set partner-aligned title/subtitle
-  (e.g. "ISO/IEC 27001 Lead Implementer — PECB Certified"), add "PECB Certified" to overview first line,
-  keep exam/artboard credits per PECB brand guidelines
+- ✅ Catalogue mapping (patch-26): seed.ts now carries the flagship PECB portfolio (11 added rows + PECB-marked
+  existing titles); /partnerships renders a portfolio grid for any course whose subtitle mentions PECB;
+  the /training marketplace filter chips group them by track. Grow the catalogue in the console — subtitle must
+  contain "PECB" to surface in the portfolio grid; re-running the seed is safe (upserts by slug).
 
 ## Ops notes
 
