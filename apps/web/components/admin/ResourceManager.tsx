@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import { ListChecks, Pencil, Plus, Search, Trash2, X, Eye } from 'lucide-react';
 import { adminFetch, UnauthorizedError, type ListResponse } from '../../lib/adminClient';
 
 /** Two-click delete: first tap arm it, second confirms. */
@@ -40,6 +40,10 @@ type ManagerProps<T, D> = {
     toPayload: (draft: D) => Record<string, unknown>;
     editor: (draft: D, setDraft: (d: D) => void, isNew: boolean) => ReactNode;
     entityName: string;
+    /** Optional bulk-publish toggle field name (when records carry `published`). */
+    bulkPublish?: boolean;
+    /** Optional in-editor preview URL builder (e.g. course page). */
+    previewUrlOf?: (draft: D) => string | null;
 };
 
 /**
@@ -58,9 +62,12 @@ export default function ResourceManager<T, D>({
     toPayload,
     editor,
     entityName,
+    bulkPublish = false,
+    previewUrlOf,
 }: ManagerProps<T, D>) {
     const [data, setData] = useState<ListResponse<T> | null>(null);
     const [editing, setEditing] = useState<{ id: string | null; draft: D } | null>(null);
+    const draftsKey = `admin-draft:${endpoint}`;
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
@@ -97,15 +104,71 @@ export default function ResourceManager<T, D>({
     const reload = useCallback(async () => {
         setError(null);
         try {
-            setData(await adminFetch<ListResponse<T>>(`${endpoint}?limit=100`));
+            setData(await adminFetch<ListResponse<T>>(`${endpoint}?limit=200`));
+            setSelected(new Set());
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
         }
     }, [endpoint]);
 
+    async function bulkSetPublished(value: boolean) {
+        if (selected.size === 0) return;
+        if (!window.confirm(`${value ? 'Publish' : 'Unpublish'} ${selected.size} ${entityName}(s)?`)) return;
+        setBusy(true);
+        setError(null);
+        try {
+            for (const id of selected) {
+                await adminFetch(`${endpoint}/${id}`, { method: 'PATCH', body: JSON.stringify({ published: value }) });
+            }
+            setNotice(`${selected.size} ${entityName}${selected.size > 1 ? 's' : ''} ${value ? 'published' : 'unpublished'}.`);
+            await reload();
+        } catch (err) {
+            if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
+        } finally {
+            setBusy(false);
+        }
+    }
+
     useEffect(() => {
         void reload();
     }, [reload]);
+
+    // ── Autosave drafts (localStorage) ────────────────────────────────────────
+    // Any in-progress editor state is snapshotted on every keystroke; on mount
+    // after a crash/reload we offer a restore.
+    const [restorableDraft, setRestorableDraft] = useState<{ id: string | null; draft: D } | null>(null);
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem(draftsKey);
+            if (raw) setRestorableDraft(JSON.parse(raw) as { id: string | null; draft: D });
+        } catch { /* corrupted draft -> ignore */ }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draftsKey]);
+    useEffect(() => {
+        try {
+            if (editing) localStorage.setItem(draftsKey, JSON.stringify(editing));
+            else localStorage.removeItem(draftsKey);
+        } catch { /* storage full / private mode — non-fatal */ }
+    }, [editing, draftsKey]);
+
+    const restoreDraft = () => {
+        if (restorableDraft) setEditing(restorableDraft);
+        setRestorableDraft(null);
+    };
+    const dismissDraft = () => {
+        try { localStorage.removeItem(draftsKey); } catch { /* ignore */ }
+        setRestorableDraft(null);
+    };
+
+    // ── Bulk selection ────────────────────────────────────────────────────────
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const toggleSelect = (id: string) =>
+        setSelected((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
 
     async function save() {
         if (!editing) return;
@@ -154,14 +217,28 @@ export default function ResourceManager<T, D>({
 
             {error && <p className="admin-error" role="alert">{error}</p>}
             {notice && <p className="admin-notice" role="status">{notice}</p>}
+            {restorableDraft && !editing && (
+                <div className="admin-restore" role="status">
+                    <span>A saved draft of a {entityName} exists from a previous session.</span>
+                    <button type="button" className="admin-ghost" onClick={restoreDraft}>Restore draft</button>
+                    <button type="button" className="admin-icon-btn" onClick={dismissDraft} aria-label="Discard draft"><X /></button>
+                </div>
+            )}
 
             {editing && (
                 <section className="admin-editor-panel">
                     <div className="admin-editor-head">
                         <h2>{editing.id ? `Edit ${entityName}` : `New ${entityName}`}</h2>
-                        <button type="button" className="admin-icon-btn" onClick={tryCloseEditor} aria-label="Cancel">
-                            <X />
-                        </button>
+                        <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                            {previewUrlOf && previewUrlOf(editing.draft) && (
+                                <a className="admin-icon-btn" href={previewUrlOf(editing.draft) as string} target="_blank" rel="noopener noreferrer" title="Open the live page preview in a new tab">
+                                    <Eye /> Preview
+                                </a>
+                            )}
+                            <button type="button" className="admin-icon-btn" onClick={tryCloseEditor} aria-label="Cancel">
+                                <X />
+                            </button>
+                        </div>
                     </div>
                     <form
                         className="admin-form"
@@ -183,6 +260,22 @@ export default function ResourceManager<T, D>({
                 </section>
             )}
 
+            {bulkPublish && selected.size > 0 && (
+                <div className="admin-bulk" role="region" aria-label="Bulk actions">
+                    <ListChecks aria-hidden="true" />
+                    <span>{selected.size} selected</span>
+                    <button type="button" className="admin-ghost" disabled={busy} onClick={() => void bulkSetPublished(true)}>
+                        Publish
+                    </button>
+                    <button type="button" className="admin-ghost" disabled={busy} onClick={() => void bulkSetPublished(false)}>
+                        Unpublish
+                    </button>
+                    <button type="button" className="admin-icon-btn" onClick={() => setSelected(new Set())} aria-label="Clear selection">
+                        <X />
+                    </button>
+                </div>
+            )}
+
             {data && (
                 <div className="admin-toolbar">
                     <div className="admin-search">
@@ -200,6 +293,7 @@ export default function ResourceManager<T, D>({
 
             <div className="admin-table">
                 <div className="admin-tr admin-th admin-tr-crud">
+                    {bulkPublish && <span aria-hidden="true" className="bulk-col-head" />}
                     {columns.map((c) => (
                         <span key={c}>{c}</span>
                     ))}
@@ -214,7 +308,17 @@ export default function ResourceManager<T, D>({
                     .map((item) => {
                     const id = idOf(item);
                     return (
-                        <div className="admin-tr admin-tr-static admin-tr-crud" key={id}>
+                        <div className={`admin-tr admin-tr-static admin-tr-crud ${selected.has(id) ? 'selected' : ''}`} key={id}>
+                            {bulkPublish && (
+                                <span className="bulk-col">
+                                    <input
+                                        type="checkbox"
+                                        checked={selected.has(id)}
+                                        onChange={() => toggleSelect(id)}
+                                        aria-label={`Select ${entityName}`}
+                                    />
+                                </span>
+                            )}
                             {renderRow(item)}
                             <span className="admin-row-actions">
                                 <button

@@ -1,0 +1,13 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "framework": "nextjs",
+    "buildCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm --filter web build",
+    "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+    "regions": ["fra1"],
+    "headers": [
+        {
+            "source": "/assets/(.*)",
+            "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+        }
+    ]
+}

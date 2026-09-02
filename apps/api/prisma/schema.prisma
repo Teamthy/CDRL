@@ -284,3 +284,18 @@ model BundleCourse {
   @@unique([bundleId, courseId])
   @@index([courseId])
 }
+
+// ── patch-34: admin audit log (dashboard "who-changed-what") ─────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String   // admin user email/id from the bearer token
+  action    String   // create | update | delete
+  resource  String   // courses | events | posts | trainers | bundles | …
+  targetId  String?  // id of the row touched (null when bulk)
+  summary   String   // "Updated 'ISO/IEC 27001 — Lead Auditor'"
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([resource, createdAt])
+}

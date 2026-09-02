@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
+    Activity,
     BadgeCheck,
     PackageOpen,
     UserRound,
@@ -27,6 +28,7 @@ const navItems = [
     { label: 'PECB Exams', href: '/admin/pecb-exams', icon: BadgeCheck },
     { label: 'Trainers', href: '/admin/trainers', icon: UserRound },
     { label: 'Bundles', href: '/admin/bundles', icon: PackageOpen },
+    { label: 'Activity', href: '/admin/activity', icon: Activity },
     { label: 'Courses', href: '/admin/courses', icon: BookOpen },
     { label: 'Events', href: '/admin/events', icon: CalendarDays },
     { label: 'Posts', href: '/admin/posts', icon: FileText },

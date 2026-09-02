@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Checkbox, Field, Select, TextArea, TextInput } from './fields';
 
 /** kebab-case helper for slugs (runs while the slug field is untouched). */
@@ -87,6 +88,31 @@ export function CourseFields({
     setDraft: (d: CourseDraft) => void;
     isNew: boolean;
 }) {
+    const [slugState, setSlugState] = useState<'idle' | 'checking' | 'free' | 'taken'>('idle');
+    const [slugDebounce, setSlugDebounce] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+    // Live slug availability check (patch-32/34): badge under the slug field.
+    const checkSlug = (value: string) => {
+        if (!value || !isNew) {
+            setSlugState('idle');
+            return;
+        }
+        setSlugState('checking');
+        if (slugDebounce) clearTimeout(slugDebounce);
+        const t = setTimeout(async () => {
+            try {
+                const { adminFetch, UnauthorizedError } = await import('../../lib/adminClient');
+                const data = await adminFetch<{ items?: { slug: string }[] }>(`/admin/courses?limit=200`);
+                const taken = (data?.items ?? data as unknown as { slug: string }[])?.some?.((c: { slug: string }) => c.slug === value);
+                setSlugState(taken ? 'taken' : 'free');
+            } catch (err) {
+                // 401 is handled globally by adminFetch; everything else → neutral
+                if ((err as Error).name !== 'UnauthorizedError') setSlugState('idle');
+            }
+        }, 350);
+        setSlugDebounce(t);
+    };
+
     return (
         <>
             <TextInput
@@ -101,13 +127,24 @@ export function CourseFields({
                     })
                 }
             />
-            <TextInput
-                label="Slug"
-                value={draft.slug}
-                required
-                placeholder="iso-iec-27001-lead-auditor"
-                onChange={(v) => setDraft({ ...draft, slug: v, slugTouched: true })}
-            />
+            <Field label="Slug" hint={isNew ? 'Unique; used in the URL /training/<slug>' : 'Locked once published'}>
+                <input
+                    value={draft.slug}
+                    required
+                    placeholder="iso-iec-27001-lead-auditor"
+                    onChange={(e) => {
+                        setDraft({ ...draft, slug: e.target.value, slugTouched: true });
+                        checkSlug(e.target.value);
+                    }}
+                />
+                {isNew && (
+                    <em className={`admin-field-hint slug-${slugState}`}>
+                        {slugState === 'checking' && 'Checking availability…'}
+                        {slugState === 'free' && '✓ Available'}
+                        {slugState === 'taken' && '✗ Already used by another course'}
+                    </em>
+                )}
+            </Field>
             <TextInput label="Subtitle" value={draft.subtitle} required wide placeholder="e.g. Lead Implementer (PECB Certified)" hint="The credential phrase shown under the title" onChange={(v) => setDraft({ ...draft, subtitle: v })} />
             <Select label="Track" value={draft.track} required placeholder="Choose a PECB category…" options={[...TRACKS]} hint="Drives the /training filter chips" onChange={(v) => setDraft({ ...draft, track: v })} />
             <Select label="Level" value={draft.level} required placeholder="Select level…" options={[...LEVELS]} onChange={(v) => setDraft({ ...draft, level: v })} />

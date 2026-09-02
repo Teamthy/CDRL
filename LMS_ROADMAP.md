@@ -182,3 +182,19 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
 - ✅ **Course `priceBand`** (JSON: individual/corporate/bundle copy) renders as an
   "Investment — three ways" card on course pages; console editor added.
 - ✅ Admin client: AdminCourse/AdminEvent extended with the new fields.
+
+## Patch-34 — Console robustness round (2026-09-02)
+
+- ✅ **Draft autosave**: every editor panel snapshots to localStorage on change;
+  after a reload it offers "Restore draft" so in-progress work survives crashes.
+- ✅ **Audit log**: new `AuditLog` table + `GET /admin/audit-log`; console mutations
+  (create/update/delete in the ResourceManager + patch-31–33 CRUD) all record
+  actor/action/summary; new **Activity** console page with filter + refresh.
+- ✅ **Bulk publish/unpublish** on the Courses manager (row checkboxes → action bar).
+- ✅ **Slug availability pre-check** on the courses editor (green ✓ / red ✗ under the
+  slug input, debounced 350 ms against the live list).
+- ✅ **Preview button** on the courses editor (opens the live `/training/<slug>`
+  page in a new tab before or after save).
+- ✅ **Vercel migration buddy**: `apps/web/vercel.json` + `docs/DEPLOY_VERCEL.md` —
+  click-through cutover steps when Netlify free credits exhaust (app is already
+  Vercel-native; no code change, just root-directory + env copy).

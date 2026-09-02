@@ -64,6 +64,8 @@ function toPayload(d: CourseDraft) {
 export default function AdminCoursesPage() {
     return (
         <ResourceManager<CourseRow, CourseDraft>
+            bulkPublish
+            previewUrlOf={(d) => (d.slug ? `/training/${d.slug}` : null)}
             title="Courses"
             description="The full catalogue lives here. PECB-coded courses (with 'PECB' in the subtitle) also appear on the partnerships page."
             endpoint="/admin/courses"

@@ -29,6 +29,27 @@ import {
     postUpsertSchema,
 } from './validation.js';
 
+/** patch-34: fire-and-forget mutation audit trail. */
+async function audit(req: Request, action: 'create' | 'update' | 'delete', resource: string, targetId: string | null, summary: string) {
+    try {
+        const header = req.headers.authorization ?? '';
+        const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+        const payload = token ? verifyScopedToken('admin', token) : null;
+        const actor = (payload && typeof payload === 'object' ? (payload as { sub?: string }).sub : null) ?? 'unknown';
+        await prisma.auditLog.create({
+            data: {
+                actor,
+                action,
+                resource,
+                targetId,
+                summary: summary.slice(0, 300),
+            },
+        });
+    } catch {
+        // audit failure must never break the mutation path itself
+    }
+}
+
 /** Wrap async route handlers so rejections reach the error middleware. */
 const ah =
     (fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>): RequestHandler =>
@@ -113,6 +134,20 @@ adminRouter.get(
     }),
 );
 
+// patch-34: audit log read endpoint (console "Activity" page)
+adminRouter.get(
+    '/audit-log',
+    ah(async (req, res) => {
+        const q = listQuerySchema.safeParse(req.query);
+        const limit = q.success ? Math.min(q.data.limit, 200) : 100;
+        const [items, total] = await Promise.all([
+            prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: limit }),
+            prisma.auditLog.count(),
+        ]);
+        res.json({ items, total });
+    }),
+);
+
 // ────────────────────────────────────────────────────────────────────────────
 // CRM: contact enquiries
 // ────────────────────────────────────────────────────────────────────────────
@@ -185,6 +220,8 @@ function crudRoutes(path: string, delegate: Delegate, schema: z.ZodObject<z.ZodR
             if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
             try {
                 const item = await delegate.create({ data: parsed.data as Record<string, unknown> });
+                const label = (parsed.data as Record<string, unknown>).title ?? parsed.data.slug ?? path;
+                void audit(req, 'create', path, (item as { id?: string }).id ?? null, `Created ${path}/${label}`);
                 return res.status(201).json(item);
             } catch (err) {
                 if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -202,6 +239,7 @@ function crudRoutes(path: string, delegate: Delegate, schema: z.ZodObject<z.ZodR
             if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
             try {
                 const item = await delegate.update({ where: { id: req.params.id }, data: parsed.data as Record<string, unknown> });
+                void audit(req, 'update', path, req.params.id, `Updated ${path}/${req.params.id}`);
                 return res.json(item);
             } catch (err) {
                 if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {

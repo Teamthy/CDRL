@@ -2225,3 +2225,33 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .exam-card { background: #fff; padding: 13px 15px; border: 1px solid var(--cdrl-line,#d9d2c4); border-radius: 11px; display: grid; gap: 3px; }
 .exam-card strong { font-size: 14px; }
 .exam-card span { font-size: 12.5px; color: var(--cdrl-text-muted-light); }
+
+/* ── patch-34: console robustness polish ── */
+.admin-restore {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: linear-gradient(90deg, rgba(176,141,87,0.12), rgba(176,141,87,0.05));
+    border: 1px solid rgba(176,141,87,0.4);
+    border-radius: 11px; padding: 10px 14px; margin-bottom: 14px; font-size: 13.5px;
+}
+.admin-bulk {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: rgba(47,107,79,0.07); border: 1.5px solid var(--cdrl-green);
+    border-radius: 12px; padding: 10px 13px; margin-bottom: 12px;
+}
+.admin-bulk span { font-weight: 600; color: var(--cdrl-green); }
+.slug-free { color: var(--cdrl-green) !important; }
+.slug-taken { color: #b5483a !important; font-weight: 600; }
+.slug-checking { color: var(--cdrl-text-muted-light) !important; }
+
+.admin-tr.selected { background: rgba(47,107,79,0.05); }
+.bulk-col, .bulk-col-head { width: 26px; display: flex; align-items: center; justify-content: center; }
+
+.audit-table { border: 1px solid var(--cdrl-line,#e6ddcd); border-radius: 12px; overflow: hidden; }
+.audit-tr { display: grid; grid-template-columns: 170px 90px 1fr 170px; gap: 10px; padding: 11px 15px; background: #fff; border-bottom: 1px solid var(--cdrl-line,#f1ece1); font-size: 13.2px; align-items: center; }
+.audit-tr:last-child { border-bottom: 0; }
+.audit-th { background: #f8f5ee; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--cdrl-text-muted-light); }
+.audit-pill { font-style: normal; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.audit-create { background: rgba(47,107,79,0.12); color: var(--cdrl-green); }
+.audit-update { background: rgba(176,141,87,0.12); color: #8a6d3b; }
+.audit-delete { background: rgba(181,72,58,0.11); color: #b5483a; }
+@media (max-width: 860px) { .audit-tr { grid-template-columns: 1fr; gap: 3px; } }
