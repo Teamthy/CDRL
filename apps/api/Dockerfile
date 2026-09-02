@@ -21,8 +21,15 @@ RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app /app
+# Startup script for hosts (e.g. Render) whose command field cannot run shell
+# chains; it runs migrations then execs the API. Must stay executable, and
+# verify paths before shipping: the runtime stage copies all of /app, so a bad
+# path here only fails at container start, not at build time.
+RUN chmod +x apps/api/docker-start.sh \
+ && test -f apps/api/node_modules/.bin/prisma \
+ && test -f apps/api/dist/index.js
 USER node
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD wget -qO- http://127.0.0.1:4000/api/v1/health || exit 1
-CMD ["node", "apps/api/dist/index.js"]
+CMD ["/app/apps/api/docker-start.sh"]
