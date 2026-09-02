@@ -2609,3 +2609,14 @@ button.admin-btn, .admin-pagination button { transition: border-color 140ms ease
 .module-list .learn-card, .module-list .module-title { color: var(--cdrl-text-dark); }
 .admin-detail-meta span { color: var(--cdrl-text-muted-light); }
 .status-pill { color: var(--cdrl-deep-green); }
+
+
+/* ── patch-47: audit readable + row contrast lock ── */
+.audit-table .audit-tr { color: var(--cdrl-text-dark); }
+.audit-table .audit-tr.audit-th { background: rgba(15,30,20,.04); color: var(--cdrl-text-muted-light); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: .06em; }
+.audit-table .audit-tr .audit-pill { font-style: normal; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+.audit-table .audit-create { background: rgba(47,107,79,.14); color: var(--cdrl-deep-green); }
+.audit-table .audit-update { background: rgba(217,119,6,.12); color: #9a6700; }
+.audit-table .audit-delete { background: rgba(208,58,58,.12); color: #c0392b; }
+.admin-chip-count { font-variant-numeric: tabular-nums; }
+.audit-tr small.admin-mono { font-family: ui-monospace, Consolas, monospace; color: var(--cdrl-text-muted-light); }
