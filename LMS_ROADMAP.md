@@ -125,3 +125,20 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
   17025/21502/28000/55001/45001/18788/27701/31000/37001/37301/26000.
 - ✅ Seed upsert-by-slug keeps re-runs safe; EU AI Governance + ISO/TS 31050 remain
   excluded (PECB marks them "coming soon").
+
+
+## Patch-30 — UI polish: catalogue filters, form placeholders, course imagery, bug fix (2026-09-02)
+
+- ✅ **Bug fix — `e.filter is not a function`**: `/admin/courses` is paginated
+  (`{items, total}`) but the PECB Exams composer read it as a bare array. Now
+  tolerates both shapes and bumps the fetch limit to 200.
+- ✅ **Dynamic catalogue filters**: /training chips are now derived from the live
+  course list instead of a hardcoded 5-entry list, so all 11 PECB categories +
+  curated tracks appear with course counts, auto-growing as the catalogue grows.
+- ✅ **Course imagery**: every course card and course-detail hero gets a
+  Unsplash-served thematic backdrop chosen deterministically per track
+  (lib/courseImages.ts — every URL verified working on 2026-09-02); dark gradient
+  overlay preserves text readability, hover zoom adds motion.
+- ✅ **Form polish**: contextual placeholders across Apply card, Pay card, and
+  contact enquiry; consistent focus ring (accent halo), rounded corners, and a
+  custom chevron on all dropdowns across public + console surfaces.

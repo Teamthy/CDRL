@@ -23,7 +23,7 @@ export default function CourseMarketplace({ courses }: Props) {
 
     return (
         <>
-            <CatalogTools query={query} filter={filter} onQueryChange={setQuery} onFilterChange={setFilter} />
+            <CatalogTools courses={courses} query={query} filter={filter} onQueryChange={setQuery} onFilterChange={setFilter} />
             <section className="market-grid">
                 {shown.length === 0 ? (
                     <div className="wrap">

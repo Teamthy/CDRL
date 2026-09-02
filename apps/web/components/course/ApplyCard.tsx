@@ -81,15 +81,15 @@ export default function ApplyCard({ course }: Props) {
             </p>
             <label>
                 Full name
-                <input required value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+                <input required value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" placeholder="Your full name" />
             </label>
             <label>
                 Email
-                <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+                <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="you@organisation.com" />
             </label>
             <label>
                 Phone (optional)
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" placeholder="+234 …" />
             </label>
             <label>
                 Your background
@@ -101,7 +101,7 @@ export default function ApplyCard({ course }: Props) {
             </label>
             <label>
                 Anything we should know? (optional)
-                <textarea rows={3} value={message} onChange={(e) => setMessage(e.target.value)} />
+                <textarea rows={3} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Group size, preferred dates, employer sponsorship…" />
             </label>
             {state === 'error' && (
                 <p className="admin-error" role="alert">

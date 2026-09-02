@@ -63,11 +63,11 @@ export default function PayCard({ course }: { course: Course }) {
             <div className="pay-price">{format(course.priceKobo, course.currency)}</div>
             <label>
                 Email for your account
-                <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+                <input placeholder="Email for the payment receipt" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
             </label>
             <label>
                 Full name
-                <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+                <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" placeholder="Name on the payment record (optional)" />
             </label>
             {error && <p className="admin-error" role="alert">{error}</p>}
             <button type="button" className="auth-submit" disabled={busy || !email.trim()} onClick={() => void pay()}>

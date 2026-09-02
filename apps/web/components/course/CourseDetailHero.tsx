@@ -2,10 +2,16 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import Reveal from '../motion/Reveal';
 import type { Course } from '../../lib/content';
+import { courseHeroImageFor } from '../../lib/courseImages';
 
 export default function CourseDetailHero({ course }: { course: Course }) {
     return (
-        <section className="course-detail">
+        <section className="course-detail course-detail-img">
+            <div
+                className="course-detail-bg"
+                aria-hidden="true"
+                style={{ backgroundImage: `url(${courseHeroImageFor(course.track, course.slug)})` }}
+            />
             <div className="wrap">
                 <Link href={'/training'} className="back">
                     <ArrowLeft aria-hidden="true" /> Back to training
