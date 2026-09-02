@@ -9,11 +9,11 @@
 [build]
   base = "apps/web"
   command = "pnpm --filter web build"
-  publish = "apps/web/.next"
+  publish = ".next"
 
 [functions]
   # Conventional-but-absent on purpose: no user functions in this app.
-  directory = "apps/web/netlify/functions"
+  directory = "netlify/functions"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
