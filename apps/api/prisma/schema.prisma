@@ -8,18 +8,21 @@ datasource db {
 }
 
 model Course {
-  id            String   @id @default(cuid())
-  slug          String   @unique
+  id            String             @id @default(cuid())
+  slug          String             @unique
   title         String
   subtitle      String
   track         String
   level         String
   deliveryMode  String
   overview      String
-  published     Boolean  @default(true)
+  published     Boolean            @default(true)
   sortOrder     Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  planItems     LearningPlanItem[]
+
+  @@index([published, track])
 }
 
 model SiteContent {
@@ -56,6 +59,8 @@ model LearningPlanItem {
   courseId       String
   createdAt      DateTime     @default(now())
   learningPlan   LearningPlan @relation(fields: [learningPlanId], references: [id], onDelete: Cascade)
+  course         Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([learningPlanId, courseId])
+  @@index([courseId])
 }
