@@ -116,10 +116,19 @@ export interface LearnerModule {
     body: string | null;
 }
 
+export interface LearnerRecording {
+    id: string;
+    title: string;
+    url: string;
+    description: string | null;
+    order: number;
+}
+
 export interface LearnerCourseView {
     course: { title: string; slug: string; track: string };
     enrollment: { id: string; status: string; progress: number };
     modules: LearnerModule[];
+    recordings: LearnerRecording[];
 }
 
 export class NotEnrolledError extends Error {

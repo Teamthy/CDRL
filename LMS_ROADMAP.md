@@ -44,7 +44,8 @@ no phase breaks an earlier one.
 
 - ✅ `/learner` dashboard (enrollments, progress bars, tutor) + `/learner/<slug>` module list
 - ✅ Certificates: `/learner/<slug>/certificate` — printable, verification ID, print-to-PDF; unlocks when enrollment = completed (patch-21)
-- ⏭ Remaining: session recordings area, PWA offline caching
+- ✅ Session recordings area (patch-22): console → LMS → Recordings; enrollment-gated in the player; YouTube embeds vs link cards
+- ⏭ Remaining: PWA offline caching
 - Hardening backlog: refresh-cookie rotation, argon2 policy review
 
 ## Phase 5 — Payments & PECB notes (PARTIAL, patch-20)

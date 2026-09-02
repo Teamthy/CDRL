@@ -1695,3 +1695,12 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
   .cert-sheet, .cert-sheet * { visibility: visible !important; }
   .cert-sheet { position: absolute; inset: 0 auto auto 0; width: 100%; border: 0; box-shadow: none; border-radius: 0; }
 }
+
+/* ─── PATCH-22: session recordings ───────────────────────────────────────── */
+.recordings { display: grid; gap: 14px; margin-top: 8px; }
+.recording-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.recording-card { gap: 8px; }
+.recording-card strong { font-size: 14.5px; line-height: 1.35; display: inline-flex; align-items: center; gap: 6px; }
+.recording-link { text-decoration: none; color: inherit; transition: border-color 0.15s ease; }
+.recording-link:hover { border-color: var(--cdrl-green-dark, #2f7d1f); }
+.recording-link > .learn-meta:last-child { color: var(--cdrl-green-dark, #2f7d1f); font-weight: 650; }

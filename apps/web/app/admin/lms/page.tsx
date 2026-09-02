@@ -32,7 +32,7 @@ interface ModuleRow {
     course: { slug: string; title: string };
 }
 
-const tabs = ['People', 'Enrollments', 'Modules'] as const;
+const tabs = ['People', 'Enrollments', 'Modules', 'Recordings'] as const;
 type Tab = (typeof tabs)[number];
 
 export default function LmsAdminPage() {
@@ -57,6 +57,7 @@ export default function LmsAdminPage() {
             {tab === 'People' && <PeopleSection />}
             {tab === 'Enrollments' && <EnrollmentsSection />}
             {tab === 'Modules' && <ModulesSection />}
+            {tab === 'Recordings' && <RecordingsSection />}
         </div>
     );
 }
@@ -453,6 +454,192 @@ function ModulesSection() {
                     );
                 })}
                 {rows.length === 0 && <p className="admin-empty">No modules yet.</p>}
+            </div>
+        </section>
+    );
+}
+
+/* ── Recordings (session recording links) ────────────────────────────────── */
+
+interface RecordingRow {
+    id: string;
+    title: string;
+    url: string;
+    description: string | null;
+    order: number;
+    published: boolean;
+    course: { slug: string; title: string };
+}
+
+function RecordingsSection() {
+    const [courseSlug, setCourseSlug] = useState('');
+    const [title, setTitle] = useState('');
+    const [url, setUrl] = useState('');
+    const [order, setOrder] = useState('0');
+    const [description, setDescription] = useState('');
+    const [published, setPublished] = useState(true);
+    const [rows, setRows] = useState<RecordingRow[]>([]);
+    const [openId, setOpenId] = useState<string | null>(null);
+    const [drafts, setDrafts] = useState<Record<string, { title: string; url: string; order: string; description: string; published: boolean }>>({});
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
+
+    const reload = useCallback(async () => {
+        try {
+            const res = await adminFetch<ListResponse<RecordingRow>>('/admin/lms/recordings');
+            setRows(res.items);
+        } catch (err) {
+            if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
+        }
+    }, []);
+
+    useEffect(() => {
+        void reload();
+    }, [reload]);
+
+    async function create(e: FormEvent) {
+        e.preventDefault();
+        setBusy(true);
+        setError(null);
+        setNotice(null);
+        try {
+            await adminFetch('/admin/lms/recordings', {
+                method: 'POST',
+                body: JSON.stringify({
+                    courseSlug: courseSlug.trim(),
+                    title: title.trim(),
+                    url: url.trim(),
+                    order: Number.parseInt(order, 10) || 0,
+                    description: description.trim() || null,
+                    published,
+                }),
+            });
+            setNotice(`Recording "${title.trim()}" added to ${courseSlug.trim()}.`);
+            setTitle('');
+            setUrl('');
+            setDescription('');
+            await reload();
+        } catch (err) {
+            if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    function openRow(r: RecordingRow) {
+        setOpenId((cur) => (cur === r.id ? null : r.id));
+        setDrafts((d) => ({
+            ...d,
+            [r.id]: { title: r.title, url: r.url, order: String(r.order), description: r.description ?? '', published: r.published },
+        }));
+    }
+
+    async function save(r: RecordingRow) {
+        const draft = drafts[r.id];
+        if (!draft) return;
+        setError(null);
+        setNotice(null);
+        try {
+            await adminFetch(`/admin/lms/recordings/${r.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    title: draft.title.trim(),
+                    url: draft.url.trim(),
+                    order: Number.parseInt(draft.order, 10) || 0,
+                    description: draft.description.trim() || null,
+                    published: draft.published,
+                }),
+            });
+            setNotice(`Recording "${draft.title.trim()}" saved.`);
+            await reload();
+        } catch (err) {
+            if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
+        }
+    }
+
+    async function remove(r: RecordingRow) {
+        if (!window.confirm(`Delete recording "${r.title}"?`)) return;
+        setError(null);
+        try {
+            await adminFetch(`/admin/lms/recordings/${r.id}`, { method: 'DELETE' });
+            setNotice(`Recording "${r.title}" deleted.`);
+            await reload();
+        } catch (err) {
+            if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
+        }
+    }
+
+    const hostOf = (u: string) => {
+        try {
+            return new URL(u).host;
+        } catch {
+            return u;
+        }
+    };
+
+    return (
+        <section className="admin-editor-panel">
+            <h2 className="admin-lms-h">Add a session recording</h2>
+            <form className="admin-form" onSubmit={create}>
+                <TextInput label="Course slug" value={courseSlug} onChange={setCourseSlug} required placeholder="iso-iec-27001-foundation" />
+                <TextInput label="Recording title" value={title} onChange={setTitle} required placeholder="Week 1 live session" />
+                <TextInput label="URL (YouTube, Drive, Vimeo…)" value={url} onChange={setUrl} required placeholder="https://youtu.be/…" />
+                <TextInput label="Order" type="number" value={order} onChange={setOrder} />
+                <Checkbox label="Published" checked={published} onChange={setPublished} hint="Visible to enrolled learners immediately" />
+                <TextArea label="Description (optional)" value={description} onChange={setDescription} rows={3} />
+                <div className="admin-form-actions">
+                    <button type="submit" className="admin-save" disabled={busy}>
+                        {busy ? 'Saving…' : 'Add recording'}
+                    </button>
+                </div>
+            </form>
+            <p className="admin-hint">YouTube links embed in the learner portal; anything else becomes a tidy link card.</p>
+            {error && <p className="admin-error">{error}</p>}
+            {notice && <p className="admin-notice">{notice}</p>}
+            <div className="admin-table admin-table-plain">
+                <div className="admin-tr admin-th admin-tr-lms">
+                    <span>Course</span>
+                    <span>Recording</span>
+                    <span>Host</span>
+                    <span>Visibility</span>
+                    <span aria-hidden="true" />
+                </div>
+                {rows.map((r) => {
+                    const draft = drafts[r.id];
+                    const open = openId === r.id;
+                    return (
+                        <div key={r.id} className={`admin-row ${open ? 'open' : ''}`}>
+                            <button type="button" className="admin-tr admin-tr-lms" onClick={() => openRow(r)} aria-expanded={open}>
+                                <span>{r.course.slug}</span>
+                                <span><strong>{r.title}</strong></span>
+                                <span>{hostOf(r.url)}</span>
+                                <span>
+                                    <span className={`status-pill ${r.published ? 's-qualified' : 's-closed'}`}>
+                                        {r.published ? 'published' : 'draft'}
+                                    </span>
+                                </span>
+                                <span className="admin-ghost">Edit</span>
+                            </button>
+                            {open && draft && (
+                                <div className="admin-detail">
+                                    <div className="admin-form">
+                                        <TextInput label="Title" value={draft.title} onChange={(v) => setDrafts((d) => ({ ...d, [r.id]: { ...draft, title: v } }))} />
+                                        <TextInput label="URL" value={draft.url} onChange={(v) => setDrafts((d) => ({ ...d, [r.id]: { ...draft, url: v } }))} />
+                                        <TextInput label="Order" type="number" value={draft.order} onChange={(v) => setDrafts((d) => ({ ...d, [r.id]: { ...draft, order: v } }))} />
+                                        <Checkbox label="Published" checked={draft.published} onChange={(v) => setDrafts((d) => ({ ...d, [r.id]: { ...draft, published: v } }))} />
+                                        <TextArea label="Description" value={draft.description} onChange={(v) => setDrafts((d) => ({ ...d, [r.id]: { ...draft, description: v } }))} rows={3} />
+                                    </div>
+                                    <div className="admin-form-actions">
+                                        <button type="button" className="admin-save" onClick={() => void save(r)}>Save recording</button>
+                                        <button type="button" className="admin-ghost admin-danger" onClick={() => void remove(r)}>Delete</button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+                {rows.length === 0 && <p className="admin-empty">No recordings yet.</p>}
             </div>
         </section>
     );

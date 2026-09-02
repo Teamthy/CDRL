@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     contactSchema,
+    recordingUpsertSchema,
     isValidSessionId,
     learningPlanItemSchema,
     courseModuleUpdateSchema,
@@ -88,5 +89,16 @@ describe('course module schemas (patch-19)', () => {
     });
     it('update rejects empty payloads is fine but title must be non-empty when present', () => {
         expect(courseModuleUpdateSchema.safeParse({ title: '' }).success).toBe(false);
+    });
+});
+
+describe('recording schemas (patch-22)', () => {
+    it('upsert defaults published + order', () => {
+        const r = recordingUpsertSchema.parse({ courseSlug: 'c', title: 'Session 1', url: 'https://youtu.be/abc123XYz' });
+        expect(r.published).toBe(true);
+        expect(r.order).toBe(0);
+    });
+    it('upsert rejects non-URLs', () => {
+        expect(recordingUpsertSchema.safeParse({ courseSlug: 'c', title: 'S1', url: 'not-a-url' }).success).toBe(false);
     });
 });

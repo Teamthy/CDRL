@@ -214,10 +214,16 @@ learnerRouter.get(
             orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
             select: { id: true, title: true, order: true, body: true },
         });
+        const recordings = await prisma.recording.findMany({
+            where: { courseId: course.id, published: true },
+            orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+            select: { id: true, title: true, url: true, description: true, order: true },
+        });
         return res.json({
             course: { title: course.title, slug: course.slug, track: course.track },
             enrollment: { id: enrollment.id, status: enrollment.status, progress: enrollment.progress },
             modules,
+            recordings,
         });
     }),
 );

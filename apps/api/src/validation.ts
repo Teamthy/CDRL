@@ -168,3 +168,22 @@ export const learnerResetSchema = z.object({
     token: z.string().min(10).max(2000),
     password: z.string().min(8).max(72),
 });
+
+// ─── Recordings (patch-22) ──────────────────────────────────────────────────
+
+export const recordingUpsertSchema = z.object({
+    courseSlug: z.string().min(1),
+    title: z.string().min(1).max(200),
+    url: z.string().url().max(2000),
+    description: z.string().max(2000).nullable().optional(),
+    order: z.number().int().min(0).optional().default(0),
+    published: z.boolean().optional().default(true),
+});
+
+export const recordingUpdateSchema = z.object({
+    title: z.string().min(1).max(200).optional(),
+    url: z.string().url().max(2000).optional(),
+    description: z.string().max(2000).nullable().optional(),
+    order: z.number().int().min(0).optional(),
+    published: z.boolean().optional(),
+});

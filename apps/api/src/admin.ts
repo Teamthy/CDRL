@@ -17,6 +17,8 @@ import {
     enrollmentUpsertSchema,
     lmsUserUpdateSchema,
     lmsUserUpsertSchema,
+    recordingUpsertSchema,
+    recordingUpdateSchema,
     courseUpsertSchema,
     enquiryUpdateSchema,
     eventUpsertSchema,
@@ -467,6 +469,69 @@ adminRouter.delete(
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
                 return res.status(404).json({ message: 'Module not found' });
+            }
+            throw err;
+        }
+    }),
+);
+
+// ────────────────────────────────────────────────────────────────────────────
+// Recordings (patch-22): per-course session recording links
+// ────────────────────────────────────────────────────────────────────────────
+
+adminRouter.get(
+    '/lms/recordings',
+    ah(async (req, res) => {
+        const courseSlug = typeof req.query.courseSlug === 'string' ? req.query.courseSlug : undefined;
+        const items = await prisma.recording.findMany({
+            where: courseSlug ? { course: { slug: courseSlug } } : {},
+            orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
+            take: 500,
+            include: { course: { select: { slug: true, title: true } } },
+        });
+        res.json({ items, total: items.length });
+    }),
+);
+
+adminRouter.post(
+    '/lms/recordings',
+    ah(async (req, res) => {
+        const parsed = recordingUpsertSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        const { courseSlug, ...data } = parsed.data;
+        const course = await prisma.course.findUnique({ where: { slug: courseSlug } });
+        if (!course) return res.status(404).json({ message: `No course with slug "${courseSlug}"` });
+        const rec = await prisma.recording.create({ data: { ...data, courseId: course.id } });
+        return res.status(201).json(rec);
+    }),
+);
+
+adminRouter.patch(
+    '/lms/recordings/:id',
+    ah(async (req, res) => {
+        const parsed = recordingUpdateSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
+        try {
+            const rec = await prisma.recording.update({ where: { id: req.params.id }, data: parsed.data });
+            return res.json(rec);
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                return res.status(404).json({ message: 'Recording not found' });
+            }
+            throw err;
+        }
+    }),
+);
+
+adminRouter.delete(
+    '/lms/recordings/:id',
+    ah(async (req, res) => {
+        try {
+            await prisma.recording.delete({ where: { id: req.params.id } });
+            return res.status(204).end();
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                return res.status(404).json({ message: 'Recording not found' });
             }
             throw err;
         }

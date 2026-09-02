@@ -3,14 +3,17 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ExternalLink } from 'lucide-react';
+
 import {
     LearnerUnauthorizedError,
     NotEnrolledError,
     learnerCourseModules,
     type LearnerCourseView,
+    type LearnerRecording,
 } from '../../../lib/learnerClient';
 import ModuleText from '../../../components/learn/ModuleText';
+import { youtubeId } from '../../../lib/moduleText';
 
 /** Module player (Phase 3/4): ordered published modules; click a row to read the module notes. */
 export default function CoursePlayer({ slug }: { slug: string }) {
@@ -91,6 +94,40 @@ export default function CoursePlayer({ slug }: { slug: string }) {
                         );
                     })}
                 </ol>
+            )}
+
+            {data.recordings.length > 0 && (
+                <section className="recordings">
+                    <h2 className="learner-h">Session recordings</h2>
+                    <div className="recording-grid">
+                        {data.recordings.map((r: LearnerRecording) => {
+                            const yt = youtubeId(r.url);
+                            return yt ? (
+                                <div key={r.id} className="learn-card recording-card">
+                                    <div className="mod-yt">
+                                        <iframe
+                                            src={`https://www.youtube-nocookie.com/embed/${yt}`}
+                                            title={r.title}
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                    <strong>{r.title}</strong>
+                                    {r.description && <p className="learn-meta">{r.description}</p>}
+                                </div>
+                            ) : (
+                                <a key={r.id} href={r.url} target="_blank" rel="noopener noreferrer" className="learn-card recording-card recording-link">
+                                    <strong>
+                                        {r.title} <ExternalLink aria-hidden="true" width={13} height={13} />
+                                    </strong>
+                                    {r.description && <p className="learn-meta">{r.description}</p>}
+                                    <span className="learn-meta">Open recording ↗</span>
+                                </a>
+                            );
+                        })}
+                    </div>
+                </section>
             )}
         </div>
     );
