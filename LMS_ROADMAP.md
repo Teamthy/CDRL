@@ -198,3 +198,20 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
 - ✅ **Vercel migration buddy**: `apps/web/vercel.json` + `docs/DEPLOY_VERCEL.md` —
   click-through cutover steps when Netlify free credits exhaust (app is already
   Vercel-native; no code change, just root-directory + env copy).
+
+## Patch-36 — PECB-parity surfaces /training & /courses (2026-09-02)
+
+- ✅ **Training listing redesign**: new CategoryLaunchpad (hero tiles per catalogue track,
+  image-backed, click-to-filter & scroll to the marketplace) above the filter bar;
+  industry-standard numbered pagination with ‹ › ellipsis window; full-width catalogue
+  anchors.
+- ✅ **Course-detail hero redesign**: breadcrumbs (Home / Training / Course), PECB-style
+  headline and eyebrow, "Apply for this training" + "Back to all programmes" CTAs.
+- ✅ **Per-course imagery**: slug-keyword overrides route standard families to the
+  best-fitting verified Unsplash backdrops (ISO 27001 → padlock, 42001 → neural glow,
+  ethical hacking → hoodie matrix, GDPR → privacy lock, QA → measurement bench, …),
+  falling back to per-track themes. All URLs re-verified live 2026-09-02.
+- ✅ **Course bodies restructured to PECB section order** in the seed: What is X? · Why
+  it matters · Who should attend · What you will learn · How to get started · Exam &
+  certification. URLs and page structure unchanged (pure content rewrite via seed
+  re-run).

@@ -101,22 +101,32 @@ interface Row {
     focus?: string; // one-line scope/why for the overview
 }
 
+function focusWhy(r: Row): string {
+    return `${r.focus ?? 'Professional credentials open doors.'} Organizations that conform relentlessly win procurement, pass audits, and keep customers; professionals who carry the recognized credential get the mandate to lead that work. The certification exam closes the loop — you leave with evidence, not just attendance.`;
+}
+
 function buildDetails(r: Row): string {
     const L = LEVELS[r.level];
     const objectives = [...L.objectives, ...(r.extraObjectives ?? [])];
+    const learnFallback = 'Build role-ready capability you can apply immediately at work.';
     return [
-        '## About this training',
+        // PECB canonical section flow
+        `## What is ${r.code}?`,
         r.about,
-        `**Schedule:** ${L.days}. Delivered live (virtual or hybrid) by a certified Ykay Consulting Hub tutor, with official PECB course materials included.`,
-        '## Who should attend',
+        `## Why is ${r.code} important for you?`,
+        focusWhy(r),
+        `## Who should attend`,
         ...r.audience.map((a) => `- ${a}`),
         '## What you will learn',
-        ...objectives.map((o) => `- ${o}`),
+        ...(objectives.length ? objectives.map((o) => `- ${o}`) : [`- ${learnFallback}`]),
+        '## How do I get started with this training?',
+        `Schedule: **${L.days}**. Delivered live (virtual or hybrid) by a certified Ykay Consulting Hub instructor with official PECB course materials. Sessions run throughout the year; corporate cohorts can be scheduled to order.`,
         '## Examination and certification',
-        `The programme concludes with the official **PECB ${r.code} ${r.levelLabel}** certification exam. Passing earns the PECB Certified credential, issued directly by PECB and verifiable on the PECB website. Exam retake policy, credential maintenance, and upgrade paths follow the current PECB Certification Rules and Policies.`,
-        '**Next step:** apply below or contact our admissions team for corporate groups, schedules, and pricing.',
+        `The programme concludes with the official **PECB ${r.code} ${r.levelLabel}** certification exam. Passing earns the PECB Certified credential, issued directly by PECB and verifiable online. Exam format, retake policy, and credential maintenance all follow the current PECB Examination Rules and Policies.`,
+        '**Next step:** [view all training events](https://pecb.com/en/events), then apply below — or contact our admissions team for corporate groups and bundle pricing.',
     ].join('\n\n');
 }
+
 
 function course(r: Row, sortOrder: number): SeedCourse {
     const title = r.code + (r.titleSuffix ? ` ${r.titleSuffix}` : '');
