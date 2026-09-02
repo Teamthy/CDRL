@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import { config } from './config.js';
 import { prisma } from './db.js';
 
@@ -46,11 +46,12 @@ export function signScopedToken(
     kind: 'admin' | 'learner',
     subject: string,
     extra: Record<string, string> = {},
+    expiresIn: SignOptions['expiresIn'] = '12h',
 ): string {
     const secret = kind === 'admin' ? config.ADMIN_JWT_SECRET : config.LEARNER_JWT_SECRET;
     if (!secret) throw new Error(`${kind} auth not configured`);
     return jwt.sign({ sub: subject, role: kind === 'admin' ? 'admin' : (extra.role ?? 'learner'), ...extra }, secret, {
-        expiresIn: '12h',
+        expiresIn,
         issuer: ISSUER,
         audience: kind,
     });

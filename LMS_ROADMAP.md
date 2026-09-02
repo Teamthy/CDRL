@@ -49,7 +49,10 @@ no phase breaks an earlier one.
 - ✅ RBAC (patch-23): one permission matrix + authenticate()/requirePermission(); JWTs carry iss/aud so
   admin and learner tokens are mutually unreplayable; roles read from DB per-request; tutor grading
   surface (own enrollments only, ownership enforced in the query itself); 401 vs 403 discipline
-- Hardening backlog: refresh-cookie rotation, argon2 policy review
+- ✅ Refresh-cookie rotation (patch-25): 2h access JWT + 30d rotating httpOnly cookie, family model,
+  reuse-revokes-family, Origin allowlist CSRF shield, logout/password-reset revoke sessions
+- ✅ PWA offline (patch-25): manifest + conservative service worker (auth/data routes never cached)
+- Hardening backlog: argon2 policy review
 
 ## Phase 5 — Payments & PECB notes (PARTIAL, patch-20)
 

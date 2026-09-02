@@ -85,7 +85,7 @@ const app = express();
 app.set('trust proxy', 1); // one reverse proxy in front; req.ip is the real client IP
 app.disable('x-powered-by');
 app.use(helmet());
-app.use(cors({ origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins }));
+app.use(cors({ origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins, credentials: true }));
 // Paystack webhook needs the RAW body for HMAC verification — mount before json().
 app.use('/api/v1/payments/webhook', paymentsRawBody, paymentsWebhook());
 

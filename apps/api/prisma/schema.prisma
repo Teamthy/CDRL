@@ -133,6 +133,7 @@ model LmsUser {
   updatedAt    DateTime     @updatedAt
   enrollments  Enrollment[] @relation("StudentEnrollments")
   tutoring     Enrollment[] @relation("TutorAssignments")
+  refreshTokens RefreshToken[]
 }
 
 model Enrollment {
@@ -198,4 +199,19 @@ model Recording {
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId, order])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  familyId  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      LmsUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
 }

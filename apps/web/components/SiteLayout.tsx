@@ -3,6 +3,7 @@ import AnnouncementBar from './layout/AnnouncementBar';
 import UtilityBar from './layout/UtilityBar';
 import Header from './layout/Header';
 import Footer from './layout/Footer';
+import ServiceWorkerRegister from './ServiceWorkerRegister';
 
 type Props = {
     children: ReactNode;
@@ -18,6 +19,7 @@ export default function SiteLayout({ children, cartCount = 0 }: Props) {
             <Header initialCount={cartCount} />
             <main id="main-content">{children}</main>
             <Footer />
+            <ServiceWorkerRegister />
         </>
     );
 }

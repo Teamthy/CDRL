@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import {
     LearnerUnauthorizedError,
-    clearLearnerToken,
     learnerMe,
+    learnerSignOut,
     tutorEnrollments,
     tutorGrade,
     type LearnerMe,
@@ -53,8 +53,7 @@ export default function LearnerDashboard() {
     }
 
     function signOut() {
-        clearLearnerToken();
-        router.replace('/sign-in');
+        void learnerSignOut().finally(() => router.replace('/sign-in'));
     }
 
     if (error) return <p className="auth-error" role="alert">{error}</p>;

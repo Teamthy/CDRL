@@ -10,6 +10,16 @@ import { prisma } from './db.js';
 import { logger } from './logger.js';
 import { JWT_ISSUER, signScopedToken, verifyScopedToken } from './rbac.js';
 import {
+    assertAllowedOrigin,
+    clearRefreshCookie,
+    issueRefreshToken,
+    readRefreshCookie,
+    revokeAllForUser,
+    revokePresented,
+    rotateRefreshToken,
+    setRefreshCookie,
+} from './refresh.js';
+import {
     learnerLoginSchema,
     learnerResetRequestSchema,
     learnerResetSchema,
@@ -40,7 +50,7 @@ const authLimiter = new RateLimiterMemory({ points: 5, duration: 60 });
 const DUMMY_HASH = '$2b$10$9kH0w8Vz0YlW3Z1QzQ0G0O6b8Jb0nqQ0ZQ0ZQ0ZQ0ZQ0ZQ0ZQ0ZQ0W';
 
 export function signLearnerToken(userId: string, role = 'learner'): string {
-    return signScopedToken('learner', userId, { role });
+    return signScopedToken('learner', userId, { role }, '2h');
 }
 
 /** Fingerprint of the current password state — a reset token dies the moment
@@ -130,6 +140,8 @@ learnerRouter.post(
             ? await prisma.lmsUser.update({ where: { email }, data: { name, passwordHash } })
             : await prisma.lmsUser.create({ data: { name, email, role: 'student', passwordHash } });
         logger.info({ userId: user.id }, 'learner account created');
+        const refresh = await issueRefreshToken(user.id);
+        setRefreshCookie(res, refresh);
         return res.status(201).json({ token: signLearnerToken(user.id), user: publicUser(user) });
     }),
 );
@@ -152,7 +164,47 @@ learnerRouter.post(
         if (user.status === 'suspended') {
             return res.status(403).json({ message: 'This account is suspended — contact the school.' });
         }
+        const refresh = await issueRefreshToken(user.id);
+        setRefreshCookie(res, refresh);
         return res.json({ token: signLearnerToken(user.id), user: publicUser(user) });
+    }),
+);
+
+// POST /refresh — rotate cookie, mint new access token (CSRF: Origin allowlisted)
+learnerRouter.post(
+    '/refresh',
+    ah(async (req, res) => {
+        if (!assertAllowedOrigin(req, res)) return;
+        if (!learnerConfigured) return res.status(503).json({ message: 'Learner accounts not enabled on this deployment' });
+        const presented = readRefreshCookie(req);
+        if (!presented) return res.status(401).json({ message: 'No session' });
+        const rotated = await rotateRefreshToken(presented);
+        if (!rotated.ok) {
+            clearRefreshCookie(res);
+            const message =
+                rotated.reason === 'reuse'
+                    ? 'Session security issue detected — sign in again.'
+                    : 'Session expired — sign in again.';
+            return res.status(401).json({ message });
+        }
+        const user = await prisma.lmsUser.findUnique({ where: { id: rotated.userId } });
+        if (!user || user.status === 'suspended') {
+            clearRefreshCookie(res);
+            return res.status(401).json({ message: 'Session ended — sign in again.' });
+        }
+        setRefreshCookie(res, rotated.newToken);
+        return res.json({ token: signLearnerToken(user.id), user: publicUser(user) });
+    }),
+);
+
+// POST /logout — kill the refresh family; client also drops its access token.
+learnerRouter.post(
+    '/logout',
+    ah(async (req, res) => {
+        const presented = readRefreshCookie(req);
+        if (presented) await revokePresented(presented); // family-scoped: logs out everywhere this rotation chain lives
+        clearRefreshCookie(res);
+        return res.json({ ok: true });
     }),
 );
 
@@ -288,6 +340,7 @@ learnerRouter.post(
             where: { id: user.id },
             data: { passwordHash: await bcrypt.hash(parsed.data.password, 10) },
         });
+        await revokeAllForUser(user.id); // reset ⇒ all sessions die
         logger.info({ userId: user.id }, 'learner password reset');
         return res.json({ ok: true, message: 'Password updated — sign in with your new password.' });
     }),

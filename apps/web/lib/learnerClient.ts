@@ -97,14 +97,52 @@ export async function learnerResetPassword(token: string, password: string): Pro
     return post('/learner/reset-password', { token, password });
 }
 
-export async function learnerMe(): Promise<LearnerMe> {
+/** Try the refresh cookie → new access token. One retry only. */
+async function tryRefresh(): Promise<boolean> {
+    try {
+        const res = await fetch(`${API_BASE}/learner/refresh`, { method: 'POST', credentials: 'include' });
+        if (!res.ok) return false;
+        const body = (await res.json()) as { token?: string };
+        if (!body.token) return false;
+        setLearnerToken(body.token);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/** Authed fetch with refresh-on-401 retry (the rotation client half). */
+async function authFetch(path: string, init: RequestInit = {}, spin: { tried?: boolean } = {}): Promise<Response> {
     const token = getLearnerToken();
     if (!token) throw new LearnerUnauthorizedError();
-    const res = await fetch(`${API_BASE}/learner/me`, { headers: { Authorization: `Bearer ${token}` } });
-    if (res.status === 401 || res.status === 403) {
+    const res = await fetch(`${API_BASE}${path}`, {
+        ...init,
+        credentials: 'include',
+        headers: { ...(init.headers ?? {}), Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401 && !spin.tried && (await tryRefresh())) {
+        return authFetch(path, init, { tried: true });
+    }
+    if (res.status === 401) {
         clearLearnerToken();
         throw new LearnerUnauthorizedError();
     }
+    return res;
+}
+
+/** Full sign-out: revoke server-side family + drop local access token. */
+export async function learnerSignOut(): Promise<void> {
+    try {
+        await fetch(`${API_BASE}/learner/logout`, { method: 'POST', credentials: 'include' });
+    } catch {
+        /* offline logout is fine — local token still clears */
+    }
+    clearLearnerToken();
+}
+
+export async function learnerMe(): Promise<LearnerMe> {
+    const res = await authFetch('/learner/me');
+    if (res.status === 403) throw new LearnerUnauthorizedError();
     if (!res.ok) throw new Error(`Failed to load your account (${res.status})`);
     return (await res.json()) as LearnerMe;
 }
@@ -147,30 +185,19 @@ export interface TutorEnrollment {
 
 /** Tutor surface: the caller's assigned enrollments (RBAC: tutor role). */
 export async function tutorEnrollments(): Promise<TutorEnrollment[]> {
-    const token = getLearnerToken();
-    if (!token) throw new LearnerUnauthorizedError();
-    const res = await fetch(`${API_BASE}/lms/tutor/enrollments`, { headers: { Authorization: `Bearer ${token}` } });
-    if (res.status === 401 || res.status === 403) {
-        if (res.status === 401) clearLearnerToken();
-        throw new LearnerUnauthorizedError();
-    }
+    const res = await authFetch('/lms/tutor/enrollments');
+    if (res.status === 403) throw new LearnerUnauthorizedError();
     if (!res.ok) throw new Error(`Failed to load assigned enrollments (${res.status})`);
     const body = (await res.json()) as { items: TutorEnrollment[] };
     return body.items;
 }
 
 export async function tutorGrade(enrollmentId: string, patch: { progress?: number; status?: string }): Promise<void> {
-    const token = getLearnerToken();
-    if (!token) throw new LearnerUnauthorizedError();
-    const res = await fetch(`${API_BASE}/lms/tutor/enrollments/${encodeURIComponent(enrollmentId)}`, {
+    const res = await authFetch(`/lms/tutor/enrollments/${encodeURIComponent(enrollmentId)}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
     });
-    if (res.status === 401) {
-        clearLearnerToken();
-        throw new LearnerUnauthorizedError();
-    }
     if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.message ?? `Could not save (${res.status})`);
@@ -179,15 +206,7 @@ export async function tutorGrade(enrollmentId: string, patch: { progress?: numbe
 
 /** Published modules for a course the learner is enrolled in. */
 export async function learnerCourseModules(slug: string): Promise<LearnerCourseView> {
-    const token = getLearnerToken();
-    if (!token) throw new LearnerUnauthorizedError();
-    const res = await fetch(`${API_BASE}/learner/courses/${encodeURIComponent(slug)}/modules`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.status === 401) {
-        clearLearnerToken();
-        throw new LearnerUnauthorizedError();
-    }
+    const res = await authFetch(`/learner/courses/${encodeURIComponent(slug)}/modules`);
     if (res.status === 403) throw new NotEnrolledError();
     if (res.status === 404) throw new Error('Course not found');
     if (!res.ok) throw new Error(`Failed to load modules (${res.status})`);
