@@ -49,6 +49,7 @@ export const courseUpsertSchema = z.object({
     level: z.string().min(1).max(100),
     deliveryMode: z.string().min(1).max(100),
     overview: z.string().min(1),
+    details: z.string().max(60000).nullable().optional(), // patch-27: long-form course body
     priceKobo: z.number().int().min(0).nullable().optional(), // null/0 = application-based
     currency: z.string().min(3).max(3).optional().default('NGN'),
     published: z.boolean().optional().default(true),

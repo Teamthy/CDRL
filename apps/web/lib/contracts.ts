@@ -15,6 +15,7 @@ export const courseSchema = z.object({
     level: z.string(),
     deliveryMode: z.string(),
     overview: z.string(),
+    details: z.string().nullable().optional(),
     priceKobo: z.number().int().nullable().optional(),
     currency: z.string().optional(),
 });

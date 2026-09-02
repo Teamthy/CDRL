@@ -85,3 +85,18 @@ DATABASE_URL="<your Neon string>" pnpm prisma:seed
 ```
 
 Run once after the patch-15 migration so LMS enrollments can resolve course slugs.
+
+## Patch-27 — Full PECB course catalogue with rich detail pages (2026-09-02)
+
+- ✅ **Full PECB catalogue seeded**: `apps/api/src/pecb-catalogue.ts` enumerates the PECB
+  education portfolio across all 11 PECB categories (Information Security, Cybersecurity
+  Management, Technical Cybersecurity, Continuity & Resilience, Privacy & Data Protection,
+  Artificial Intelligence, Digital Transformation, GRC, Quality & Management, Health & Safety,
+  Sustainability). Rows upsert by slug — re-running the seed is always safe.
+- ✅ **Well-detailed course pages**: new `Course.details` long-form field (markdown-lite),
+  rendered on every `/training/<slug>` page by the existing `ModuleText` component with
+  About / Who should attend / What you will learn / Examination and certification sections.
+- ✅ **Console editor**: courses in the admin console now expose the long-form details field.
+- ✅ Tracks follow PECB's own category names, so the /training filter chips mirror their site.
+- Ops docs: press-release email + partner exam-credit request templates ship in
+  `docs/PECB_OPS_PACK.md`.

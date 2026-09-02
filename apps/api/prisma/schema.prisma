@@ -16,6 +16,7 @@ model Course {
   level         String
   deliveryMode  String
   overview      String
+  details       String?            // patch-27: long-form markdown-lite body for detail pages
   priceKobo     Int?               // null/0 = not payable online (apply flow)
   currency      String             @default("NGN")
   published     Boolean            @default(true)

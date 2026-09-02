@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { pecbCatalogue } from './pecb-catalogue.js';
 
 const prisma = new PrismaClient();
 
@@ -42,7 +43,7 @@ const content = [
 ];
 
 async function main() {
-    for (const course of courses) {
+    for (const course of [...courses, ...pecbCatalogue]) {
         await prisma.course.upsert({
             where: { slug: course.slug },
             update: course,

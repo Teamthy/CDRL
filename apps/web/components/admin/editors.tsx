@@ -25,6 +25,7 @@ export interface CourseDraft {
     level: string;
     deliveryMode: string;
     overview: string;
+    details: string;
     priceNaira: string;
     currency: string;
     published: boolean;
@@ -40,6 +41,7 @@ export const emptyCourseDraft = (): CourseDraft => ({
     level: '',
     deliveryMode: 'Self-paced',
     overview: '',
+    details: '',
     priceNaira: '',
     currency: 'NGN',
     published: true,
@@ -90,6 +92,7 @@ export function CourseFields({
             />
             <TextInput label="Sort order" type="number" value={draft.sortOrder} onChange={(v) => setDraft({ ...draft, sortOrder: v })} />
             <TextArea label="Overview" value={draft.overview} required rows={5} onChange={(v) => setDraft({ ...draft, overview: v })} />
+            <TextArea label="Long-form details (markdown-lite — shown on the course page)" value={draft.details} rows={10} onChange={(v) => setDraft({ ...draft, details: v })} />
             <Checkbox label="Published (visible on the site)" checked={draft.published} onChange={(v) => setDraft({ ...draft, published: v })} />
         </>
     );
@@ -225,6 +228,7 @@ export function coursePayload(d: CourseDraft) {
         level: d.level.trim(),
         deliveryMode: d.deliveryMode.trim(),
         overview: d.overview.trim(),
+        details: d.details.trim() || null,
         priceKobo: Number.isFinite(naira) && naira > 0 ? Math.round(naira * 100) : null,
         currency: d.currency || 'NGN',
         published: d.published,

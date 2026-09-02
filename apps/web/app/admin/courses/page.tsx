@@ -27,6 +27,7 @@ export default function CoursesAdminPage() {
                 level: c.level,
                 deliveryMode: c.deliveryMode,
                 overview: c.overview,
+                details: (c as typeof c & { details?: string | null }).details ?? '',
                 priceNaira: c.priceKobo != null ? String(c.priceKobo / 100) : '',
                 currency: c.currency ?? 'NGN',
                 published: c.published,

@@ -1,5 +1,6 @@
 import { Check, Clock3, Globe2, MonitorPlay } from 'lucide-react';
 import Reveal from '../motion/Reveal';
+import ModuleText from '../learn/ModuleText';
 import AddToPlanButton from '../actions/AddToPlanButton';
 import ApplyCard from './ApplyCard';
 import PayCard from './PayCard';
@@ -24,6 +25,11 @@ export default function CourseBody({ course }: { course: Course }) {
                             {course.overview ||
                                 'This professional program equips participants with the knowledge, tools, and confidence to apply internationally recognized practices within their organizations.'}
                         </p>
+                        {course.details ? (
+                            <div className="course-details">
+                                <ModuleText text={course.details} />
+                            </div>
+                        ) : null}
                         <h3>What you receive</h3>
                         {receiveItems.map((item) => (
                             <p key={item} className="tick">
