@@ -57,6 +57,9 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
       NOTIFY_EMAIL: ${NOTIFY_EMAIL:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:-}
     depends_on:
       migrate:
         condition: service_completed_successfully

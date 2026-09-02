@@ -21,6 +21,10 @@ const envSchema = z.object({
     SMTP_PASS: z.string().optional(),
     SMTP_FROM: z.string().default('no-reply@ykayconsultinghub.com.ng'),
     NOTIFY_EMAIL: z.string().optional(),
+    // Solo-admin console (Phase A). All three must be set for /admin to activate.
+    ADMIN_EMAIL: z.string().email().optional(),
+    ADMIN_PASSWORD: z.string().min(10).optional(),
+    ADMIN_JWT_SECRET: z.string().min(32).optional(),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

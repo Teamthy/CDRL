@@ -1,19 +1,19 @@
 import express, { type NextFunction, type Request, type RequestHandler, type Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible';
 import { Redis } from 'ioredis';
 import nodemailer from 'nodemailer';
 import { config, corsOrigins } from './config.js';
+import { prisma } from './db.js';
+import { adminRouter } from './admin.js';
 import { logger } from './logger.js';
 import { contactSchema, isValidSessionId, learningPlanItemSchema } from './validation.js';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Core plumbing
 // ────────────────────────────────────────────────────────────────────────────
-
-const prisma = new PrismaClient();
 
 /** Wrap async route handlers so rejections reach the error middleware
  *  instead of becoming unhandled rejections that kill the process. */
@@ -273,6 +273,12 @@ app.delete(
         res.status(204).send();
     }),
 );
+
+// ────────────────────────────────────────────────────────────────────────────
+// Admin console (Phase A): solo-admin JWT login + guarded management routes
+// ────────────────────────────────────────────────────────────────────────────
+
+app.use('/api/v1/admin', adminRouter);
 
 // ────────────────────────────────────────────────────────────────────────────
 // 404 + centralized JSON error handling (must be LAST)
