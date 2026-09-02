@@ -508,6 +508,404 @@ const ROWS: Row[] = [
         audience: [...AUD.managers, 'Procurement and supply-chain leaders'],
         focus: 'Make procurement a lever for sustainability performance.',
     },
+
+    // ── patch-29: full-catalogue gap closure (enumerated from PECB sitemap 2026-09-02) ──
+    // Information Security
+    {
+        code: 'ISO/IEC 27002', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.InfoSec,
+        about: 'The controls catalogue behind ISO/IEC 27001 Annex A: organizational, people, physical, and technological controls explained for practitioners.',
+        audience: [...AUD.foundation],
+        focus: 'Plain-language mastery of the Annex A control library.',
+    },
+    {
+        code: 'ISO/IEC 27002', level: 'Manager', levelLabel: 'Manager', track: TRACK.InfoSec,
+        about: 'Implement and manage ISO/IEC 27002 controls in a working ISMS: attribute-based control selection, implementation guidance, and effectiveness monitoring.',
+        audience: [...AUD.managers],
+        focus: 'Operate Annex A controls day to day with managerial accountability.',
+    },
+    {
+        code: 'ISO/IEC 27005', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.InfoSec,
+        about: 'Information security risk management fundamentals per ISO/IEC 27005: context, assessment, treatment, acceptance, and communication.',
+        audience: [...AUD.foundation],
+        focus: 'The risk process every ISMS decision runs through.',
+    },
+    {
+        code: 'ISO/IEC 27034', level: 'Foundation', levelLabel: 'Application Security Foundation', track: TRACK.InfoSec,
+        about: 'Application security management per ISO/IEC 27034: ONF/ANF concepts, application security in the lifecycle, and targeted controls.',
+        audience: [...AUD.foundation, 'Software teams adopting secure development requirements'],
+        focus: 'Structured application security for dev and procurement lifecycles.',
+    },
+    {
+        code: 'ISO/IEC 27034', level: 'LI', levelLabel: 'Lead Application Security Implementer', track: TRACK.InfoSec,
+        about: 'Implement an application security management system: ASC definition, organization normative frameworks, and lifecycle control integration per ISO/IEC 27034.',
+        audience: [...AUD.implementers, 'AppSec leads and secure-SDLC owners'],
+        focus: 'Stand up an auditable application security programme.',
+    },
+    {
+        code: 'ISO/IEC 27034', level: 'LA', levelLabel: 'Lead Application Security Auditor', track: TRACK.InfoSec,
+        about: 'Audit application security programmes against ISO/IEC 27034: evidence across the lifecycle, control adequacy, and defensible findings.',
+        audience: [...AUD.auditors, 'Security assessors reviewing software development practices'],
+        focus: 'Audit application security with ISO-grade method.',
+    },
+    {
+        code: 'ISO/IEC 27400', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.InfoSec,
+        about: 'IoT security and privacy per ISO/IEC 27400: device and ecosystem risks, controls, and lifecycle guidance for connected products.',
+        audience: [...AUD.foundation, 'IoT product and platform teams'],
+        focus: 'Secure the IoT estate from device to cloud.',
+    },
+    {
+        code: 'ISO/IEC 27400', level: 'Manager', levelLabel: 'Lead Manager', track: TRACK.InfoSec,
+        about: 'Govern IoT security programmes: risk management, controls across the device lifecycle, supply chain, and privacy-by-design duties.',
+        audience: [...AUD.managers, 'IoT programme and product security leaders'],
+        focus: 'Lead IoT security governance to an international standard.',
+    },
+    // Cybersecurity Management
+    {
+        code: 'NIS 2 Directive', level: 'LI', levelLabel: 'Lead Implementer', track: TRACK.CyberMgmt,
+        about: 'Implement NIS 2 compliance end to end: scoping entities, risk-management measures, incident reporting duties, supply-chain security, and supervisory readiness.',
+        audience: [...AUD.implementers, 'Compliance leads in EU essential/important entities'],
+        focus: 'Build a defensible NIS 2 compliance programme.',
+    },
+    {
+        code: 'DORA', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Continuity,
+        about: 'DORA fundamentals for financial entities: ICT risk framework pillars, reporting duties, resilience testing tiers, and third-party register obligations.',
+        audience: [...AUD.foundation, 'Financial-services staff with ICT risk duties'],
+        focus: 'Grasp DORA\u2019s five pillars and what readiness demands.',
+    },
+    {
+        code: 'NIST Cybersecurity', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.CyberMgmt,
+        about: 'The NIST Cybersecurity Framework and key SP 800 publications: functions, tiers, profiles, and how US-style cybersecurity programmes are structured.',
+        audience: [...AUD.foundation],
+        focus: 'The CSF vocabulary global security teams share.',
+    },
+    {
+        code: 'NIST Cybersecurity', level: 'Manager', levelLabel: 'Lead Implementer', track: TRACK.CyberMgmt,
+        about: 'Implement a cybersecurity programme on the NIST CSF: current/target profiles, gap action plans, and continuous measurement.',
+        audience: [...AUD.managers],
+        focus: 'Run a NIST CSF programme from profile to proven improvement.',
+    },
+    {
+        code: 'SOC 2', level: 'Manager', levelLabel: 'Lead Manager', track: TRACK.GRC,
+        about: 'Trust Services Criteria and SOC 2 readiness: scoping, control mapping, evidence operation, and preparing for Type I/II examinations.',
+        audience: [...AUD.managers, 'SaaS and service-organization compliance teams'],
+        focus: 'Prepare a service organization for SOC 2.',
+    },
+    // Technical Cybersecurity
+    {
+        code: 'Advanced Penetration Tester', level: 'Professional', levelLabel: 'Certified Advanced Penetration Tester', track: TRACK.TechCyber,
+        about: 'Beyond the basics of offensive security: advanced exploitation, evasion trade-craft, lateral movement discipline, and red-team reporting standards.',
+        audience: [...AUD.specialists, 'Practising penetration testers leveling up'],
+        focus: 'Practitioner-grade advanced offensive security.',
+    },
+    // Continuity
+    {
+        code: 'ISO 22301', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Continuity,
+        about: 'Business continuity fundamentals per ISO 22301: BCMS structure, business impact analysis, and recovery strategy basics.',
+        audience: [...AUD.foundation],
+        focus: 'The foundation every resilience programme builds on.',
+    },
+    {
+        code: 'Crisis Management', level: 'Manager', levelLabel: 'Lead Crisis Manager', track: TRACK.Continuity,
+        about: 'Lead organizational crisis capability: crisis taxonomy, decision frameworks under pressure, communication, exercise design, and post-crisis learning.',
+        audience: [...AUD.managers, 'Executives and resilience leaders owning crisis response'],
+        focus: 'Command-ready crisis management capability.',
+    },
+    // Privacy
+    {
+        code: 'ISO/IEC 27701', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Privacy,
+        about: 'Privacy information management fundamentals: PII controller/processor extensions to the ISMS and the privacy control set.',
+        audience: [...AUD.foundation, 'Privacy-adjacent ISMS team members'],
+        focus: 'How PIMS extends your ISMS for PII.',
+    },
+    {
+        code: 'ISO/IEC 27701', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Privacy,
+        about: 'Audit privacy information management systems: controller/processor roles, privacy evidence, and conformity judgment.',
+        audience: [...AUD.auditors],
+        focus: 'Audit PIMS implementations with authority.',
+    },
+    {
+        code: 'ISO/IEC 27701', level: 'Manager', levelLabel: 'Transition', track: TRACK.Privacy,
+        about: 'Transition an existing PIMS to the current ISO/IEC 27701 edition without losing certification continuity.',
+        audience: [...AUD.managers],
+        focus: 'Controlled PIMS transition to the current edition.',
+    },
+    {
+        code: 'US Data Privacy', level: 'Professional', levelLabel: 'Certified US Data Privacy Officer', track: TRACK.Privacy,
+        about: 'US state privacy regimes (CCPA/CPRA and peers): consumer rights, assessments, service-provider terms, and multi-state programme design.',
+        audience: [...AUD.managers, 'Privacy officers with US market exposure'],
+        focus: 'Operate a US multi-state privacy programme.',
+    },
+    // Artificial Intelligence
+    {
+        code: 'AI Security', level: 'Professional', levelLabel: 'Certified Artificial Intelligence Security Professional (CAISP)', track: TRACK.AI,
+        about: 'Secure AI systems across the lifecycle: model and data threats (prompt injection, poisoning, extraction), AI/LLM security controls, monitoring, red teaming, and governance hooks.',
+        audience: [...AUD.specialists, 'AI engineers, SOC analysts, and security architects touching AI systems'],
+        focus: 'Security engineering for ML, LLM, and agentic systems.',
+    },
+    // Digital Transformation
+    {
+        code: 'Digital Transformation', level: 'Manager', levelLabel: 'Officer', track: TRACK.Digital,
+        about: 'Operate as a Digital Transformation Officer: portfolio governance, capability and culture change, value tracking, and executive communication.',
+        audience: [...AUD.managers, 'Transformation office members and sponsors'],
+        focus: 'The operator credential for transformation programmes.',
+    },
+    // GRC
+    {
+        code: 'ISO 31000', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.GRC,
+        about: 'Risk management principles, framework, and process per ISO 31000 — the universal risk vocabulary.',
+        audience: [...AUD.foundation],
+        focus: 'Risk management fundamentals on ISO 31000.',
+    },
+    {
+        code: 'ISO 31000', level: 'Manager', levelLabel: 'Risk Manager', track: TRACK.GRC,
+        about: 'Apply the ISO 31000 process professionally: context, criteria, assessment, treatment, recording, and communication cycles.',
+        audience: [...AUD.managers],
+        focus: 'Practitioner risk management under ISO 31000.',
+    },
+    {
+        code: 'ISO 31000', level: 'Manager', levelLabel: 'Lead Risk Manager', track: TRACK.GRC,
+        about: 'Design and lead an enterprise risk framework: integration into governance, risk appetite operation, and programme leadership per ISO 31000.',
+        audience: [...AUD.managers, 'Heads of risk and ERM programme owners'],
+        focus: 'Lead enterprise risk management, not just participate.',
+    },
+    {
+        code: 'ISO 37000', level: 'Manager', levelLabel: 'Manager', track: TRACK.GRC,
+        about: 'Governance of organizations per ISO 37000: purpose, principles, governing-body duties, and value-generating oversight.',
+        audience: [...AUD.managers, 'Board secretaries and governance professionals'],
+        focus: 'Organization-level governance on the ISO 37000 model.',
+    },
+    {
+        code: 'ISO 37000', level: 'Manager', levelLabel: 'Lead Manager', track: TRACK.GRC,
+        about: 'Lead governance transformation: climate of trust, strategy oversight, accountability structures, and governance effectiveness evaluation.',
+        audience: [...AUD.managers, 'Senior governance advisors and board practitioners'],
+        focus: 'The senior credential for organizational governance.',
+    },
+    {
+        code: 'ISO 37001', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.GRC,
+        about: 'Anti-bribery management fundamentals: ISO 37001 requirements, risk assessment, and control categories.',
+        audience: [...AUD.foundation],
+        focus: 'Anti-bribery fundamentals for compliance teams.',
+    },
+    {
+        code: 'ISO 37001', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.GRC,
+        about: 'Audit anti-bribery management systems: evidence, red-flag testing, and conformity reporting.',
+        audience: [...AUD.auditors],
+        focus: 'Audit ABMS implementations professionally.',
+    },
+    {
+        code: 'ISO 37001', level: 'Manager', levelLabel: 'Transition (2025)', track: TRACK.GRC,
+        about: 'Transition an existing anti-bribery management system to the 2025 edition of ISO 37001.',
+        audience: [...AUD.managers],
+        focus: 'Move your ABMS to ISO 37001:2025.',
+    },
+    {
+        code: 'ISO 37301', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.GRC,
+        about: 'Compliance management fundamentals: obligations registers, risk assessment, and the CMS structure per ISO 37301.',
+        audience: [...AUD.foundation],
+        focus: 'Compliance management grounded in ISO 37301.',
+    },
+    {
+        code: 'ISO 37301', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.GRC,
+        about: 'Audit compliance management systems against ISO 37301 with certification-grade method.',
+        audience: [...AUD.auditors],
+        focus: 'Audit CMS implementations with authority.',
+    },
+    {
+        code: 'Management Systems Auditor', level: 'Professional', levelLabel: 'PECB Certified MS Auditor (CMSA)', track: TRACK.GRC,
+        about: 'A cross-standard professional audit credential: auditing principles, evidence handling, and reporting across ISO management-system standards.',
+        audience: [...AUD.auditors, 'Early-career auditors seeking a portable credential'],
+        focus: 'Professional auditing across management-system standards.',
+    },
+    // Quality & Management
+    {
+        code: 'ISO 13485', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Health,
+        about: 'Medical-device quality management per ISO 13485: regulatory harmonization, process documentation, and device-lifecycle controls.',
+        audience: [...AUD.foundation, 'Medtech quality and regulatory staff'],
+        focus: 'QMS for medical devices, ISO 13485 style.',
+    },
+    {
+        code: 'ISO 13485', level: 'LI', levelLabel: 'Lead Implementer', track: TRACK.Health,
+        about: 'Implement a medical-device QMS: design controls, risk linkage (ISO 14971 context), supplier control, and audit readiness.',
+        audience: [...AUD.implementers, 'Medtech operations and quality managers'],
+        focus: 'Build a certifiable medical-device QMS.',
+    },
+    {
+        code: 'ISO 13485', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Health,
+        about: 'Audit medical-device quality systems against ISO 13485 and regulatory expectations.',
+        audience: [...AUD.auditors, 'Notified-body-track auditors and supplier auditors'],
+        focus: 'Audit medtech quality with professional method.',
+    },
+    {
+        code: 'ISO 21001', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Quality,
+        about: 'Educational organizations management systems per ISO 21001: learner-centred quality, and EOMS requirements.',
+        audience: [...AUD.foundation, 'Academic administrators and education quality teams'],
+        focus: 'Management systems for education providers.',
+    },
+    {
+        code: 'ISO 21001', level: 'LI', levelLabel: 'Lead Implementer', track: TRACK.Quality,
+        about: 'Implement an educational organizations management system: curriculum governance, learner satisfaction, and performance evaluation.',
+        audience: [...AUD.implementers, 'Registrars, deans, and education consultants'],
+        focus: 'Run an EOMS that measurably serves learners.',
+    },
+    {
+        code: 'ISO 21001', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Quality,
+        about: 'Audit educational organizations management systems against ISO 21001.',
+        audience: [...AUD.auditors],
+        focus: 'Audit EOMS implementations professionally.',
+    },
+    {
+        code: 'ISO 21502', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Quality,
+        about: 'Project management fundamentals per ISO 21502: governance, lifecycle, and delivery vocabulary.',
+        audience: [...AUD.foundation],
+        focus: 'ISO-style project management basics.',
+    },
+    {
+        code: 'ISO 22000', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Health,
+        about: 'Food safety fundamentals: FSMS structure, PRPs, and hazard control basics per ISO 22000.',
+        audience: [...AUD.foundation],
+        focus: 'Food safety management fundamentals.',
+    },
+    {
+        code: 'ISO 22000', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Health,
+        about: 'Audit food safety management systems per ISO 22000: CCP evidence, PRP verification, and conformity reporting.',
+        audience: [...AUD.auditors, 'Food industry auditors'],
+        focus: 'Audit FSMS implementations with authority.',
+    },
+    {
+        code: 'ISO/IEC 17025', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Quality,
+        about: 'Laboratory competence fundamentals: impartiality, methods, traceability, and quality practice per ISO/IEC 17025.',
+        audience: [...AUD.foundation, 'Lab analysts and quality assistants'],
+        focus: 'Laboratory quality fundamentals.',
+    },
+    {
+        code: 'ISO/IEC 17025', level: 'Manager', levelLabel: 'Lead Assessor', track: TRACK.Quality,
+        about: 'Assess laboratories against ISO/IEC 17025: technical competence review, method validation evaluation, and assessment reporting.',
+        audience: [...AUD.auditors, 'Accreditation-track assessors'],
+        focus: 'Lead laboratory assessments to accreditation standard.',
+    },
+    {
+        code: 'Lean Six Sigma', level: 'Professional', levelLabel: 'Yellow Belt', track: TRACK.Quality,
+        about: 'Lean Six Sigma Yellow Belt: waste recognition, DMAIC basics, and supporting improvement projects.',
+        audience: [...AUD.foundation, 'Team members joining improvement initiatives'],
+        focus: 'Contribute to improvement projects with method.',
+    },
+    {
+        code: 'Six Sigma', level: 'Foundation', levelLabel: 'Yellow Belt', track: TRACK.Quality,
+        about: 'Six Sigma Yellow Belt: statistical-thinking basics and structured problem solving at team level.',
+        audience: [...AUD.foundation],
+        focus: 'Structured problem solving fundamentals.',
+    },
+    {
+        code: 'ISO 55001', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Quality,
+        about: 'Asset management fundamentals: value, lifecycle, and the AMS structure per ISO 55001.',
+        audience: [...AUD.foundation],
+        focus: 'Asset management fundamentals.',
+    },
+    {
+        code: 'ISO 55001', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Quality,
+        about: 'Audit asset management systems per ISO 55001: lifecycle evidence, decision frameworks, and improvement loops.',
+        audience: [...AUD.auditors],
+        focus: 'Audit AMS implementations professionally.',
+    },
+    {
+        code: 'ISO 55001', level: 'Manager', levelLabel: 'Transition', track: TRACK.Quality,
+        about: 'Transition an existing asset management system to the current ISO 55001 edition.',
+        audience: [...AUD.managers],
+        focus: 'Controlled AMS transition with certification continuity.',
+    },
+    {
+        code: 'ISO 28000', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Quality,
+        about: 'Supply chain security fundamentals: threats, controls, and SeMS structure per ISO 28000.',
+        audience: [...AUD.foundation],
+        focus: 'Supply chain security fundamentals.',
+    },
+    {
+        code: 'ISO 28000', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Quality,
+        about: 'Audit supply chain security management systems against ISO 28000.',
+        audience: [...AUD.auditors],
+        focus: 'Audit SeMS implementations with authority.',
+    },
+    {
+        code: 'ISO 28000', level: 'Manager', levelLabel: 'Transition', track: TRACK.Quality,
+        about: 'Transition an existing supply-chain security management system to the current ISO 28000 edition.',
+        audience: [...AUD.managers],
+        focus: 'Controlled SeMS transition.',
+    },
+    {
+        code: 'ISO 56001', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Quality,
+        about: 'Innovation management systems per ISO 56001: intent, portfolio, process, and culture requirements.',
+        audience: [...AUD.foundation, 'Innovation and strategy teams'],
+        focus: 'Manage innovation as a system, not a slogan.',
+    },
+    {
+        code: 'ISO 56001', level: 'LI', levelLabel: 'Lead Implementer', track: TRACK.Quality,
+        about: 'Implement an innovation management system: portfolio governance, opportunity-to-value process, and measurement.',
+        audience: [...AUD.implementers, 'Innovation programme leaders'],
+        focus: 'Build a repeatable innovation engine.',
+    },
+    {
+        code: 'ISO 56001', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Quality,
+        about: 'Audit innovation management systems against ISO 56001 with certification-grade method.',
+        audience: [...AUD.auditors],
+        focus: 'Audit IMS implementations professionally.',
+    },
+    // Health & Safety
+    {
+        code: 'ISO 45001', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Health,
+        about: 'Audit occupational health and safety management systems per ISO 45001: hazard processes, worker participation evidence, and conformity judgment.',
+        audience: [...AUD.auditors, 'HSE auditors'],
+        focus: 'Audit OH&S management with authority.',
+    },
+    {
+        code: 'ISO 18788', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Health,
+        about: 'Private security operations fundamentals: ISO 18788 and the human-rights duty framework (Voluntary Principles context).',
+        audience: [...AUD.foundation, 'Security service company staff'],
+        focus: 'Professional standards for private security operations.',
+    },
+    {
+        code: 'ISO 18788', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Health,
+        about: 'Audit private security operations management systems against ISO 18788.',
+        audience: [...AUD.auditors],
+        focus: 'Audit SOMS implementations professionally.',
+    },
+    // Sustainability
+    {
+        code: 'ISO 14001', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Sustainability,
+        about: 'Environmental management fundamentals: aspects, obligations, and improvement cycles per ISO 14001.',
+        audience: [...AUD.foundation],
+        focus: 'Environmental management fundamentals.',
+    },
+    {
+        code: 'ISO 14001', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Sustainability,
+        about: 'Audit environmental management systems: impact controls, compliance evidence, and performance evaluation.',
+        audience: [...AUD.auditors],
+        focus: 'Audit EMS implementations with authority.',
+    },
+    {
+        code: 'ISO 14001', level: 'Manager', levelLabel: 'Transition (2026)', track: TRACK.Sustainability,
+        about: 'Transition an existing environmental management system to the revised ISO 14001 edition.',
+        audience: [...AUD.managers],
+        focus: 'Move your EMS to the revised ISO 14001.',
+    },
+    {
+        code: 'ISO 50001', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Sustainability,
+        about: 'Energy management fundamentals: baselines, performance indicators, and the EnMS structure per ISO 50001.',
+        audience: [...AUD.foundation],
+        focus: 'Energy management fundamentals.',
+    },
+    {
+        code: 'ISO 50001', level: 'LA', levelLabel: 'Lead Auditor', track: TRACK.Sustainability,
+        about: 'Audit energy management systems: energy-review evidence, savings verification, and conformity reporting.',
+        audience: [...AUD.auditors],
+        focus: 'Audit EnMS implementations with authority.',
+    },
+    {
+        code: 'ISO 26000', level: 'Foundation', levelLabel: 'Foundation', track: TRACK.Sustainability,
+        about: 'Social responsibility fundamentals: the seven core subjects and stakeholder practice per ISO 26000.',
+        audience: [...AUD.foundation, 'CSR/ESG team members'],
+        focus: 'Social responsibility fundamentals.',
+    },
+
     // ── EBIOS (Information Security, risk method) ───────────────────────────
     {
         code: 'EBIOS', level: 'Manager', levelLabel: 'Risk Manager', track: TRACK.InfoSec,

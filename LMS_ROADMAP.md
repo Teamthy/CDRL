@@ -112,3 +112,16 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
   - Pre-send checklist surfacing PECB's rules (attendance recorded, candidate emails
     match PECB profiles, credit balance/PO cover, exam-rules briefing).
 - ✅ No backend surface added — client-side only; templates mirror `docs/PECB_OPS_PACK.md`.
+
+## Patch-29 — Complete PECB catalogue gap closure (2026-09-02)
+
+- ✅ Catalogue enumerated from the live PECB sitemap (116 course rows across the 11
+  categories; every family in PECB's education catalogue now has all its credential
+  levels: Foundation / Manager / Lead Implementer / Lead Auditor / Transition).
+- ✅ New families added: ISO/IEC 27034 (AppSec), ISO/IEC 27400 (IoT), NIST CSF, SOC 2,
+  ISO 13485, ISO 21001, ISO 37000, ISO 56001, Advanced Pen Tester, Crisis Manager,
+  US Data Privacy, Lean Six Sigma YB, CMSA auditor credential, DORA Foundation, and
+  the missing Transition/level variants across ISO 27002/27005/14001/50001/22000/
+  17025/21502/28000/55001/45001/18788/27701/31000/37001/37301/26000.
+- ✅ Seed upsert-by-slug keeps re-runs safe; EU AI Governance + ISO/TS 31050 remain
+  excluded (PECB marks them "coming soon").
