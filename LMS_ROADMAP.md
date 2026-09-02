@@ -215,3 +215,20 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
   it matters · Who should attend · What you will learn · How to get started · Exam &
   certification. URLs and page structure unchanged (pure content rewrite via seed
   re-run).
+
+## Patch-37 — 4×4 grid, guaranteed-rich course bodies, contrast lock (2026-09-02)
+
+- ✅ Catalogue pagination is now 4 × 4 (PAGE_SIZE 16); grid is 4 columns ≥1180px.
+- ✅ `lib/courseDetails.ts` — `richDetailsFor()` ensures EVERY course page shows the
+  full PECB section set (What is / Why important / Who should attend / What you will
+  learn / How to get started / Exam & certification) even for rows seeded before
+  patch-36 (synthesizes missing bodies at render time; once you re-run `prisma:seed`,
+  stored PECB bodies take over automatically).
+- ✅ `levelMetaFor()` — level-accurate programme facts: 2-day/1-hr exam/14 CPD
+  (Foundation/Transition/Executive), 3-day/2-hr/21 CPD (Professional), 5-day/3-hr/
+  35 CPD (Advanced).
+- ✅ Course detail now opens with a 4-cell facts band beneath the hero (duration,
+  exam, CPD credits, materials included) — matches PECB's "what you get" at-a-glance.
+- ✅ Contrast lock: heavy dark scrim over every image hero and tile; text forced to
+  light tokens there, dark tokens on light surfaces — no light-on-light anywhere.
+- ✅ TOC and body share the same source (`richDetailsFor`), so anchors can never drift.

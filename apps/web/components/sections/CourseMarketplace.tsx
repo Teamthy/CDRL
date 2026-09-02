@@ -9,7 +9,7 @@ import type { Course } from '../../lib/content';
 
 type Props = { courses: Course[] };
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 16;   // 4 × 4 per page
 
 export default function CourseMarketplace({ courses }: Props) {
     const [query, setQuery] = useState('');

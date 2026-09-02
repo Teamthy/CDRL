@@ -2329,3 +2329,30 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .pager-num:hover { border-color: var(--cdrl-green); }
 .pager-num.on { background: var(--cdrl-green); color: #fff; border-color: var(--cdrl-green); font-weight: 700; }
 .pager-ellipsis { padding: 0 4px; color: var(--cdrl-text-muted-light); }
+
+/* ── patch-37: 4×4 catalogue grid, course meta band, hard contrast ── */
+@media (min-width: 1180px) { .market-grid .wrap { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 700px) and (max-width: 1179px) { .market-grid .wrap { grid-template-columns: repeat(2, 1fr); } }
+
+.detail-meta-band {
+    list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    padding: 0; margin: 34px 0 14px;
+}
+.detail-meta-band li {
+    display: flex; gap: 12px; align-items: center;
+    background: var(--cdrl-text-light,#fff); border: 1px solid var(--cdrl-border-light,#d8d2c4);
+    border-radius: 14px; padding: 14px 16px;
+}
+.detail-meta-band svg { width: 22px; height: 22px; color: var(--cdrl-green); flex-shrink: 0; }
+.detail-meta-band strong { display: block; font-size: 14px; color: var(--cdrl-text-dark); }
+.detail-meta-band small { color: var(--cdrl-text-muted-light); font-size: 12px; }
+@media (max-width: 900px) { .detail-meta-band { grid-template-columns: repeat(2, 1fr); } }
+
+/* No light text on light backgrounds: strong scrim over every image hero */
+.course-detail-img::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(90deg, rgba(10,16,14,.92) 0%, rgba(10,16,14,.72) 55%, rgba(10,16,14,.48) 100%);
+}
+.course-detail-img h1, .course-detail-img h1 em, .course-detail-img .kicker,
+.course-detail-img p, .course-detail-img .crumbs { color: #fff; }
+.cat-tile h3, .cat-tile strong, .cat-tile small, .cat-tile svg { color: #fff; }

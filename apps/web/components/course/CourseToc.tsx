@@ -1,29 +1,26 @@
 import type { Course } from '../../lib/content';
+import { richDetailsFor } from '../../lib/courseDetails';
 
 type Props = { course: Course };
 
-/** Sticky in-page table of contents for the long-form course body (PECB-style). */
+/** Sticky in-page table of contents (PECB-style). Anchors mirror ModuleText's
+ *  anchorIds output over richDetailsFor(course). */
 export default function CourseToc({ course }: Props) {
     const sections: { id: string; label: string }[] = [];
-    if (course.details) {
-        // Pull "## Heading" anchors out of the markdown-lite body — matches ModuleText rendering.
-        for (const line of course.details.split('\n')) {
-            if (line.startsWith('## ')) {
-                const label = line.slice(3).trim();
-                const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                sections.push({ id, label });
-            }
+    for (const line of richDetailsFor(course).split('\n')) {
+        if (line.startsWith('## ')) {
+            const label = line.slice(3).trim();
+            const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            sections.push({ id, label });
         }
     }
     const toc = [
-        { id: 'overview', label: 'Course overview' },
-        ...(sections.length ? sections : []),
+        ...sections,
         { id: 'what-you-receive', label: 'What you receive' },
         { id: 'delivery', label: 'Delivery & flexibility' },
         { id: 'enrol', label: 'Apply & enrol' },
         { id: 'related', label: 'Related programmes' },
     ];
-    if (toc.length < 3) return null;
 
     return (
         <nav className="course-toc" aria-label="On this page">

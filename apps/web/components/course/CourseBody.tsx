@@ -1,4 +1,4 @@
-import { Check, Clock3, Globe2, MonitorPlay } from 'lucide-react';
+import { Check, Clock3, Globe2, MonitorPlay, BadgeCheck, CalendarClock, FileText, Package } from 'lucide-react';
 import Reveal from '../motion/Reveal';
 import ModuleText from '../learn/ModuleText';
 import AddToPlanButton from '../actions/AddToPlanButton';
@@ -8,6 +8,7 @@ import CourseToc from './CourseToc';
 import EmployerFunding from './EmployerFunding';
 import PriceBandCard from './PriceBandCard';
 import type { Course } from '../../lib/content';
+import { levelMetaFor, richDetailsFor } from '../../lib/courseDetails';
 
 const receiveItems = [
     'Expert-led learning experience',
@@ -18,24 +19,51 @@ const receiveItems = [
 ];
 
 export default function CourseBody({ course }: { course: Course }) {
+    const meta = levelMetaFor(course.level);
+    const details = richDetailsFor(course);
     return (
         <section className="course-body">
+            <div className="wrap">
+                <ul className="detail-meta-band" aria-label="Programme facts">
+                    <li>
+                        <CalendarClock aria-hidden="true" />
+                        <span>
+                            <strong>{meta.days}</strong>
+                            <small>Live instruction</small>
+                        </span>
+                    </li>
+                    <li>
+                        <FileText aria-hidden="true" />
+                        <span>
+                            <strong>{meta.exam}</strong>
+                            <small>Certification exam</small>
+                        </span>
+                    </li>
+                    <li>
+                        <BadgeCheck aria-hidden="true" />
+                        <span>
+                            <strong>{meta.cpd}</strong>
+                            <small>Continuing education</small>
+                        </span>
+                    </li>
+                    <li>
+                        <Package aria-hidden="true" />
+                        <span>
+                            <strong>Materials included</strong>
+                            <small>Official courseware</small>
+                        </span>
+                    </li>
+                </ul>
+            </div>
             <div className="wrap course-body-grid">
                 <Reveal className="course-toc-wrap">
                     <CourseToc course={course} />
                 </Reveal>
                 <Reveal className="course-main-col">
                     <div>
-                        <h2 id="overview">Course overview</h2>
-                        <p>
-                            {course.overview ||
-                                'This professional program equips participants with the knowledge, tools, and confidence to apply internationally recognized practices within their organizations.'}
-                        </p>
-                        {course.details ? (
-                            <div className="course-details">
-                                <ModuleText text={course.details} anchorIds />
-                            </div>
-                        ) : null}
+                        <div className="course-details">
+                            <ModuleText text={details} anchorIds />
+                        </div>
                         <h3 id="what-you-receive">What you receive</h3>
                         {receiveItems.map((item) => (
                             <p key={item} className="tick">
