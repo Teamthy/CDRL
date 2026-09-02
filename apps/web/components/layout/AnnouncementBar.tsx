@@ -1,10 +1,11 @@
+import type { Route } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 type Props = {
     message?: string;
     ctaLabel?: string;
-    ctaHref?: string;
+    ctaHref?: Route;
 };
 
 export default function AnnouncementBar({
@@ -15,7 +16,7 @@ export default function AnnouncementBar({
     return (
         <div className="notice" role="region" aria-label="Announcement">
             <span>{message}</span>
-            <Link href={ctaHref as any}>
+            <Link href={ctaHref}>
                 {ctaLabel} <ArrowRight />
             </Link>
         </div>

@@ -53,7 +53,7 @@ export default function LearningPlanSelected({ courses }: Props) {
                     <ShoppingBag className="plan-icon" aria-hidden="true" />
                     <h2>Your learning journey starts here.</h2>
                     <p>Explore the marketplace and add a program to your learning plan.</p>
-                    <Link href={'/training' as any} className="btn btn-primary">
+                    <Link href={'/training'} className="btn btn-primary">
                         <span>Explore Training</span>
                         <ArrowRight />
                     </Link>
@@ -87,7 +87,7 @@ export default function LearningPlanSelected({ courses }: Props) {
                         </div>
                     ))}
                 </div>
-                <Link href={'/contact' as any} className="btn btn-primary">
+                <Link href={'/contact'} className="btn btn-primary">
                     <span>Complete Enquiry</span>
                     <ArrowRight />
                 </Link>

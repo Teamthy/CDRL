@@ -1,5 +1,7 @@
 'use client';
 
+import type { Route } from 'next';
+
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
@@ -8,12 +10,12 @@ type Props = {
     readTime: string;
     title: string;
     excerpt: string;
-    href: string;
+    href: Route;
 };
 
 export default function InsightCard({ category, readTime, title, excerpt, href }: Props) {
     return (
-        <Link href={href as any} className="insight-card">
+        <Link href={href} className="insight-card">
             <span>
                 {category} · {readTime}
             </span>

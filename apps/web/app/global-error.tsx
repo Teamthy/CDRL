@@ -70,7 +70,7 @@ export default function GlobalError({ error, reset }: Props) {
                                 <RefreshCcw size={16} />
                             </button>
                             <Link
-                                href={'/' as any}
+                                href={'/'}
                                 style={{
                                     color: '#70F250',
                                     border: '1px solid #70F250',

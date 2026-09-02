@@ -1,3 +1,4 @@
+import type { Route } from 'next';
 import OutlineButton from '../actions/OutlineButton';
 import TrainingTrackCard, { type TrackIconName } from '../cards/TrainingTrackCard';
 import Reveal from '../motion/Reveal';
@@ -8,7 +9,7 @@ type Track = {
     title: string;
     description: string;
     icon: TrackIconName;
-    href: string;
+    href: Route;
 };
 
 const tracks: Track[] = [

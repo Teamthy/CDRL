@@ -25,11 +25,11 @@ export default function NotFound() {
                         training or return to the homepage below.
                     </p>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                        <Link href={'/' as any} className="btn btn-primary">
+                        <Link href={'/'} className="btn btn-primary">
                             <span>Back to home</span>
                             <ArrowRight />
                         </Link>
-                        <Link href={'/training' as any} className="btn btn-secondary">
+                        <Link href={'/training'} className="btn btn-secondary">
                             <span>Explore training</span>
                         </Link>
                     </div>

@@ -40,7 +40,7 @@ export default function Header({ initialCount = 0 }: { initialCount?: number }) 
         <header className="site-header">
             <div className="wrap mainnav">
                 <div className="header-inner">
-                    <Link href={'/' as any} className="logo-btn" aria-label="CDRL home">
+                    <Link href={'/'} className="logo-btn" aria-label="CDRL home">
                         <Logo />
                     </Link>
                     <nav className="header-nav" aria-label="Primary navigation">
@@ -50,7 +50,7 @@ export default function Header({ initialCount = 0 }: { initialCount?: number }) 
                             return (
                                 <Link
                                     key={item.href}
-                                    href={item.href as any}
+                                    href={item.href}
                                     className={`${active ? 'active' : ''} ${isTraining ? 'with-drop' : ''}`.trim()}
                                 >
                                     {item.label}
@@ -69,7 +69,7 @@ export default function Header({ initialCount = 0 }: { initialCount?: number }) 
                             <Search />
                         </button>
                         <Link
-                            href={'/learning-plan' as any}
+                            href={'/learning-plan'}
                             className="bag"
                             aria-label={`Learning plan (${count} ${count === 1 ? 'item' : 'items'})`}
                         >
