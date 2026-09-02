@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Copy, Mail, Check, ClipboardList } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ClipboardList, Copy, Mail } from 'lucide-react';
 import { adminFetch, type AdminCourse, UnauthorizedError } from '../../../lib/adminClient';
 
 type Candidate = { name: string; email: string };
@@ -27,6 +27,7 @@ export default function PecExamRequestsPage() {
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState<'' | 'subject' | 'body'>('');
     const [mode, setMode] = useState<Mode>('exam-request');
+    const [step, setStep] = useState(0);
 
     const [courseSlug, setCourseSlug] = useState('');
     const [trainer, setTrainer] = useState('');
@@ -123,6 +124,17 @@ export default function PecExamRequestsPage() {
         setTimeout(() => setCopied(''), 1500);
     };
 
+    // patch-45: 3-step composer (step validation gates the "Save & next →" CTA)
+    const STEPS = ['Course & schedule', 'Trainer & logistics', mode === 'exam-request' ? 'Candidates' : 'Credits'] as const;
+    const stepValid = useMemo(() => {
+        if (courseSlug === '') return false;
+        if (step === 0) return !!courseSlug && !!dates.trim();
+        if (step === 1) return !!trainer.trim();
+        return mode === 'exam-request' ? candidates.length > 0 : Number(creditCount) > 0;
+    }, [step, courseSlug, dates, trainer, mode, candidates.length, creditCount]);
+    const next = () => setStep((s) => Math.min(STEPS.length - 1, s + 1));
+    const back = () => setStep((s) => Math.max(0, s - 1));
+
     const mailto = `mailto:${mode === 'exam-request' ? PECB_EXAMS_TO : PECB_PM_TO || PECB_EXAMS_TO}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
     return (
@@ -153,51 +165,80 @@ export default function PecExamRequestsPage() {
 
             <div className="pecb-exam-grid">
                 <div className="pecb-exam-form">
-                    <label className="admin-field admin-field-wide">
-                        <span>Course</span>
-                        <select value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)}>
-                            {courses.length === 0 && <option value="">— loading PECB courses —</option>}
-                            {courses.map((c) => (
-                                <option key={c.id} value={c.slug}>
-                                    {c.title} {c.subtitle}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="admin-field">
-                        <span>Course delivery dates</span>
-                        <input value={dates} onChange={(e) => setDates(e.target.value)} placeholder="e.g. 22–26 Sep 2026" />
-                    </label>
-                    <label className="admin-field">
-                        <span>Trainer</span>
-                        <input value={trainer} onChange={(e) => setTrainer(e.target.value)} placeholder="Trainer name" />
-                    </label>
-                    {mode === 'exam-request' ? (
+                    {/* patch-45 stepper chrome */}
+                    <ol className="pecb-steps" aria-label="Composer steps">
+                        {STEPS.map((label, i) => (
+                            <li key={label} className={i === step ? 'on' : i < step ? 'done' : ''} aria-current={i === step ? 'step' : undefined}>
+                                <span className="pecb-step-num">{i < step ? '✓' : i + 1}</span>
+                                <span>{label}</span>
+                            </li>
+                        ))}
+                    </ol>
+
+                    {step === 0 && (
+                        <>
+                            <label className="admin-field admin-field-wide">
+                                <span>Course</span>
+                                <select value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)}>
+                                    {courses.length === 0 && <option value="">— loading PECB courses —</option>}
+                                    {courses.map((c) => (
+                                        <option key={c.id} value={c.slug}>
+                                            {c.title} {c.subtitle}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                            <label className="admin-field">
+                                <span>Course delivery dates</span>
+                                <input value={dates} onChange={(e) => setDates(e.target.value)} placeholder="e.g. 22–26 Sep 2026" />
+                            </label>
+                        </>
+                    )}
+
+                    {step === 1 && (
                         <>
                             <label className="admin-field">
-                                <span>Delivery mode</span>
-                                <select value={deliveryMode} onChange={(e) => setDeliveryMode(e.target.value)}>
-                                    <option>Virtual / Live Virtual</option>
-                                    <option>In-person</option>
-                                    <option>Hybrid</option>
-                                </select>
+                                <span>Trainer</span>
+                                <input value={trainer} onChange={(e) => setTrainer(e.target.value)} placeholder="Trainer name" />
                             </label>
-                            <label className="admin-field">
-                                <span>Exam window requested</span>
-                                <input value={examWindow} onChange={(e) => setExamWindow(e.target.value)} placeholder="e.g. 5–12 Oct 2026" />
-                            </label>
-                            <label className="admin-field">
-                                <span>Exam format</span>
-                                <select value={examFormat} onChange={(e) => setExamFormat(e.target.value)}>
-                                    <option>Online proctored</option>
-                                    <option>Paper-based at partner site</option>
-                                    <option>At PECB exam center</option>
-                                </select>
-                            </label>
-                            <label className="admin-field">
-                                <span>PO / credit reference</span>
-                                <input value={creditRef} onChange={(e) => setCreditRef(e.target.value)} placeholder="Optional" />
-                            </label>
+                            {mode === 'exam-request' ? (
+                                <>
+                                    <label className="admin-field">
+                                        <span>Delivery mode</span>
+                                        <select value={deliveryMode} onChange={(e) => setDeliveryMode(e.target.value)}>
+                                            <option>Virtual / Live Virtual</option>
+                                            <option>In-person</option>
+                                            <option>Hybrid</option>
+                                        </select>
+                                    </label>
+                                    <label className="admin-field">
+                                        <span>Exam window requested</span>
+                                        <input value={examWindow} onChange={(e) => setExamWindow(e.target.value)} placeholder="e.g. 5–12 Oct 2026" />
+                                    </label>
+                                    <label className="admin-field">
+                                        <span>Exam format</span>
+                                        <select value={examFormat} onChange={(e) => setExamFormat(e.target.value)}>
+                                            <option>Online proctored</option>
+                                            <option>Paper-based at partner site</option>
+                                            <option>At PECB exam center</option>
+                                        </select>
+                                    </label>
+                                    <label className="admin-field">
+                                        <span>PO / credit reference</span>
+                                        <input value={creditRef} onChange={(e) => setCreditRef(e.target.value)} placeholder="Optional" />
+                                    </label>
+                                </>
+                            ) : (
+                                <label className="admin-field">
+                                    <span>PO / credit reference</span>
+                                    <input value={creditRef} onChange={(e) => setCreditRef(e.target.value)} placeholder="Optional" />
+                                </label>
+                            )}
+                        </>
+                    )}
+
+                    {step === 2 &&
+                        (mode === 'exam-request' ? (
                             <label className="admin-field admin-field-wide">
                                 <span>Candidates (one per line: Full name, email)</span>
                                 <textarea
@@ -207,13 +248,32 @@ export default function PecExamRequestsPage() {
                                     placeholder={'Adaeze Okafor, adaeze@example.com\nTunde Bello\ttunde@example.com'}
                                 />
                             </label>
-                        </>
-                    ) : (
-                        <label className="admin-field">
-                            <span>Number of credits</span>
-                            <input value={creditCount} onChange={(e) => setCreditCount(e.target.value.replace(/\D/g, ''))} inputMode="numeric" />
-                        </label>
-                    )}
+                        ) : (
+                            <label className="admin-field">
+                                <span>Number of credits</span>
+                                <input value={creditCount} onChange={(e) => setCreditCount(e.target.value.replace(/\D/g, ''))} inputMode="numeric" />
+                            </label>
+                        ))}
+
+                    {/* stepper action row */}
+                    <div className="pecb-step-actions">
+                        {step > 0 ? (
+                            <button type="button" className="pecb-btn" onClick={back}>
+                                <ArrowLeft size={14} aria-hidden="true" /> Back
+                            </button>
+                        ) : (
+                            <span />
+                        )}
+                        {step < STEPS.length - 1 ? (
+                            <button type="button" className="pecb-btn pecb-next" onClick={next} disabled={!stepValid}>
+                                Save &amp; next <ArrowRight size={14} aria-hidden="true" />
+                            </button>
+                        ) : (
+                            <a className="pecb-btn pecb-next" href={mailto} aria-disabled={!stepValid}>
+                                <Mail size={14} aria-hidden="true" /> Send request {mode === 'exam-request' ? `(${candidates.length})` : `(${creditCount})`}
+                            </a>
+                        )}
+                    </div>
                 </div>
 
                 <div className="pecb-exam-preview">

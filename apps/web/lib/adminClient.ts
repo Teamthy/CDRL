@@ -86,6 +86,8 @@ export interface Enquiry {
 
 export interface AdminOverview {
     enquiries: Record<string, number>;
+    applications: Record<string, number>;
+    applicationsSeries: { date: string; count: number }[];
     courses: number;
     upcomingEvents: number;
     publishedPosts: number;

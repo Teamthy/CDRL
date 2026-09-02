@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronDown, GraduationCap, Mail, Save } from 'lucide-react';
+import { ChevronDown, GraduationCap, Inbox, Mail, Save } from 'lucide-react';
+import EmptyArt from '../../../components/admin/EmptyArt';
+import StatusBadge from '../../../components/admin/StatusBadge';
 import { adminFetch, UnauthorizedError, type ListResponse } from '../../../lib/adminClient';
 
 const STATUSES = ['new', 'contacted', 'admitted', 'enrolled', 'closed'] as const;
@@ -106,6 +108,9 @@ export default function ApplicationsPage() {
                     <span>Status</span>
                     <span aria-hidden="true" />
                 </div>
+                {items.length === 0 && (
+                    <EmptyArt icon={Inbox} title="No applications yet" hint="Applications from course pages and the marketing site funnel here. New ones appear in real-time once published." />
+                )}
                 {items.map((a) => {
                     const draft = drafts[a.id];
                     const open = openId === a.id;
@@ -118,9 +123,7 @@ export default function ApplicationsPage() {
                                     {a.background && <em>{a.background}</em>}
                                 </span>
                                 <span>{a.courseTitle ?? a.track ?? 'General'}</span>
-                                <span>
-                                    <span className={`status-pill s-${a.status}`}>{a.status}</span>
-                                </span>
+                                <StatusBadge status={a.status} />
                                 <ChevronDown className="row-caret" />
                             </button>
                             {open && draft && (

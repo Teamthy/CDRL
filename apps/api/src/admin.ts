@@ -119,14 +119,34 @@ adminRouter.use(requireAdmin);
 adminRouter.get(
     '/overview',
     ah(async (_req, res) => {
-        const [enquiriesByStatus, courses, events, posts] = await Promise.all([
+        const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const [enquiriesByStatus, courses, events, posts, appsByStatus, appsSeries] = await Promise.all([
             prisma.contactEnquiry.groupBy({ by: ['status'], _count: true }),
             prisma.course.count(),
             prisma.event.count({ where: { startsAt: { gte: new Date() } } }),
             prisma.post.count({ where: { published: true } }),
+            prisma.application.groupBy({ by: ['status'], _count: true }),
+            prisma.application.findMany({
+                where: { createdAt: { gte: since } },
+                select: { createdAt: true },
+                orderBy: { createdAt: 'asc' },
+            }),
         ]);
+        // 30-day daily buckets for the overview sparkline chart
+        const days: { date: string; count: number }[] = [];
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+            days.push({ date: d.toISOString().slice(0, 10), count: 0 });
+        }
+        const byDay = Object.fromEntries(days.map((d) => [d.date, d]));
+        for (const a of appsSeries) {
+            const key = a.createdAt.toISOString().slice(0, 10);
+            if (byDay[key]) byDay[key]!.count += 1;
+        }
         res.json({
             enquiries: Object.fromEntries(enquiriesByStatus.map((g) => [g.status, g._count])),
+            applications: Object.fromEntries(appsByStatus.map((g) => [g.status, g._count])),
+            applicationsSeries: days,
             courses,
             upcomingEvents: events,
             publishedPosts: posts,
