@@ -100,6 +100,8 @@ export interface AdminCourse {
     level: string;
     deliveryMode: string;
     overview: string;
+    priceKobo: number | null;
+    currency: string;
     published: boolean;
     sortOrder: number;
     updatedAt: string;

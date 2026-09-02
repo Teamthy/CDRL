@@ -25,6 +25,8 @@ export interface CourseDraft {
     level: string;
     deliveryMode: string;
     overview: string;
+    priceNaira: string;
+    currency: string;
     published: boolean;
     sortOrder: string;
     slugTouched: boolean;
@@ -38,6 +40,8 @@ export const emptyCourseDraft = (): CourseDraft => ({
     level: '',
     deliveryMode: 'Self-paced',
     overview: '',
+    priceNaira: '',
+    currency: 'NGN',
     published: true,
     sortOrder: '0',
     slugTouched: false,
@@ -77,6 +81,13 @@ export function CourseFields({
             <TextInput label="Track (e.g. Cybersecurity, GRC)" value={draft.track} required onChange={(v) => setDraft({ ...draft, track: v })} />
             <TextInput label="Level (e.g. Foundation)" value={draft.level} required onChange={(v) => setDraft({ ...draft, level: v })} />
             <TextInput label="Delivery mode" value={draft.deliveryMode} required onChange={(v) => setDraft({ ...draft, deliveryMode: v })} />
+            <TextInput
+                label="Price (₦ — blank = application-based)"
+                type="number"
+                value={draft.priceNaira}
+                placeholder="e.g. 250000"
+                onChange={(v) => setDraft({ ...draft, priceNaira: v })}
+            />
             <TextInput label="Sort order" type="number" value={draft.sortOrder} onChange={(v) => setDraft({ ...draft, sortOrder: v })} />
             <TextArea label="Overview" value={draft.overview} required rows={5} onChange={(v) => setDraft({ ...draft, overview: v })} />
             <Checkbox label="Published (visible on the site)" checked={draft.published} onChange={(v) => setDraft({ ...draft, published: v })} />
@@ -205,6 +216,7 @@ const nullIfEmpty = (v: string) => (v.trim() === '' ? null : v.trim());
 const toIsoOrNull = (v: string) => (v ? new Date(v).toISOString() : null);
 
 export function coursePayload(d: CourseDraft) {
+    const naira = Number.parseFloat(d.priceNaira);
     return {
         slug: d.slug.trim(),
         title: d.title.trim(),
@@ -213,6 +225,8 @@ export function coursePayload(d: CourseDraft) {
         level: d.level.trim(),
         deliveryMode: d.deliveryMode.trim(),
         overview: d.overview.trim(),
+        priceKobo: Number.isFinite(naira) && naira > 0 ? Math.round(naira * 100) : null,
+        currency: d.currency || 'NGN',
         published: d.published,
         sortOrder: Number.parseInt(d.sortOrder, 10) || 0,
     };

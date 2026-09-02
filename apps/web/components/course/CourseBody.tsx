@@ -2,6 +2,7 @@ import { Check, Clock3, Globe2, MonitorPlay } from 'lucide-react';
 import Reveal from '../motion/Reveal';
 import AddToPlanButton from '../actions/AddToPlanButton';
 import ApplyCard from './ApplyCard';
+import PayCard from './PayCard';
 import type { Course } from '../../lib/content';
 
 const receiveItems = [
@@ -53,6 +54,7 @@ export default function CourseBody({ course }: { course: Course }) {
                             </p>
                             <AddToPlanButton courseId={course.id} />
                             <ApplyCard course={course} />
+                            <PayCard course={course} />
                             <small>Corporate enrollment available for teams.</small>
                         </aside>
                     </div>

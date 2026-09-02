@@ -1654,3 +1654,10 @@ a.pecb-badge img { border-radius: 10px; }
 .module-body p { margin: 0; font-size: 14px; line-height: 1.75; opacity: 0.92; }
 .admin-danger { color: #c0392b; border-color: rgba(220, 60, 60, 0.4); }
 button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark); border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer; color: inherit; }
+
+/* ─── PATCH-20: payments (Phase 5) ───────────────────────────────────────── */
+.pay-card { display: grid; gap: 10px; margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--cdrl-border-dark, rgba(255,255,255,0.14)); }
+.pay-price { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+.pay-card label { display: grid; gap: 5px; font-size: 12px; font-weight: 600; }
+.pay-card input { width: 100%; padding: 9px 11px; border-radius: 9px; font: inherit; font-size: 13px; border: 1px solid var(--cdrl-border-light, rgba(15,30,20,0.18)); background: rgba(255,255,255,0.06); color: inherit; }
+.pay-card small { font-size: 11.5px; opacity: 0.7; }

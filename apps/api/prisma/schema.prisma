@@ -16,6 +16,8 @@ model Course {
   level         String
   deliveryMode  String
   overview      String
+  priceKobo     Int?               // null/0 = not payable online (apply flow)
+  currency      String             @default("NGN")
   published     Boolean            @default(true)
   sortOrder     Int
   createdAt     DateTime           @default(now())
@@ -23,6 +25,7 @@ model Course {
   planItems     LearningPlanItem[]
   enrollments   Enrollment[]
   modules       CourseModule[]
+  purchases     Purchase[]
 
   @@index([published, track])
 }
@@ -160,4 +163,23 @@ model CourseModule {
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId, order])
+}
+
+model Purchase {
+  id          String   @id @default(cuid())
+  reference   String   @unique
+  email       String
+  name        String?
+  courseSlug  String
+  amountKobo  Int
+  currency    String   @default("NGN")
+  status      String   @default("pending")   // pending | success | failed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  paidAt      DateTime?
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  courseId    String?
+
+  @@index([status, createdAt])
+  @@index([email])
 }

@@ -15,6 +15,8 @@ export const courseSchema = z.object({
     level: z.string(),
     deliveryMode: z.string(),
     overview: z.string(),
+    priceKobo: z.number().int().nullable().optional(),
+    currency: z.string().optional(),
 });
 
 export type Course = z.infer<typeof courseSchema>;

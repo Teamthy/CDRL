@@ -9,6 +9,7 @@ import { config, corsOrigins } from './config.js';
 import { prisma } from './db.js';
 import { adminRouter } from './admin.js';
 import { learnerRouter } from './learnerAuth.js';
+import { paymentsRawBody, paymentsRouter, paymentsWebhook } from './payments.js';
 import { logger } from './logger.js';
 import { applicationSchema, contactSchema, isValidSessionId, learningPlanItemSchema } from './validation.js';
 
@@ -84,6 +85,9 @@ app.set('trust proxy', 1); // one reverse proxy in front; req.ip is the real cli
 app.disable('x-powered-by');
 app.use(helmet());
 app.use(cors({ origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins }));
+// Paystack webhook needs the RAW body for HMAC verification — mount before json().
+app.use('/api/v1/payments/webhook', paymentsRawBody, paymentsWebhook());
+
 app.use(express.json({ limit: '50kb' }));
 
 // Structured request logging
@@ -369,6 +373,9 @@ app.use('/api/v1/admin', adminRouter);
 
 // Learner portal auth (LMS Phase 2): signup, login, /me, password reset
 app.use('/api/v1/learner', learnerRouter);
+
+// Payments (LMS Phase 5): initialize + verify (webhook is mounted above json middleware)
+app.use('/api/v1/payments', paymentsRouter);
 
 // ────────────────────────────────────────────────────────────────────────────
 // 404 + centralized JSON error handling (must be LAST)

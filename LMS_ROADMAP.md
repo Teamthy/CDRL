@@ -45,9 +45,14 @@ no phase breaks an earlier one.
 - ⏭ Remaining: certificates of completion, session recordings area, PWA offline caching
 - Hardening backlog: refresh-cookie rotation, argon2 policy review
 
-## Phase 5 — Payments & PECB notes
+## Phase 5 — Payments & PECB notes (PARTIAL, patch-20)
 
-- Paystack (NG bank-friendly, no card requirement to open account) for course fees; enrollment unlock webhook
+- ✅ `Course.priceKobo`/`currency` (console Courses editor: "Price (₦)" — blank keeps apply-only flow)
+- ✅ `Purchase` model + `/api/v1/payments`: `POST /initialize` (Paystack hosted checkout link), `GET /verify/:reference`, raw-body HMAC webhook (`/api/v1/payments/webhook`)
+- ✅ Successful payment auto-enrolls (upserts learner by email; repeat purchase = benign no-op)
+- ✅ Course pages show a **Pay & Enroll** card whenever a price is set; `/pay/callback` verifies and deep-links into the portal
+- **Dormant until configured:** Render env `PAYSTACK_SECRET_KEY` (paystack.com — free account, no card needed).
+  Set the Paystack dashboard webhook URL to `https://<api>/api/v1/payments/webhook`. Prices are set per course in the console first.
 - PECB partnership: map PECB course catalogue to `Course` rows; keep artboard/credit requirements on partner pages;
   event/organic integration per PECB brand guidelines
 

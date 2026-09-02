@@ -29,6 +29,8 @@ const envSchema = z.object({
     LEARNER_JWT_SECRET: z.string().min(32).optional(),
     // Used for learner-facing links (password reset). Defaults to first CORS origin.
     PUBLIC_WEB_URL: z.string().url().optional(),
+    // Phase 5 payments. Dormant (503) until PAYSTACK_SECRET_KEY is set.
+    PAYSTACK_SECRET_KEY: z.string().optional(),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
