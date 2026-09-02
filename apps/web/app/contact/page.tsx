@@ -6,6 +6,8 @@ import ContactForm from '../../components/sections/ContactForm';
 export const metadata = {
     title: 'Contact',
     description: 'Tell us how CDRL can support your professional or organizational goals.',
+
+    alternates: { canonical: '/contact' },
 };
 
 export default function ContactPage() {

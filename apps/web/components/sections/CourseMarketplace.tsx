@@ -17,7 +17,7 @@ export default function CourseMarketplace({ courses }: Props) {
             const matchesFilter = filter === 'All' || c.track === filter;
             if (!matchesFilter) return false;
             if (!q) return true;
-            return `${c.title} ${c.subtitle} ${c.track} ${c.level} ${c.mode}`.toLowerCase().includes(q);
+            return `${c.title} ${c.subtitle} ${c.track} ${c.level} ${c.deliveryMode}`.toLowerCase().includes(q);
         });
     }, [courses, query, filter]);
 

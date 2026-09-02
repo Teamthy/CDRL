@@ -1,32 +1,31 @@
-export type Course = {
-    id: string;
-    slug: string;
-    title: string;
-    subtitle: string;
-    track: 'Cybersecurity' | 'GRC' | 'AI Governance' | 'Executive Leadership';
-    level: string;
-    mode: string;
-    overview: string;
-};
+import type { Course, PageContent } from './contracts';
+
+export type { Course, PageContent } from './contracts';
+
+/**
+ * Local fallback content — used only when the API is unreachable.
+ * The API/DB is the production source of truth; keep this file minimal
+ * and structurally aligned with the API contract (see lib/contracts.ts).
+ */
 
 export const courses: Course[] = [
-    { id: '1', slug: 'iso-iec-27001-foundation', title: 'ISO/IEC 27001', subtitle: 'Foundation', track: 'Cybersecurity', level: 'Foundation', mode: 'Self-paced', overview: 'Build practical competence across the fundamentals of information security management.' },
-    { id: '2', slug: 'iso-iec-27001-lead-implementer', title: 'ISO/IEC 27001', subtitle: 'Lead Implementer', track: 'Cybersecurity', level: 'Advanced', mode: 'Hybrid', overview: 'Advance into implementation planning and operational delivery for ISO 27001.' },
-    { id: '3', slug: 'iso-iec-27001-lead-auditor', title: 'ISO/IEC 27001', subtitle: 'Lead Auditor', track: 'Cybersecurity', level: 'Advanced', mode: 'Virtual', overview: 'Develop the knowledge to audit and assess information security management systems.' },
-    { id: '4', slug: 'cybersecurity-fundamentals', title: 'Cybersecurity', subtitle: 'Fundamentals', track: 'Cybersecurity', level: 'Foundation', mode: 'Self-paced', overview: 'A practical introduction to an evolving security landscape and threat awareness.' },
-    { id: '5', slug: 'enterprise-risk-management', title: 'Enterprise Risk', subtitle: 'Management', track: 'GRC', level: 'Professional', mode: 'Virtual', overview: 'Apply structured approaches to enterprise risk identification and management.' },
-    { id: '6', slug: 'iso-31000-risk-management', title: 'ISO 31000', subtitle: 'Risk Management', track: 'GRC', level: 'Professional', mode: 'Hybrid', overview: 'Develop confidence in governance and risk management using ISO 31000 principles.' },
-    { id: '7', slug: 'compliance-regulatory-governance', title: 'Compliance & Regulatory', subtitle: 'Governance', track: 'GRC', level: 'Professional', mode: 'Virtual', overview: 'Connect governance, compliance, and regulatory priorities into practical action.' },
-    { id: '8', slug: 'ai-governance-fundamentals', title: 'AI Governance', subtitle: 'Fundamentals', track: 'AI Governance', level: 'Foundation', mode: 'Self-paced', overview: 'Understand the ethical, legal, and governance dimensions of AI adoption.' },
-    { id: '9', slug: 'responsible-ai-leadership', title: 'Responsible AI', subtitle: 'Leadership', track: 'AI Governance', level: 'Executive', mode: 'Virtual', overview: 'Prepare leaders to guide responsible AI adoption across the organization.' },
-    { id: '10', slug: 'ai-risk-management', title: 'AI Risk', subtitle: 'Management', track: 'AI Governance', level: 'Professional', mode: 'Hybrid', overview: 'Translate AI risks into practical governance and control frameworks.' },
-    { id: '11', slug: 'iso-iec-42001-ai-management-systems', title: 'ISO/IEC 42001', subtitle: 'AI Management Systems', track: 'AI Governance', level: 'Advanced', mode: 'Virtual', overview: 'Develop capability in implementing AI Management Systems aligned to emerging standards.' },
-    { id: '12', slug: 'cybersecurity-for-executives', title: 'Cybersecurity', subtitle: 'for Executives', track: 'Executive Leadership', level: 'Executive', mode: 'In-person', overview: 'Equip executives to understand cyber risk and lead with confidence.' },
-    { id: '13', slug: 'digital-risk-for-board-leaders', title: 'Digital Risk', subtitle: 'for Board Leaders', track: 'Executive Leadership', level: 'Executive', mode: 'In-person', overview: 'Support boards in navigating digital risk and governance obligations.' },
-    { id: '14', slug: 'technology-governance-leadership', title: 'Technology Governance', subtitle: '& Leadership', track: 'Executive Leadership', level: 'Executive', mode: 'Hybrid', overview: 'Build executive capability around technology governance and leadership decision-making.' },
+    { id: '1', slug: 'iso-iec-27001-foundation', title: 'ISO/IEC 27001', subtitle: 'Foundation', track: 'Cybersecurity', level: 'Foundation', deliveryMode: 'Self-paced', overview: 'Build practical competence across the fundamentals of information security management.' },
+    { id: '2', slug: 'iso-iec-27001-lead-implementer', title: 'ISO/IEC 27001', subtitle: 'Lead Implementer', track: 'Cybersecurity', level: 'Advanced', deliveryMode: 'Hybrid', overview: 'Advance into implementation planning and operational delivery for ISO 27001.' },
+    { id: '3', slug: 'iso-iec-27001-lead-auditor', title: 'ISO/IEC 27001', subtitle: 'Lead Auditor', track: 'Cybersecurity', level: 'Advanced', deliveryMode: 'Virtual', overview: 'Develop the knowledge to audit and assess information security management systems.' },
+    { id: '4', slug: 'cybersecurity-fundamentals', title: 'Cybersecurity', subtitle: 'Fundamentals', track: 'Cybersecurity', level: 'Foundation', deliveryMode: 'Self-paced', overview: 'A practical introduction to an evolving security landscape and threat awareness.' },
+    { id: '5', slug: 'enterprise-risk-management', title: 'Enterprise Risk', subtitle: 'Management', track: 'GRC', level: 'Professional', deliveryMode: 'Virtual', overview: 'Apply structured approaches to enterprise risk identification and management.' },
+    { id: '6', slug: 'iso-31000-risk-management', title: 'ISO 31000', subtitle: 'Risk Management', track: 'GRC', level: 'Professional', deliveryMode: 'Hybrid', overview: 'Develop confidence in governance and risk management using ISO 31000 principles.' },
+    { id: '7', slug: 'compliance-regulatory-governance', title: 'Compliance & Regulatory', subtitle: 'Governance', track: 'GRC', level: 'Professional', deliveryMode: 'Virtual', overview: 'Connect governance, compliance, and regulatory priorities into practical action.' },
+    { id: '8', slug: 'ai-governance-fundamentals', title: 'AI Governance', subtitle: 'Fundamentals', track: 'AI Governance', level: 'Foundation', deliveryMode: 'Self-paced', overview: 'Understand the ethical, legal, and governance dimensions of AI adoption.' },
+    { id: '9', slug: 'responsible-ai-leadership', title: 'Responsible AI', subtitle: 'Leadership', track: 'AI Governance', level: 'Executive', deliveryMode: 'Virtual', overview: 'Prepare leaders to guide responsible AI adoption across the organization.' },
+    { id: '10', slug: 'ai-risk-management', title: 'AI Risk', subtitle: 'Management', track: 'AI Governance', level: 'Professional', deliveryMode: 'Hybrid', overview: 'Translate AI risks into practical governance and control frameworks.' },
+    { id: '11', slug: 'iso-iec-42001-ai-management-systems', title: 'ISO/IEC 42001', subtitle: 'AI Management Systems', track: 'AI Governance', level: 'Advanced', deliveryMode: 'Virtual', overview: 'Develop capability in implementing AI Management Systems aligned to emerging standards.' },
+    { id: '12', slug: 'cybersecurity-for-executives', title: 'Cybersecurity', subtitle: 'for Executives', track: 'Executive Leadership', level: 'Executive', deliveryMode: 'In-person', overview: 'Equip executives to understand cyber risk and lead with confidence.' },
+    { id: '13', slug: 'digital-risk-for-board-leaders', title: 'Digital Risk', subtitle: 'for Board Leaders', track: 'Executive Leadership', level: 'Executive', deliveryMode: 'In-person', overview: 'Support boards in navigating digital risk and governance obligations.' },
+    { id: '14', slug: 'technology-governance-leadership', title: 'Technology Governance', subtitle: '& Leadership', track: 'Executive Leadership', level: 'Executive', deliveryMode: 'Hybrid', overview: 'Build executive capability around technology governance and leadership decision-making.' },
 ];
 
-export const pageData: Record<string, { kicker: string; title: string; description: string; blocks: Array<{ title: string; text: string; items?: string[] }> }> = {
+export const pageData: Record<string, PageContent> = {
     About: {
         kicker: 'ABOUT CDRL',
         title: 'Purpose-led. Practice-focused. Africa-ready.',
@@ -83,5 +82,3 @@ export const pageData: Record<string, { kicker: string; title: string; descripti
         ],
     },
 };
-
-export const navItems = ['Home', 'About', 'Training', 'Corporate Training', 'Advisory', 'Research', 'Events', 'Partnerships', 'Leadership', 'Contact'];

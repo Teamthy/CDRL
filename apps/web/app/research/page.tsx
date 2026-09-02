@@ -2,25 +2,19 @@ import SiteLayout from '../../components/SiteLayout';
 import PageHero from '../../components/sections/PageHero';
 import EditorialRows from '../../components/sections/EditorialRows';
 import CTASection from '../../components/sections/CTASection';
-import { getContent } from '../../lib/api';
+import { getPageContent } from '../../lib/data';
 import { pageData } from '../../lib/content';
 
 export const revalidate = 1800;
 
 export const metadata = {
     title: 'Research & Insights',
-    description:
-        'Analysis and practical commentary on cybersecurity, AI governance, and digital leadership for decision-makers across Africa.',
+    description: 'Analysis and practical commentary on cybersecurity, AI governance, and digital leadership for decision-makers across Africa.',
+    alternates: { canonical: '/research' },
 };
 
 export default async function ResearchPage() {
-    let content = pageData.Research;
-    try {
-        const remote = await getContent('Research');
-        if (remote) content = remote;
-    } catch {
-        /* fallback */
-    }
+    const content = (await getPageContent('Research')) ?? pageData['Research'];
 
     return (
         <SiteLayout>

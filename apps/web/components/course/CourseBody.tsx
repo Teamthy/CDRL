@@ -41,7 +41,7 @@ export default function CourseBody({ course }: { course: Course }) {
                         <span>DELIVERY</span>
                         <h4>Enrollment</h4>
                         <p>
-                            <MonitorPlay aria-hidden="true" /> {course.mode}
+                            <MonitorPlay aria-hidden="true" /> {course.deliveryMode}
                         </p>
                         <p>
                             <Clock3 aria-hidden="true" /> Learn on a flexible schedule

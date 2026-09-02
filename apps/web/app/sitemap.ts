@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
-import { courses } from '../lib/content';
+import { getCourses } from '../lib/data';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.WEB_URL || 'http://localhost:3000';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 const staticRoutes = [
     '/',
@@ -14,28 +14,29 @@ const staticRoutes = [
     '/partnerships',
     '/leadership',
     '/contact',
-    '/learning-plan',
     '/privacy',
     '/terms',
     '/accessibility',
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
-    const now = new Date();
-
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const staticEntries: MetadataRoute.Sitemap = staticRoutes.map((path) => ({
         url: `${SITE_URL}${path}`,
-        lastModified: now,
         changeFrequency: 'weekly',
         priority: path === '/' ? 1 : 0.7,
     }));
 
-    const courseEntries: MetadataRoute.Sitemap = courses.map((c) => ({
-        url: `${SITE_URL}/training/${c.slug}`,
-        lastModified: now,
-        changeFrequency: 'monthly',
-        priority: 0.6,
-    }));
+    let courseEntries: MetadataRoute.Sitemap = [];
+    try {
+        const courses = await getCourses();
+        courseEntries = courses.map((c) => ({
+            url: `${SITE_URL}/training/${c.slug}`,
+            changeFrequency: 'monthly',
+            priority: 0.6,
+        }));
+    } catch {
+        /* courses are additive — never fail the sitemap */
+    }
 
     return [...staticEntries, ...courseEntries];
 }

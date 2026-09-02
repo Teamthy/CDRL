@@ -6,6 +6,8 @@ import CTASection from '../../components/sections/CTASection';
 export const metadata = {
     title: 'Accessibility',
     description: 'Our commitment to accessible, inclusive learning experiences at CDRL.',
+
+    alternates: { canonical: '/accessibility' },
 };
 
 const sections = [
