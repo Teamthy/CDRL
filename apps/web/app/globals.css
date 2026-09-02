@@ -806,11 +806,7 @@ section.course-body {
   color: var(--cdrl-text-dark);
   padding: 80px 0 100px;
 }
-.course-body .wrap {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 80px;
-}
+/* legacy two-col rule removed in patch-39 — .course-body-grid owns layout */
 .course-body h2 {
   font-size: 34px; color: var(--cdrl-text-dark);
 }
@@ -1917,10 +1913,12 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 /* In-page TOC */
 .course-body-grid {
     display: grid;
-    grid-template-columns: 220px 1fr 340px;
-    gap: 32px;
+    grid-template-columns: 240px minmax(0, 680px) 340px;
+    gap: 44px;
     align-items: start;
+    justify-content: start;
 }
+.course-main-col { max-width: 680px; }
 @media (max-width: 1180px) { .course-body-grid { grid-template-columns: 1fr 340px; } .course-toc-wrap { display: none; } }
 @media (max-width: 880px) { .course-body-grid { grid-template-columns: 1fr; } }
 .course-toc {
@@ -2377,3 +2375,37 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 
 /* PECB parity touch: trust-band divider under the white section */
 .cat-launch { background: var(--cdrl-peach); }
+
+/* ── patch-39: contrast pins on dark-band cards & body-column layouts ── */
+.career-outcomes .kicker, .career-outcomes h2, .career-outcomes p { color: var(--cdrl-text-dark); }
+.outcome-card strong { color: var(--cdrl-text-dark); }
+.outcome-card span { color: var(--cdrl-text-muted-light); }
+.role-pill { color: var(--cdrl-text-dark); }
+
+.course-actions .action-tile, .course-actions .action-tile strong, .course-actions .action-tile span { color: var(--cdrl-text-dark); }
+.course-actions .action-note { background: var(--cdrl-green); color: #fff; }
+.course-actions .action-note strong, .course-actions .action-note span { color: #fff; }
+
+.related-rail h2, .related-rail .kicker { color: var(--cdrl-text-dark); }
+.related-card strong { color: var(--cdrl-text-dark); }
+.related-track-label { color: var(--cdrl-text-muted-light); }
+.related-go { color: var(--cdrl-green); }
+
+.waitlist, .waitlist span { color: var(--cdrl-text-dark); }
+
+/* sticky fact rail filling the left void */
+.toc-fact-card {
+    margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--cdrl-line,#d9d2c4);
+    font-size: 13px;
+}
+.toc-fact-kicker { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cdrl-text-muted-light); font-weight: 700; }
+.toc-fact-card dl { margin: 10px 0 16px; display: grid; gap: 7px; }
+.toc-fact-card dl > div { display: flex; justify-content: space-between; gap: 10px; }
+.toc-fact-card dt { color: var(--cdrl-text-muted-light); }
+.toc-fact-card dd { margin: 0; font-weight: 600; color: var(--cdrl-text-dark); text-align: right; }
+.toc-fact-cta {
+    display: inline-flex; padding: 9px 16px; border-radius: 999px;
+    background: var(--cdrl-deep-green); color: #fff; font-weight: 600; text-decoration: none; font-size: 13px;
+}
+.toc-fact-cta:hover { background: var(--cdrl-green); }
+@media (max-width: 1180px) { .toc-fact-card { display: none; } }

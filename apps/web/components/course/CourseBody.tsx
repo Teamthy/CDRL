@@ -58,6 +58,18 @@ export default function CourseBody({ course }: { course: Course }) {
             <div className="wrap course-body-grid">
                 <Reveal className="course-toc-wrap">
                     <CourseToc course={course} />
+                    <aside className="toc-fact-card" aria-label="Programme summary">
+                        <span className="toc-fact-kicker">AT A GLANCE</span>
+                        <dl>
+                            <div><dt>Level</dt><dd>{course.level}</dd></div>
+                            <div><dt>Duration</dt><dd>{meta.days}</dd></div>
+                            <div><dt>Exam</dt><dd>{meta.exam}</dd></div>
+                            <div><dt>Credits</dt><dd>{meta.cpd}</dd></div>
+                            <div><dt>Delivery</dt><dd>{course.deliveryMode}</dd></div>
+                            <div><dt>Track</dt><dd>{course.track}</dd></div>
+                        </dl>
+                        <a href="#enrol" className="toc-fact-cta">Apply for this training</a>
+                    </aside>
                 </Reveal>
                 <Reveal className="course-main-col">
                     <div>
