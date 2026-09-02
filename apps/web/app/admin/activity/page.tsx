@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Activity, CircleSlash, RefreshCw } from 'lucide-react';
+import EmptyArt from '../../../components/admin/EmptyArt';
 import { adminFetch, UnauthorizedError, type ListResponse } from '../../../lib/adminClient';
 
 interface AuditRow {
@@ -40,11 +41,19 @@ export default function ActivityPage() {
     }, []);
     const [filter, setFilter] = useState('');
 
-    const shown = rows?.filter((r) =>
-        filter.trim()
-            ? `${r.summary} ${r.resource} ${r.actor} ${r.action}`.toLowerCase().includes(filter.trim().toLowerCase())
-            : true,
+    const [actionFilter, setActionFilter] = useState<'all' | 'create' | 'update' | 'delete'>('all');
+
+    const shown = rows?.filter(
+        (r) =>
+            (actionFilter === 'all' || r.action === actionFilter) &&
+            (filter.trim()
+                ? `${r.summary} ${r.resource} ${r.actor} ${r.action}`.toLowerCase().includes(filter.trim().toLowerCase())
+                : true),
     );
+
+    // patch-46: action counts strip
+    const counts = { all: rows?.length ?? 0 };
+    if (rows) for (const r of rows) counts[r.action as keyof typeof counts] = (counts[r.action as keyof typeof counts] ?? 0) + 1;
 
     return (
         <div className="admin-page">
@@ -69,6 +78,20 @@ export default function ActivityPage() {
                         <RefreshCw />
                     </button>
                 </div>
+                <div className="admin-action-chips" role="tablist" aria-label="Filter by action type">
+                    {(['all', 'create', 'update', 'delete'] as const).map((a) => (
+                        <button
+                            key={a}
+                            role="tab"
+                            aria-selected={actionFilter === a}
+                            className={`admin-chip ${actionFilter === a ? 'on' : ''}`}
+                            onClick={() => setActionFilter(a)}
+                        >
+                            {a}
+                            <span className="admin-chip-count">{(counts as Record<string, number>)[a] ?? 0}</span>
+                        </button>
+                    ))}
+                </div>
             </header>
 
             {error && <p className="admin-error" role="alert">{error}</p>}
@@ -76,7 +99,9 @@ export default function ActivityPage() {
             {rows === null ? (
                 <p className="admin-sub"><Activity aria-hidden="true" /> Loading activity…</p>
             ) : rows.length === 0 ? (
-                <p className="admin-sub"><CircleSlash aria-hidden="true" /> No activity recorded yet.</p>
+                <EmptyArt icon={Activity} title="Nothing yet" hint="Console creates, updates, and deletes land here once they happen — by action type, actor, and target." />
+            ) : shown && shown.length === 0 ? (
+                <p className="admin-sub"><CircleSlash aria-hidden="true" /> No {actionFilter} events match that filter.</p>
             ) : (
                 <div className="audit-table">
                     <div className="audit-tr audit-th">

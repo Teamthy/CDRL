@@ -134,6 +134,7 @@ model LmsUser {
   role         String       @default("student")
   status       String       @default("active")
   passwordHash String?
+  onboardedAt  DateTime?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   enrollments  Enrollment[] @relation("StudentEnrollments")

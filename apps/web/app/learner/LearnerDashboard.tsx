@@ -30,6 +30,10 @@ export default function LearnerDashboard() {
     useEffect(() => {
         learnerMe()
             .then((me) => {
+                if (!me.user.onboardedAt) {
+                    router.replace('/learner/onboarding');
+                    return;
+                }
                 setData(me);
                 if (me.user.role === 'tutor') {
                     tutorEnrollments().then(setTutorRows).catch(() => undefined);

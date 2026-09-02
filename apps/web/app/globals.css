@@ -2573,3 +2573,39 @@ button.admin-btn, .admin-pagination button { transition: border-color 140ms ease
 .admin-empty-art > svg:last-child { position: absolute; inset: 0; margin: auto; width: 34px; height: 34px; color: var(--cdrl-green); }
 .admin-empty strong { display: block; color: var(--cdrl-text-light); font-size: 16px; margin-bottom: 6px; }
 .admin-empty p { color: var(--cdrl-text-muted-light); font-size: 13px; max-width: 300px; margin: 0 auto; }
+
+/* ── patch-46: activity action chips + onboarding flow + contrast sweep ── */
+.admin-action-chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.admin-chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+    border: 1px solid var(--cdrl-border-dark); background: none; color: var(--cdrl-text-muted-light); cursor: pointer;
+}
+.admin-chip:hover { color: var(--cdrl-text-light); border-color: var(--cdrl-green); }
+.admin-chip.on { background: var(--cdrl-green); border-color: var(--cdrl-green); color: #08240f; }
+.admin-chip.on .admin-chip-count { color: #013b1e; }
+.admin-chip-count { font-size: 11px; opacity: 0.9; }
+
+/* onboarding */
+.onboard-card {
+    background: #fff; border: 1px solid var(--cdrl-line,#d9d2c4); border-radius: 20px; padding: 40px;
+    display: grid; gap: 18px;
+}
+.onboard-card .kicker { color: var(--cdrl-text-muted-light); }
+.onboard-card h1 { color: var(--cdrl-text-dark); font-size: clamp(24px, 3.2vw, 34px); margin: 0; }
+.onboard-dots { list-style: none; display: flex; gap: 8px; margin: 0; padding: 0; }
+.onboard-dots li { width: 8px; height: 8px; border-radius: 50%; background: var(--cdrl-line,#d9d2c4); }
+.onboard-dots li.on { width: 28px; border-radius: 999px; background: var(--cdrl-green); }
+.onboard-dots li.done { background: var(--cdrl-green); opacity: 0.4; }
+.onboard-step { display: grid; gap: 10px; }
+.onboard-step svg { width: 36px; height: 36px; color: var(--cdrl-green); }
+.onboard-step h2 { margin: 0; color: var(--cdrl-text-dark); font-size: 20px; }
+.onboard-step p { color: var(--cdrl-text-muted-light); line-height: 1.6; max-width: 62ch; }
+.onboard-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* contrast sweep — pins for the combos users reported */
+.auth-card, .auth-card h1, .auth-sub, .auth-card label { color: var(--cdrl-text-dark); }
+.admin-mailto { color: var(--cdrl-green); }
+.module-list .learn-card, .module-list .module-title { color: var(--cdrl-text-dark); }
+.admin-detail-meta span { color: var(--cdrl-text-muted-light); }
+.status-pill { color: var(--cdrl-deep-green); }

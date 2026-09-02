@@ -451,6 +451,45 @@ adminRouter.patch(
     }),
 );
 
+adminRouter.post(
+    '/applications/:id/admit',
+    ah(async (req, res) => {
+        const app2 = await prisma.application.findUnique({ where: { id: req.params.id } });
+        if (!app2) return res.status(404).json({ message: 'Application not found' });
+        if (!app2.courseSlug) return res.status(400).json({ message: 'Application has no course attached' });
+        const course = await prisma.course.findUnique({ where: { slug: app2.courseSlug } });
+        if (!course) return res.status(404).json({ message: `No course with slug "${app2.courseSlug}"` });
+
+        // find-or-create the learner account (passwordless; they claim it via email)
+        const email = app2.email.toLowerCase();
+        const student =
+            (await prisma.lmsUser.findUnique({ where: { email } })) ??
+            (await prisma.lmsUser.create({
+                data: { email, name: app2.name || email.split('@')[0], role: 'student' },
+            }));
+
+        let enrollment;
+        try {
+            enrollment = await prisma.enrollment.create({
+                data: { courseId: course.id, studentId: student.id, status: 'active', progress: 0 },
+            });
+        } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+                return res.status(409).json({ message: 'Student already enrolled in this course' });
+            }
+            throw err;
+        }
+
+        const updated = await prisma.application.update({
+            where: { id: app2.id },
+            data: { status: 'enrolled' },
+        });
+        await audit(req, 'update', 'application', app2.id, `Admitted ${student.name} → ${course.title}`);
+        logger.info({ appId: app2.id, studentId: student.id }, 'application admitted');
+        return res.status(201).json({ application: updated, enrollment, student: { id: student.id, email: student.email } });
+    }),
+);
+
 adminRouter.get(
     '/lms/enrollments',
     ah(async (_req, res) => {

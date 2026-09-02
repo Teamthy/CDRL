@@ -255,3 +255,30 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
 
 Auth stack pre-existed (12h access token in localStorage + rotating HttpOnly refresh
 cookie with reuse-detection) — this fills the comprehension/profile gap.
+
+## Patch-46 — Admission pipeline, robust activity, learner onboarding (2026-09-02)
+
+### Admin — admission (the missing piece)
+- ✅ **`POST /admin/applications/:id/admit`** — one action admitting an application:
+  find-or-create the LmsUser (passwordless claim flow), create the Enrollment (active,
+  0% progress), flip the application to `enrolled`, and write an audit-log line
+- ✅ Applications detail drawer gains a green **Admit & enroll** button next to Save
+  (visible when a course is attached and not yet enrolled); double-click guarded
+
+### Admin — Activity page
+- ✅ **Action-type chips** (All/Create/Update/Delete) with live counts stacked with
+  the text search, so you can filter on either or both axes
+- ✅ Empty state uses the shared EmptyArt illustration
+- ✅ Recent-events text-search and refresh pattern kept (same API)
+
+### Learner — onboarding
+- ✅ **First-run onboarding flow** at `/learner/onboarding` — 3-step carousel (account
+  live → how modules work → how to reach admissions), step dots, "Finish — open my
+  dashboard" CTA, marks the server-side `onboardedAt` flag
+- ✅ Learner dashboard redirects first-timers to onboarding; onboarding page redirects
+  returners back to dashboard
+- ✅ Prisma `LmsUser.onboardedAt` + migration `20260902170000_learner_onboarding`
+
+### Contrast sweep
+- ✅ auth/learner surfaces pinned dark (`.auth-card`, `.auth-sub`, learn-list cards)
+- ✅ `.admin-mailto`, `.admin-detail-meta`, `.status-pill` pinned

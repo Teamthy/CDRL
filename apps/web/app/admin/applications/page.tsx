@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronDown, GraduationCap, Inbox, Mail, Save } from 'lucide-react';
+import { ChevronDown, GraduationCap, Inbox, Mail, Save, UserCheck } from 'lucide-react';
 import EmptyArt from '../../../components/admin/EmptyArt';
 import StatusBadge from '../../../components/admin/StatusBadge';
 import { adminFetch, UnauthorizedError, type ListResponse } from '../../../lib/adminClient';
@@ -55,6 +55,21 @@ export default function ApplicationsPage() {
     function openRow(a: Application) {
         setOpenId((cur) => (cur === a.id ? null : a.id));
         setDrafts((d) => ({ ...d, [a.id]: { status: a.status, notes: a.notes ?? '' } }));
+    }
+
+    function drainHit(a: Application) {
+        return savingId === a.id || !a.courseSlug;
+    }
+
+    async function admit(a: Application) {
+        if (!a.courseSlug || !a.status || (a.status === 'enrolled')) return;
+        try {
+            await adminFetch(`/admin/applications/${a.id}/admit`, { method: 'POST' });
+            setNotice(`Admitted: ${a.name} → ${a.courseSlug} (enrollment created; student sets password on first sign-in)`);
+            await reload();
+        } catch (err) {
+            if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
+        }
     }
 
     async function save(a: Application) {
@@ -161,6 +176,18 @@ export default function ApplicationsPage() {
                                                 }
                                             />
                                         </label>
+                                        {a.courseSlug && a.status !== 'enrolled' && (
+                                            <button
+                                                type="button"
+                                                className="admin-save admin-admit"
+                                                disabled={drainHit(a)}
+                                                onClick={() => void admit(a)}
+                                                title="Creates the learner account (if new) and enrols them on the attached course"
+                                            >
+                                                <UserCheck />
+                                                Admit &amp; enroll
+                                            </button>
+                                        )}
                                         <button type="button" className="admin-save" disabled={savingId === a.id} onClick={() => void save(a)}>
                                             <Save />
                                             {savingId === a.id ? 'Saving…' : 'Save'}

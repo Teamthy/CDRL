@@ -14,6 +14,7 @@ export interface LearnerUser {
     name: string;
     email: string;
     role: string;
+    onboardedAt?: string | null;
 }
 
 export interface LearnerEnrollment {

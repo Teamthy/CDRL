@@ -117,8 +117,8 @@ async function consumeRate(req: Request, res: Response): Promise<boolean> {
 
 export const learnerRouter = Router();
 
-function publicUser(u: { id: string; name: string; email: string; role: string }) {
-    return { id: u.id, name: u.name, email: u.email, role: u.role };
+function publicUser(u: { id: string; name: string; email: string; role: string; onboardedAt?: Date | null }) {
+    return { id: u.id, name: u.name, email: u.email, role: u.role, onboardedAt: u.onboardedAt ?? null };
 }
 
 // POST /signup — create a student account, or claim an admin-created one.
@@ -239,6 +239,19 @@ learnerRouter.get(
                 updatedAt: e.updatedAt,
             })),
         });
+    }),
+);
+
+// POST /me/complete-onboarding — flips the one-time marker; onboarding UI on web uses it.
+learnerRouter.post(
+    '/me/complete-onboarding',
+    requireLearner,
+    ah(async (_req, res) => {
+        const user = await prisma.lmsUser.update({
+            where: { id: res.locals.learnerUserId as string },
+            data: { onboardedAt: new Date() },
+        });
+        return res.json({ ok: true, onboardedAt: user.onboardedAt });
     }),
 );
 
