@@ -45,16 +45,38 @@ export default function Header({ initialCount = 0 }: { initialCount?: number }) 
                     </Link>
                     <nav className="header-nav" aria-label="Primary navigation">
                         {navigationLinks.map((item) => {
-                            const active = pathname === item.href;
-                            const isTraining = item.label === 'Training';
+                            const active =
+                                pathname === item.href ||
+                                (item.children?.some((child) => child.href === pathname) ?? false);
+                            if (item.children) {
+                                return (
+                                    <div key={item.href} className="has-dropdown">
+                                        <Link
+                                            href={item.href}
+                                            className={`with-drop ${active ? 'active' : ''}`.trim()}
+                                            aria-haspopup="true"
+                                        >
+                                            {item.label}
+                                            <ChevronDown />
+                                        </Link>
+                                        <div className="dropdown" role="menu">
+                                            {item.children.map((child) => (
+                                                <Link
+                                                    key={child.href}
+                                                    href={child.href}
+                                                    role="menuitem"
+                                                    className={pathname === child.href ? 'active' : ''}
+                                                >
+                                                    {child.label}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            }
                             return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={`${active ? 'active' : ''} ${isTraining ? 'with-drop' : ''}`.trim()}
-                                >
+                                <Link key={item.href} href={item.href} className={active ? 'active' : ''}>
                                     {item.label}
-                                    {isTraining && <ChevronDown />}
                                 </Link>
                             );
                         })}

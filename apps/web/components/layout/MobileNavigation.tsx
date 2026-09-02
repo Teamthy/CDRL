@@ -32,18 +32,32 @@ export default function MobileNavigation({ open, onClose }: Props) {
         <div id="mobile-navigation" className="mobile-nav" role="dialog" aria-modal="true" aria-label="Mobile navigation">
             <div className="wrap">
                 {navigationLinks.map((item, i) => {
-                    const active = pathname === item.href;
+                    const active =
+                        pathname === item.href ||
+                        (item.children?.some((child) => child.href === pathname) ?? false);
                     return (
-                        <Link
-                            key={item.href}
-                            ref={i === 0 ? firstLinkRef : undefined}
-                            href={item.href}
-                            className={active ? 'active' : ''}
-                            onClick={onClose}
-                        >
-                            <span>{item.label}</span>
-                            <ArrowRight />
-                        </Link>
+                        <div key={item.href} className="mobile-nav-group">
+                            <Link
+                                ref={i === 0 ? firstLinkRef : undefined}
+                                href={item.href}
+                                className={active ? 'active' : ''}
+                                onClick={onClose}
+                            >
+                                <span>{item.label}</span>
+                                <ArrowRight />
+                            </Link>
+                            {item.children?.map((child) => (
+                                <Link
+                                    key={child.href}
+                                    href={child.href}
+                                    className={`mobile-sub ${pathname === child.href ? 'active' : ''}`.trim()}
+                                    onClick={onClose}
+                                >
+                                    <span>{child.label}</span>
+                                    <ArrowRight />
+                                </Link>
+                            ))}
+                        </div>
                     );
                 })}
             </div>
