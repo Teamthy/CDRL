@@ -1,6 +1,6 @@
 'use client';
 
-import { Checkbox, TextArea, TextInput } from './fields';
+import { Checkbox, Select, TextArea, TextInput } from './fields';
 
 /** kebab-case helper for slugs (runs while the slug field is untouched). */
 export function kebab(s: string): string {
@@ -14,6 +14,29 @@ function isoToInput(iso: string | null | undefined): string {
     if (!iso) return '';
     return iso.slice(0, 16);
 }
+
+// ── Brand-consistent option sets (patch-32 console parity) ───────────────────
+const TRACKS = [
+    'Information Security',
+    'Cybersecurity Management',
+    'Technical Cybersecurity',
+    'Continuity & Resilience',
+    'Privacy & Data Protection',
+    'Artificial Intelligence',
+    'Digital Transformation',
+    'Governance, Risk & Compliance',
+    'Quality & Management',
+    'Health & Safety',
+    'Sustainability',
+] as const;
+const LEVELS = ['Foundation', 'Professional', 'Advanced', 'Executive'] as const;
+const DELIVERY_MODES = [
+    'Self-paced',
+    'Virtual / Live Online',
+    'Virtual / Hybrid',
+    'In-person (Lagos)',
+    'In-person (Client site)',
+] as const;
 
 // ── Course ──────────────────────────────────────────────────────────────────
 
@@ -79,10 +102,10 @@ export function CourseFields({
                 placeholder="iso-iec-27001-lead-auditor"
                 onChange={(v) => setDraft({ ...draft, slug: v, slugTouched: true })}
             />
-            <TextInput label="Subtitle" value={draft.subtitle} required wide onChange={(v) => setDraft({ ...draft, subtitle: v })} />
-            <TextInput label="Track (e.g. Cybersecurity, GRC)" value={draft.track} required onChange={(v) => setDraft({ ...draft, track: v })} />
-            <TextInput label="Level (e.g. Foundation)" value={draft.level} required onChange={(v) => setDraft({ ...draft, level: v })} />
-            <TextInput label="Delivery mode" value={draft.deliveryMode} required onChange={(v) => setDraft({ ...draft, deliveryMode: v })} />
+            <TextInput label="Subtitle" value={draft.subtitle} required wide placeholder="e.g. Lead Implementer (PECB Certified)" hint="The credential phrase shown under the title" onChange={(v) => setDraft({ ...draft, subtitle: v })} />
+            <Select label="Track" value={draft.track} required placeholder="Choose a PECB category…" options={[...TRACKS]} hint="Drives the /training filter chips" onChange={(v) => setDraft({ ...draft, track: v })} />
+            <Select label="Level" value={draft.level} required placeholder="Select level…" options={[...LEVELS]} onChange={(v) => setDraft({ ...draft, level: v })} />
+            <Select label="Delivery mode" value={draft.deliveryMode} required placeholder="Pick how the course runs…" options={[...DELIVERY_MODES]} onChange={(v) => setDraft({ ...draft, deliveryMode: v })} />
             <TextInput
                 label="Price (₦ — blank = application-based)"
                 type="number"
@@ -91,8 +114,14 @@ export function CourseFields({
                 onChange={(v) => setDraft({ ...draft, priceNaira: v })}
             />
             <TextInput label="Sort order" type="number" value={draft.sortOrder} onChange={(v) => setDraft({ ...draft, sortOrder: v })} />
-            <TextArea label="Overview" value={draft.overview} required rows={5} onChange={(v) => setDraft({ ...draft, overview: v })} />
-            <TextArea label="Long-form details (markdown-lite — shown on the course page)" value={draft.details} rows={10} onChange={(v) => setDraft({ ...draft, details: v })} />
+            <TextArea label="Overview" value={draft.overview} required rows={5} placeholder="One sharp sentence on what the participant gets. PECB courses start with: A PECB Certified course delivered by Ykay Consulting Hub." onChange={(v) => setDraft({ ...draft, overview: v })} />
+            <TextArea label="Long-form details (markdown-lite — shown on the course page)" value={draft.details} rows={10} hint="Supports ## headings, - bullets, **bold**, [label](url)" placeholder="## About this training
+
+…
+
+## Who should attend
+
+- …" onChange={(v) => setDraft({ ...draft, details: v })} />
             <Checkbox label="Published (visible on the site)" checked={draft.published} onChange={(v) => setDraft({ ...draft, published: v })} />
         </>
     );

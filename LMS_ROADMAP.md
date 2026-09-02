@@ -155,3 +155,16 @@ Run once after the patch-15 migration so LMS enrollments can resolve course slug
 - ✅ **Auto-scrolling "Related programmes" rail** on course pages — same family
   first, then same track; pause-on-hover + manual controls.
 - ✅ **Corporate quote form** on /corporate-training (posts to the CRM).
+
+
+## Patch-32 — Console brand consistency + robustness (2026-09-02)
+
+- ✅ **Shared form toolkit expanded** (`components/admin/fields.tsx`): Select dropdown
+  (style-aligned), hint text under fields, Field hint/error shelf, TextInput hint prop.
+- ✅ **Courses editor**: Track/Level/Delivery mode become dropdowns of canonical
+  choices (PECB categories, level ladder, delivery modes); placeholders + hints
+  across every input; markdown-lite help on the long-form details box.
+- ✅ **ResourceManager robustness**: in-table text filter with typeahead search
+  input; `total` items count in the header; notices self-dismiss after 4.5s;
+  Escape closes the editor; unsaved-draft confirmation guard before closing;
+  double-click delete already guarded by arm/confirm.

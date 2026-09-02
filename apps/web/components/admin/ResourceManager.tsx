@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { adminFetch, UnauthorizedError, type ListResponse } from '../../lib/adminClient';
 
 /** Two-click delete: first tap arm it, second confirms. */
@@ -64,6 +64,35 @@ export default function ResourceManager<T, D>({
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
+    const [search, setSearch] = useState('');
+
+    // Notices self-clear so stale confirmations never linger.
+    useEffect(() => {
+        if (!notice) return;
+        const t = setTimeout(() => setNotice(null), 4500);
+        return () => clearTimeout(t);
+    }, [notice]);
+
+    const tryCloseEditor = useCallback(() => {
+        setEditing((cur) => {
+            if (!cur) return cur;
+            // Any non-empty text content counts as dirty input.
+            const dirty = Object.values(cur.draft as Record<string, unknown>).some(
+                (v) => typeof v === 'string' && v.trim().length > 0,
+            );
+            if (!dirty || window.confirm('Discard the unsaved changes to this draft?')) return null;
+            return cur;
+        });
+    }, []);
+
+    // Escape everywhere closes the editor panel (with the same dirty guard).
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') tryCloseEditor();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [tryCloseEditor]);
 
     const reload = useCallback(async () => {
         setError(null);
@@ -130,7 +159,7 @@ export default function ResourceManager<T, D>({
                 <section className="admin-editor-panel">
                     <div className="admin-editor-head">
                         <h2>{editing.id ? `Edit ${entityName}` : `New ${entityName}`}</h2>
-                        <button type="button" className="admin-icon-btn" onClick={() => setEditing(null)} aria-label="Cancel">
+                        <button type="button" className="admin-icon-btn" onClick={tryCloseEditor} aria-label="Cancel">
                             <X />
                         </button>
                     </div>
@@ -146,12 +175,27 @@ export default function ResourceManager<T, D>({
                             <button type="submit" className="admin-save" disabled={busy}>
                                 {busy ? 'Saving…' : editing.id ? 'Save changes' : `Create ${entityName}`}
                             </button>
-                            <button type="button" className="admin-ghost" onClick={() => setEditing(null)}>
+                            <button type="button" className="admin-ghost" onClick={tryCloseEditor}>
                                 Cancel
                             </button>
                         </div>
                     </form>
                 </section>
+            )}
+
+            {data && (
+                <div className="admin-toolbar">
+                    <div className="admin-search">
+                        <Search aria-hidden="true" />
+                        <input
+                            type="search"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={`Filter ${entityName.toLowerCase()}s…`}
+                            aria-label={`Filter ${entityName.toLowerCase()}s`}
+                        />
+                    </div>
+                </div>
             )}
 
             <div className="admin-table">
@@ -161,7 +205,13 @@ export default function ResourceManager<T, D>({
                     ))}
                     <span aria-hidden="true" />
                 </div>
-                {data?.items.map((item) => {
+                {data?.items
+                    .filter((item) =>
+                        search.trim()
+                            ? JSON.stringify(item).toLowerCase().includes(search.trim().toLowerCase())
+                            : true,
+                    )
+                    .map((item) => {
                     const id = idOf(item);
                     return (
                         <div className="admin-tr admin-tr-static admin-tr-crud" key={id}>
@@ -179,7 +229,7 @@ export default function ResourceManager<T, D>({
                             </span>
                         </div>
                     );
-                })}
+                    })}
                 {data && data.items.length === 0 && (
                     <p className="admin-empty">None yet — use “New {entityName}” above.</p>
                 )}
