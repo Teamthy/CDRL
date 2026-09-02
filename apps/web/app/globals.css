@@ -2620,3 +2620,46 @@ button.admin-btn, .admin-pagination button { transition: border-color 140ms ease
 .audit-table .audit-delete { background: rgba(208,58,58,.12); color: #c0392b; }
 .admin-chip-count { font-variant-numeric: tabular-nums; }
 .audit-tr small.admin-mono { font-family: ui-monospace, Consolas, monospace; color: var(--cdrl-text-muted-light); }
+
+/* ── patch-48: partnerships portfolio + dedupe CTA + global contrast pins ── */
+
+/* PECB portfolio cards, image-backed */
+.pecb-course-card-img {
+    position: relative; min-height: 170px; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--cdrl-line,#d9d2c4); display: flex; align-items: flex-end;
+    text-decoration: none; isolation: isolate;
+}
+.pecb-card-bg {
+    position: absolute; inset: 0; z-index: -2;
+    background-size: cover; background-position: center 30%; filter: saturate(0.85);
+    transition: transform .35s ease;
+}
+.pecb-course-card-img:hover .pecb-card-bg { transform: scale(1.04); }
+.pecb-course-card-img::after {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(180deg, rgba(10,16,14,.18) 20%, rgba(10,16,14,.86) 100%);
+}
+.pecb-card-content { padding: 18px 18px 16px; display: grid; gap: 3px; }
+.pecb-course-meta {
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #a9e58a; font-weight: 700;
+}
+.pecb-course-title { color: #fff; font-weight: 700; font-size: 16px; line-height: 1.25; }
+.pecb-course-sub { color: rgba(255,255,255,.78); font-size: 12.5px; }
+
+/* Colour pins for the corporate quote card (was washed-out beige) */
+.corp-quote { color: var(--cdrl-text-dark); }
+.corp-quote span.kicker, .corp-quote .kicker { color: var(--cdrl-green); }
+.corp-quote > p, .corp-quote-note { color: var(--cdrl-text-muted-light); }
+.corp-quote label { color: var(--cdrl-text-dark); font-size: 13px; font-weight: 600; }
+.corp-quote input, .corp-quote select, .corp-quote textarea { color: var(--cdrl-text-dark); }
+.corp-quote input::placeholder, .corp-quote textarea::placeholder { color: var(--cdrl-text-muted-light); opacity: .9; }
+
+/* portfolio "Showing" count */
+.pecb-count { color: var(--cdrl-text-muted-light); font-size: 13px; margin: 12px 0 0; }
+.pecb-count strong { color: var(--cdrl-text-dark); }
+
+/* global contrast pin pass for remaining washed combos */
+.corp-side small, .auth-ghost.small, .hero-card small { color: var(--cdrl-text-dark); }
+.notice span, .notice a, .notice button { color: var(--cdrl-text-light); }
+.directory-empty span, .events-empty span { color: var(--cdrl-text-muted-light); }
