@@ -8,14 +8,14 @@ type Props = {
 };
 
 /**
- * CDRL brand lockup: SVG mark (identical to favicon) + wordmark.
+ * YKAY Consult brand lockup: SVG mark (identical to favicon) + wordmark.
  * The SVG is inlined so it inherits sizing and never needs a network round-trip.
  */
 export default function Logo({ dark = false, showDescriptor = true, size = 42 }: Props) {
     return (
         <span
             className={`brand ${dark ? 'dark' : ''}`}
-            aria-label="CDRL, Centre for Digital Risk and Leadership"
+            aria-label="YKAY Consult, Centre for Digital Risk and Leadership"
         >
             <span
                 className="brand-mark-svg"
@@ -32,7 +32,7 @@ export default function Logo({ dark = false, showDescriptor = true, size = 42 }:
                 </svg>
             </span>
             <span className="brand-title">
-                <strong>CDRL</strong>
+                <strong>YKAY CONSULT</strong>
                 {showDescriptor && <small>Centre for Digital Risk &amp; Leadership</small>}
             </span>
         </span>

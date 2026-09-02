@@ -1203,3 +1203,47 @@ footer.site-footer {
     .brand-title small { display: none; }
 }
 /* ═══ END POLISH OVERRIDES ═══════════════════════════ */
+
+/* ═══ HOME HERO MEDIA (background image carousel) ═══════════════════ */
+section.hero.hero-media { background: var(--cdrl-black); }
+
+.hero-carousel {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transform: scale(1.05);
+  transition: opacity 1500ms ease-in-out, transform 7000ms ease-out;
+}
+
+.hero-slide.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Dark gradient: keeps hero copy legible over any slide image */
+.hero-media-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.78) 42%,
+    rgba(0, 0, 0, 0.52) 100%
+  );
+}
+
+section.hero.hero-media .wrap { position: relative; z-index: 1; }
+section.hero.hero-media .hero-proof > div { border-left-color: rgba(112, 242, 80, 0.55); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide { transition: opacity 400ms ease-in-out; }
+}
+/* ═══ END HOME HERO MEDIA ══════════════════════════════════════════ */

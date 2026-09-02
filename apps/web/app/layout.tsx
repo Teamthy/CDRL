@@ -18,19 +18,19 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export const metadata: Metadata = {
     title: {
-        default: 'CDRL | Centre for Digital Risk & Leadership',
-        template: '%s | CDRL',
+        default: 'YKAY Consult | Centre for Digital Risk & Leadership',
+        template: '%s | YKAY Consult',
     },
     description:
-        'CDRL professional training in cybersecurity, governance, AI risk, and digital leadership certification across Africa.',
+        'YKAY Consult professional training in cybersecurity, governance, AI risk, and digital leadership certification across Africa.',
     metadataBase: new URL(siteUrl),
     alternates: { canonical: '/' },
     openGraph: {
-        title: 'CDRL | Centre for Digital Risk & Leadership',
+        title: 'YKAY Consult | Centre for Digital Risk & Leadership',
         description:
             'Professional training in cybersecurity, governance, AI risk, and digital leadership certification across Africa.',
         type: 'website',
-        siteName: 'CDRL',
+        siteName: 'YKAY Consult',
         url: siteUrl,
     },
     icons: {

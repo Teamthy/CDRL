@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { motionTokens } from '../../lib/motion/tokens';
+import HeroCarousel from './HeroCarousel';
 
 export default function HomeHero() {
     const reduce = useReducedMotion();
@@ -17,15 +18,17 @@ export default function HomeHero() {
             };
 
     return (
-        <section className="hero">
+        <section className="hero hero-media">
+            <HeroCarousel />
             <div className="wrap hero-grid">
                 <div className="hero-copy">
                     <motion.span className="eyebrow" {...fade(0.05)}>
-                        CENTRE FOR DIGITAL RISK &amp; LEADERSHIP
+                        YKAY CONSULT · CENTRE FOR DIGITAL RISK &amp; LEADERSHIP
                     </motion.span>
 
                     <motion.h1 {...fade(0.12)}>
-                        Advancing Trust in the <em>Digital Age.</em>
+                        Building Resilient Organizations Through Cybersecurity, AI Governance, Privacy,
+                        Business Continuity And ISO Management Systems.
                     </motion.h1>
 
                     <motion.p {...fade(0.2)}>
@@ -58,8 +61,6 @@ export default function HomeHero() {
                         </div>
                     </motion.div>
                 </div>
-
-
             </div>
         </section>
     );
