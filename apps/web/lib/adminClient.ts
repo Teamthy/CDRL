@@ -91,30 +91,41 @@ export interface AdminOverview {
     publishedPosts: number;
 }
 
-export interface CourseRow {
+export interface AdminCourse {
     id: string;
     slug: string;
     title: string;
+    subtitle: string;
     track: string;
     level: string;
+    deliveryMode: string;
+    overview: string;
     published: boolean;
+    sortOrder: number;
     updatedAt: string;
 }
 
-export interface EventRow {
+export interface AdminEvent {
     id: string;
     slug: string;
     title: string;
-    startsAt: string;
+    summary: string;
+    body: string | null;
     location: string | null;
+    startsAt: string;
+    endsAt: string | null;
+    registrationUrl: string | null;
     published: boolean;
 }
 
-export interface PostRow {
+export interface AdminPost {
     id: string;
     slug: string;
     title: string;
     category: string;
+    excerpt: string;
+    body: string;
+    coverImageUrl: string | null;
     published: boolean;
     publishedAt: string | null;
 }

@@ -1,15 +1,28 @@
 'use client';
 
-import ResourceList from '../../../components/admin/ResourceList';
-import type { EventRow } from '../../../lib/adminClient';
+import ResourceManager from '../../../components/admin/ResourceManager';
+import {
+    EventFields,
+    emptyEventDraft,
+    eventDraftFrom,
+    eventPayload,
+    type EventDraft,
+} from '../../../components/admin/editors';
+import type { AdminEvent } from '../../../lib/adminClient';
 
 export default function EventsAdminPage() {
     return (
-        <ResourceList<EventRow>
+        <ResourceManager<AdminEvent, EventDraft>
             title="Events"
-            description="Programmes, webinars, and cohort dates. Published events will appear on the public Events page."
+            entityName="event"
+            description="Programmes, webinars, and cohort dates. Published events will appear on the public Events page (wiring: Phase C)."
             endpoint="/admin/events"
             columns={['Event', 'Starts', 'Location', 'State']}
+            idOf={(e) => e.id}
+            emptyDraft={emptyEventDraft}
+            draftFrom={eventDraftFrom}
+            toPayload={eventPayload}
+            editor={(draft, setDraft, isNew) => <EventFields draft={draft} setDraft={setDraft} isNew={isNew} />}
             renderRow={(e) => (
                 <>
                     <span>
