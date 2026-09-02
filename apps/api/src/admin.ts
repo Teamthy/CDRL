@@ -1,11 +1,11 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { config } from './config.js';
+import { signScopedToken, verifyScopedToken } from './rbac.js';
 import { prisma } from './db.js';
 import { logger } from './logger.js';
 import {
@@ -45,22 +45,17 @@ const passwordHash = adminConfigured ? bcrypt.hashSync(config.ADMIN_PASSWORD as 
 const loginLimiter = new RateLimiterMemory({ points: 5, duration: 60 });
 
 export function signAdminToken(email: string): string {
-    return jwt.sign({ sub: email, role: 'admin' }, config.ADMIN_JWT_SECRET as string, { expiresIn: '12h' });
+    return signScopedToken('admin', email);
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     const header = req.headers.authorization ?? '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-    if (!token || !adminConfigured) {
+    const payload = token ? verifyScopedToken('admin', token) : null;
+    if (!payload || payload.role !== 'admin') {
         return res.status(401).json({ message: 'Unauthorized' });
     }
-    try {
-        const payload = jwt.verify(token, config.ADMIN_JWT_SECRET as string) as { role?: string };
-        if (payload.role !== 'admin') throw new Error('bad role');
-        return next();
-    } catch {
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
+    return next();
 }
 
 export const adminRouter = Router();

@@ -1704,3 +1704,8 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .recording-link { text-decoration: none; color: inherit; transition: border-color 0.15s ease; }
 .recording-link:hover { border-color: var(--cdrl-green-dark, #2f7d1f); }
 .recording-link > .learn-meta:last-child { color: var(--cdrl-green-dark, #2f7d1f); font-weight: 650; }
+
+/* ─── PATCH-23: RBAC — tutor grading zone ─────────────────────────────────── */
+.tutor-zone { display: grid; gap: 14px; margin-top: 10px; padding-top: 18px; border-top: 1px solid var(--cdrl-border-light, rgba(15,30,20,0.14)); }
+.tutor-controls { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.tutor-controls label { display: grid; gap: 4px; font-size: 11.5px; font-weight: 650; opacity: 0.85; }

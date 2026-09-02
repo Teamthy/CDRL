@@ -137,6 +137,46 @@ export class NotEnrolledError extends Error {
     }
 }
 
+export interface TutorEnrollment {
+    id: string;
+    status: string;
+    progress: number;
+    student: { name: string; email: string };
+    course: { title: string; slug: string; track: string };
+}
+
+/** Tutor surface: the caller's assigned enrollments (RBAC: tutor role). */
+export async function tutorEnrollments(): Promise<TutorEnrollment[]> {
+    const token = getLearnerToken();
+    if (!token) throw new LearnerUnauthorizedError();
+    const res = await fetch(`${API_BASE}/lms/tutor/enrollments`, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.status === 401 || res.status === 403) {
+        if (res.status === 401) clearLearnerToken();
+        throw new LearnerUnauthorizedError();
+    }
+    if (!res.ok) throw new Error(`Failed to load assigned enrollments (${res.status})`);
+    const body = (await res.json()) as { items: TutorEnrollment[] };
+    return body.items;
+}
+
+export async function tutorGrade(enrollmentId: string, patch: { progress?: number; status?: string }): Promise<void> {
+    const token = getLearnerToken();
+    if (!token) throw new LearnerUnauthorizedError();
+    const res = await fetch(`${API_BASE}/lms/tutor/enrollments/${encodeURIComponent(enrollmentId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(patch),
+    });
+    if (res.status === 401) {
+        clearLearnerToken();
+        throw new LearnerUnauthorizedError();
+    }
+    if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.message ?? `Could not save (${res.status})`);
+    }
+}
+
 /** Published modules for a course the learner is enrolled in. */
 export async function learnerCourseModules(slug: string): Promise<LearnerCourseView> {
     const token = getLearnerToken();

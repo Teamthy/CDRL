@@ -46,6 +46,9 @@ no phase breaks an earlier one.
 - ✅ Certificates: `/learner/<slug>/certificate` — printable, verification ID, print-to-PDF; unlocks when enrollment = completed (patch-21)
 - ✅ Session recordings area (patch-22): console → LMS → Recordings; enrollment-gated in the player; YouTube embeds vs link cards
 - ⏭ Remaining: PWA offline caching
+- ✅ RBAC (patch-23): one permission matrix + authenticate()/requirePermission(); JWTs carry iss/aud so
+  admin and learner tokens are mutually unreplayable; roles read from DB per-request; tutor grading
+  surface (own enrollments only, ownership enforced in the query itself); 401 vs 403 discipline
 - Hardening backlog: refresh-cookie rotation, argon2 policy review
 
 ## Phase 5 — Payments & PECB notes (PARTIAL, patch-20)

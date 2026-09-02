@@ -10,6 +10,7 @@ import { prisma } from './db.js';
 import { adminRouter } from './admin.js';
 import { learnerRouter } from './learnerAuth.js';
 import { paymentsRawBody, paymentsRouter, paymentsWebhook } from './payments.js';
+import { tutorRouter } from './tutor.js';
 import { logger } from './logger.js';
 import { applicationSchema, contactSchema, isValidSessionId, learningPlanItemSchema } from './validation.js';
 
@@ -376,6 +377,9 @@ app.use('/api/v1/learner', learnerRouter);
 
 // Payments (LMS Phase 5): initialize + verify (webhook is mounted above json middleware)
 app.use('/api/v1/payments', paymentsRouter);
+
+// Tutor surface (patch-23): scope-checked RBAC — tutors grade their own enrollments
+app.use('/api/v1/lms/tutor', tutorRouter);
 
 // ────────────────────────────────────────────────────────────────────────────
 // 404 + centralized JSON error handling (must be LAST)

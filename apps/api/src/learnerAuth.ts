@@ -8,6 +8,7 @@ import nodemailer from 'nodemailer';
 import { config, corsOrigins } from './config.js';
 import { prisma } from './db.js';
 import { logger } from './logger.js';
+import { JWT_ISSUER, signScopedToken, verifyScopedToken } from './rbac.js';
 import {
     learnerLoginSchema,
     learnerResetRequestSchema,
@@ -38,8 +39,8 @@ const authLimiter = new RateLimiterMemory({ points: 5, duration: 60 });
 // Compared against when the account doesn't exist so timing leaks nothing.
 const DUMMY_HASH = '$2b$10$9kH0w8Vz0YlW3Z1QzQ0G0O6b8Jb0nqQ0ZQ0ZQ0ZQ0ZQ0ZQ0ZQ0ZQ0W';
 
-export function signLearnerToken(userId: string): string {
-    return jwt.sign({ sub: userId, role: 'learner' }, learnerSecret as string, { expiresIn: '12h' });
+export function signLearnerToken(userId: string, role = 'learner'): string {
+    return signScopedToken('learner', userId, { role });
 }
 
 /** Fingerprint of the current password state — a reset token dies the moment
@@ -53,7 +54,7 @@ export function issueResetToken(user: { id: string; email: string; passwordHash:
     return jwt.sign(
         { sub: user.id, kind: 'reset', fp: resetFingerprint(user) },
         learnerSecret as string,
-        { expiresIn: '30m' },
+        { expiresIn: '30m', issuer: JWT_ISSUER, audience: 'password-reset' },
     );
 }
 
@@ -62,7 +63,10 @@ export function verifyResetToken(
     user: { id: string; email: string; passwordHash: string | null },
 ): boolean {
     try {
-        const payload = jwt.verify(token, learnerSecret as string) as { sub?: string; kind?: string; fp?: string };
+        const payload = jwt.verify(token, learnerSecret as string, {
+            issuer: JWT_ISSUER,
+            audience: 'password-reset',
+        }) as { sub?: string; kind?: string; fp?: string };
         return payload.kind === 'reset' && payload.sub === user.id && payload.fp === resetFingerprint(user);
     } catch {
         return false;
@@ -72,17 +76,12 @@ export function verifyResetToken(
 export function requireLearner(req: Request, res: Response, next: NextFunction) {
     const header = req.headers.authorization ?? '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-    if (!token || !learnerConfigured) {
-        return res.status(401).json({ message: 'Sign in first' });
+    const payload = token ? verifyScopedToken('learner', token) : null;
+    if (!payload?.sub) {
+        return res.status(401).json({ message: token ? 'Session expired — sign in again' : 'Sign in first' });
     }
-    try {
-        const payload = jwt.verify(token, learnerSecret as string) as { sub?: string; role?: string };
-        if (payload.role !== 'learner' || !payload.sub) throw new Error('bad role');
-        res.locals.learnerUserId = payload.sub;
-        return next();
-    } catch {
-        return res.status(401).json({ message: 'Session expired — sign in again' });
-    }
+    res.locals.learnerUserId = payload.sub;
+    return next();
 }
 
 const transporter: nodemailer.Transporter | null =
@@ -273,7 +272,10 @@ learnerRouter.post(
         // Verify signature/expiry first, then load the user the token names.
         let sub: string | null = null;
         try {
-            const payload = jwt.verify(parsed.data.token, learnerSecret as string) as { sub?: string; kind?: string };
+            const payload = jwt.verify(parsed.data.token, learnerSecret as string, {
+                issuer: JWT_ISSUER,
+                audience: 'password-reset',
+            }) as { sub?: string; kind?: string };
             if (payload.kind === 'reset' && payload.sub) sub = payload.sub;
         } catch {
             /* falls through to invalid-token 400 */
