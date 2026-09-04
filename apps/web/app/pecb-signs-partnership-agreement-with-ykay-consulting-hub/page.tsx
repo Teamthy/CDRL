@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import SiteLayout from '../../components/SiteLayout';
 import PageHero from '../../components/sections/PageHero';
 import Reveal from '../../components/motion/Reveal';
+import JsonLd from '../../components/JsonLd';
+import { newsArticleJsonLd, SITE_URL } from '../../lib/jsonld';
 import Link from 'next/link';
 
 const CANONICAL = '/pecb-signs-partnership-agreement-with-ykay-consulting-hub';
@@ -17,6 +19,16 @@ export const metadata: Metadata = {
 export default function PecpPressReleasePage() {
     return (
         <SiteLayout>
+            <JsonLd
+                data={newsArticleJsonLd({
+                    headline: 'PECB Signs a Partnership Agreement with Ykay Consulting Hub',
+                    description:
+                        'PECB, an ISO certification and training company, announced a partnership agreement with Ykay Consulting Hub to provide best practices of ISO standards in Nigeria.',
+                    datePublished: '2026-08-06T08:00:00+01:00',
+                    url: `${SITE_URL}${CANONICAL}`,
+                    image: `${SITE_URL}/assets/pecb-authorized-partner.jpg`,
+                })}
+            />
             <PageHero
                 eyebrow="PRESS RELEASE"
                 title="PECB Signs a Partnership Agreement with Ykay Consulting Hub"

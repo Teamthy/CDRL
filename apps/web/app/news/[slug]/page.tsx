@@ -5,6 +5,8 @@ import SiteLayout from '../../../components/SiteLayout';
 import PageHero from '../../../components/sections/PageHero';
 import CTASection from '../../../components/sections/CTASection';
 import { getPostBySlug } from '../../../lib/data';
+import JsonLd from '../../../components/JsonLd';
+import { newsArticleJsonLd, SITE_URL } from '../../../lib/jsonld';
 
 export const revalidate = 300;
 
@@ -32,6 +34,14 @@ export default async function PostPage({ params }: Props) {
 
     return (
         <SiteLayout>
+            <JsonLd
+                data={newsArticleJsonLd({
+                    headline: post.title,
+                    description: post.excerpt,
+                    datePublished: dateIso,
+                    url: `${SITE_URL}/news/${post.slug}`,
+                })}
+            />
             <PageHero eyebrow={post.category.toUpperCase()} title={post.title} description={`${dateLabel} · Ykay Consulting Hub`} />
             <article className="pr-article">
                 <div className="wrap">

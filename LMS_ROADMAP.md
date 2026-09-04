@@ -282,3 +282,12 @@ cookie with reuse-detection) — this fills the comprehension/profile gap.
 ### Contrast sweep
 - ✅ auth/learner surfaces pinned dark (`.auth-card`, `.auth-sub`, learn-list cards)
 - ✅ `.admin-mailto`, `.admin-detail-meta`, `.status-pill` pinned
+
+## Patch 49 — SEO foundation (structured data + PECB keywords)
+- ✅ JSON-LD structured data: `EducationalOrganization` + `WebSite` site-wide (layout),
+  `Course` schema on every `/training/[slug]` page (with NGN offer when priced),
+  `NewsArticle` on `/news/[slug]` and the PECB press release
+- ✅ Homepage metadata targets "PECB, Cybersecurity & AI Governance Training in Nigeria"
+- ✅ PECB course pages: meta description names the PECB partnership; internal-link
+  strip → press release + `/partnerships` portfolio (crawl paths for PECB queries)
+- ✅ No CSS / DB / API changes — render-layer only

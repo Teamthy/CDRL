@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import JsonLd from '../components/JsonLd';
+import { organizationJsonLd, websiteJsonLd } from '../lib/jsonld';
 import { DM_Sans, Manrope } from 'next/font/google';
 
 const dmSans = DM_Sans({
@@ -48,6 +50,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="en" className={`${dmSans.variable} ${manrope.variable}`}>
             <body>
+                <JsonLd data={organizationJsonLd()} />
+                <JsonLd data={websiteJsonLd()} />
                 <a href="#main-content" className="skip-link">
                     Skip to content
                 </a>
