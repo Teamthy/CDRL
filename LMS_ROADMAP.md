@@ -314,3 +314,11 @@ cookie with reuse-detection) — this fills the comprehension/profile gap.
 - ✅ sitemap.ts exports revalidate = 3600 — newly published posts/courses now
   enter the sitemap within an hour of publishing (no redeploy needed);
   previously the sitemap was baked at build time only
+
+## Patch 53 — flagship course-page enrichment (data migration)
+- ✅ Migration `20260905110000_enrich_flagship_courses`: 22 flagship PECB courses
+  (ISO 27001, 42001, 9001, 22301, GDPR+CDPO, DORA, Cybersecurity Mgmt, 4×AI)
+  gain family-specific `overview` (keyword-bearing meta) + full `details` bodies
+  (What is / Why it matters in Nigeria / Who should attend / What you will learn /
+  Getting started / Exam & certification) — replacing the generic synthesized
+  template with unique per-family content; idempotent UPDATEs
