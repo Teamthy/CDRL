@@ -12,6 +12,30 @@ export const revalidate = 300;
 
 type Props = { params: Promise<{ slug: string }> };
 
+const URL_RE = /(https?:\/\/[^\s)]+)/g;
+
+/** Plain-text paragraph renderer that turns bare URLs into links
+ *  (internal links stay same-tab; external open safely in a new tab). */
+function ParagraphWithLinks({ text }: { text: string }) {
+    return (
+        <p>
+            {text.split(URL_RE).map((part, i) => {
+                if (i % 2 === 0) return part;
+                const isInternal = part.includes('ykayconsultinghub.com.ng');
+                return (
+                    <a
+                        key={i}
+                        href={part}
+                        {...(isInternal ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
+                    >
+                        {part}
+                    </a>
+                );
+            })}
+        </p>
+    );
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;
     const post = await getPostBySlug(slug);
@@ -46,7 +70,7 @@ export default async function PostPage({ params }: Props) {
             <article className="pr-article">
                 <div className="wrap">
                     {paragraphs.map((p, i) => (
-                        <p key={i}>{p}</p>
+                        <ParagraphWithLinks key={i} text={p} />
                     ))}
                     <footer className="pr-links">
                         <Link href="/news">← All news</Link>

@@ -302,3 +302,10 @@ cookie with reuse-detection) — this fills the comprehension/profile gap.
 - ✅ Retitles: /training, /partnerships, /corporate-training
 - ✅ Internal links: homepage + press release + course pages → pillar
 - ✅ Sitemap gains /pecb-training-nigeria
+
+## Patch 51 — publish SEO guides (data migration + linkified news renderer)
+- ✅ Migration `20260904120000_publish_seo_guides`: 5 published Guides posts
+  (PECB certification, ISO 27001, ISO 42001/AI governance, ISO 22301/BC,
+  cybersecurity paths) — idempotent ON CONFLICT (slug) DO NOTHING
+- ✅ /news/[slug] renderer turns bare URLs in post bodies into links
+  (internal same-tab, external new-tab noopener)
