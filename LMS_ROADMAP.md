@@ -309,3 +309,8 @@ cookie with reuse-detection) — this fills the comprehension/profile gap.
   cybersecurity paths) — idempotent ON CONFLICT (slug) DO NOTHING
 - ✅ /news/[slug] renderer turns bare URLs in post bodies into links
   (internal same-tab, external new-tab noopener)
+
+## Patch 52 — sitemap ISR
+- ✅ sitemap.ts exports revalidate = 3600 — newly published posts/courses now
+  enter the sitemap within an hour of publishing (no redeploy needed);
+  previously the sitemap was baked at build time only

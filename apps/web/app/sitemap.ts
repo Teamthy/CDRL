@@ -1,4 +1,8 @@
 import type { MetadataRoute } from 'next';
+
+// Revalidate hourly so newly published posts/courses enter the sitemap
+// without requiring a redeploy (ISR instead of build-time baking).
+export const revalidate = 3600;
 import { getCourses, getPublishedPosts } from '../lib/data';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
