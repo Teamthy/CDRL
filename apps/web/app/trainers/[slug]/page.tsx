@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink, GraduationCap } from 'lucide-react';
 import SiteLayout from '../../../components/SiteLayout';
+import JsonLd from '../../../components/JsonLd';
 import { fetchTrainer, fetchTrainers } from '../../../lib/api';
 
 export const revalidate = 1800;
@@ -32,8 +33,23 @@ export default async function TrainerPage({ params }: Props) {
 
     const taught = trainer.courses ?? [];
 
+    const hasRealLinkedIn =
+        !!trainer.linkedIn && /^https:\/\/www\.linkedin\.com\/.+/.test(trainer.linkedIn);
+    const personData: Record<string, unknown> = {
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name: trainer.name,
+        jobTitle: trainer.title,
+        description: trainer.bio,
+        url: `https://www.ykayconsultinghub.com.ng/trainers/${trainer.slug}`,
+        worksFor: { '@type': 'Organization', name: 'Ykay Consulting Hub' },
+        knowsAbout: trainer.focus ? trainer.focus.split(/[,;]/).map((x) => x.trim()).filter(Boolean) : undefined,
+    };
+    if (hasRealLinkedIn) personData.sameAs = [trainer.linkedIn];
+
     return (
         <SiteLayout>
+            <JsonLd data={personData} />
             <section className="trainer-hero">
                 <div className="wrap trainer-hero-grid">
                     <div className="trainer-photo-lg" aria-hidden="true">

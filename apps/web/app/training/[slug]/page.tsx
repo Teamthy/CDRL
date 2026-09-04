@@ -10,7 +10,7 @@ import CourseActionPanel from '../../../components/course/CourseActionPanel';
 import CareerOutcomes from '../../../components/course/CareerOutcomes';
 import WaitlistCTA from '../../../components/course/WaitlistCTA';
 import { getCourseBySlug, getCourses } from '../../../lib/data';
-import { courseJsonLd } from '../../../lib/jsonld';
+import { courseJsonLd, SITE_URL } from '../../../lib/jsonld';
 import { courses as localCourses } from '../../../lib/content';
 
 
@@ -49,6 +49,24 @@ export default async function CourseDetailPage({ params }: Props) {
     return (
         <SiteLayout>
             <JsonLd data={courseJsonLd(course)} />
+            <JsonLd
+                data={{
+                    '@context': 'https://schema.org',
+                    '@type': 'BreadcrumbList',
+                    itemListElement: [
+                        { '@type': 'ListItem', position: 1, name: 'Training', item: `${SITE_URL}/training` },
+                        { '@type': 'ListItem', position: 2, name: course.track, item: `${SITE_URL}/training` },
+                        { '@type': 'ListItem', position: 3, name: `${course.title} ${course.subtitle}` },
+                    ],
+                }}
+            />
+            <nav className="crumbs wrap" aria-label="Breadcrumb">
+                <Link href="/training">Training</Link>
+                <span className="sep" aria-hidden="true">›</span>
+                <span>{course.track}</span>
+                <span className="sep" aria-hidden="true">›</span>
+                <span>{course.title} {course.subtitle}</span>
+            </nav>
             <CourseDetailHero course={course} />
             {isPecb && (
                 <div className="wrap" style={{ marginTop: 18 }}>
@@ -69,8 +87,12 @@ export default async function CourseDetailPage({ params }: Props) {
                             PECB partnership
                         </Link>{' '}
                         —{' '}
+                        <Link href="/pecb-training-nigeria" className="text-link">
+                            explore PECB training in Nigeria
+                        </Link>{' '}
+                        or{' '}
                         <Link href="/partnerships" className="text-link">
-                            see the full PECB portfolio
+                            see the full portfolio
                         </Link>
                         .
                     </p>

@@ -5,6 +5,7 @@ import CTASection from '../../components/sections/CTASection';
 import Reveal from '../../components/motion/Reveal';
 import { CalendarDays, MapPin } from 'lucide-react';
 import { getPageContent, getPublishedEvents } from '../../lib/data';
+import JsonLd from '../../components/JsonLd';
 import { pageData } from '../../lib/content';
 
 export const revalidate = 1800;
@@ -32,6 +33,21 @@ async function PublishedEvents() {
     return (
         <section className="db-events">
             <div className="wrap">
+                <JsonLd
+                    data={{
+                        '@context': 'https://schema.org',
+                        '@graph': events.map((ev) => ({
+                            '@type': 'Event',
+                            name: ev.title,
+                            startDate: ev.startsAt,
+                            ...(ev.endsAt ? { endDate: ev.endsAt } : {}),
+                            eventStatus: 'https://schema.org/EventScheduled',
+                            ...(ev.location ? { location: { '@type': 'Place', name: ev.location } } : {}),
+                            organizer: { '@type': 'Organization', name: 'Ykay Consulting Hub', url: 'https://www.ykayconsultinghub.com.ng' },
+                            url: ev.registrationUrl ?? 'https://www.ykayconsultinghub.com.ng/events',
+                        })),
+                    }}
+                />
                 <span className="kicker">UPCOMING DATES</span>
                 <h2>Scheduled programs &amp; events</h2>
                 <div className="db-events-grid">

@@ -126,6 +126,9 @@ export default function PecpPressReleasePage() {
                                 Read this release on pecb.com
                             </a>
                             <span aria-hidden="true">·</span>
+                            <span aria-hidden="true">·</span>
+                            <Link href="/pecb-training-nigeria">PECB training in Nigeria</Link>
+                            <span aria-hidden="true">·</span>
                             <Link href="/">Back to Ykay Consulting Hub</Link>
                         </footer>
                     </Reveal>

@@ -9,7 +9,7 @@ import { pageData } from '../../lib/content';
 export const revalidate = 1800;
 
 export const metadata = {
-    title: 'Corporate Training',
+    title: 'Corporate Training in Nigeria for Teams & Boards',
     description: 'Tailored corporate learning experiences for teams, executives, and boards across cybersecurity, GRC, and AI governance.',
     alternates: { canonical: '/corporate-training' },
 };

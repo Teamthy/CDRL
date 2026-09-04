@@ -291,3 +291,14 @@ cookie with reuse-detection) — this fills the comprehension/profile gap.
 - ✅ PECB course pages: meta description names the PECB partnership; internal-link
   strip → press release + `/partnerships` portfolio (crawl paths for PECB queries)
 - ✅ No CSS / DB / API changes — render-layer only
+
+## Patch 50 — SEO push to 100 (pillar + schema + analytics)
+- ✅ NEW pillar page `/pecb-training-nigeria`: PECB Training in Nigeria — flagship families,
+  full catalogue (live API grouping), how-it-works, 5-question FAQ + FAQPage JSON-LD
+- ✅ Breadcrumbs (visible + BreadcrumbList JSON-LD) on course pages
+- ✅ Event JSON-LD on /events (renders only when published events exist)
+- ✅ Person JSON-LD on trainer pages (real fields only; sameAs only for full LinkedIn URLs)
+- ✅ GA4 Analytics component (env-gated on NEXT_PUBLIC_GA_ID — inert until set)
+- ✅ Retitles: /training, /partnerships, /corporate-training
+- ✅ Internal links: homepage + press release + course pages → pillar
+- ✅ Sitemap gains /pecb-training-nigeria

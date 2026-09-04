@@ -14,6 +14,7 @@ const staticRoutes = [
     '/research',
     '/events',
     '/partnerships',
+    '/pecb-training-nigeria',
     '/leadership',
     '/news',
     '/pecb-signs-partnership-agreement-with-ykay-consulting-hub',

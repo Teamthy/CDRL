@@ -10,8 +10,8 @@ import { pageData } from '../../lib/content';
 export const revalidate = 1800;
 
 export const metadata = {
-    title: 'Partnerships',
-    description: 'Institutional collaborations that build shared capability, standards, and responsible innovation across Africa.',
+    title: 'PECB Partnership & Courses in Nigeria',
+    description: 'Ykay Consulting Hub is an Authorized Partner of PECB, delivering official PECB certification courses across Nigeria. Explore the partnership and the full PECB portfolio.',
     alternates: { canonical: '/partnerships' },
 };
 
