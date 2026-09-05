@@ -54,7 +54,12 @@ export default async function PostPage({ params }: Props) {
 
     const dateIso = post.publishedAt ?? post.createdAt;
     const dateLabel = new Date(dateIso).toLocaleDateString('en-NG', { dateStyle: 'long' });
-    const paragraphs = post.body.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+    // Normalize CRLF/CR so Windows-authored bodies split into paragraphs correctly.
+    const paragraphs = post.body
+        .replace(/\r\n?/g, '\n')
+        .split(/\n{2,}/)
+        .map((p) => p.trim())
+        .filter(Boolean);
 
     return (
         <SiteLayout>

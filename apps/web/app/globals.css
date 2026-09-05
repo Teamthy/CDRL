@@ -2688,3 +2688,7 @@ button.admin-btn, .admin-pagination button { transition: border-color 140ms ease
 .crumbs a { color: var(--cdrl-green); text-decoration: none; }
 .crumbs a:hover { text-decoration: underline; }
 .crumbs .sep { opacity: .5; margin: 0 7px; }
+
+/* ── patch-54: course details wrapping guard (mobile-safe) ── */
+.course-details { overflow-wrap: break-word; word-break: break-word; }
+.course-details h2 { overflow-wrap: anywhere; }

@@ -322,3 +322,13 @@ cookie with reuse-detection) — this fills the comprehension/profile gap.
   (What is / Why it matters in Nigeria / Who should attend / What you will learn /
   Getting started / Exam & certification) — replacing the generic synthesized
   template with unique per-family content; idempotent UPDATEs
+
+## Patch 54 — CRLF fix: course details render as sections again
+- ✅ Root cause: patch-53 migration file was converted LF→CRLF by git on
+  Windows; Postgres stored literal CHR(13) in Course.details and the
+  \n\n-based section splitter never matched (\r\n\r\n) → whole body
+  rendered as one raw blob
+- ✅ parseModuleText + news renderer now normalize CRLF/CR before splitting
+  (also protects future Windows-authored console edits)
+- ✅ Migration `20260905140000_strip_cr` strips CHR(13) from stored data
+- ✅ Mobile wrapping guard on .course-details

@@ -47,7 +47,10 @@ export function inlineTokens(text: string): InlineToken[] {
 
 export function parseModuleText(raw: string): ModuleBlock[] {
     const blocks: ModuleBlock[] = [];
-    for (const chunk of raw.split(/\n{2,}/)) {
+    // Normalize Windows/mac line endings (CRLF/CR) so content authored or
+    // migrated on Windows parses identically to Unix-authored content.
+    const normalized = raw.replace(/\r\n?/g, '\n');
+    for (const chunk of normalized.split(/\n{2,}/)) {
         const trimmed = chunk.trim();
         if (!trimmed) continue;
 
