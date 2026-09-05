@@ -2692,3 +2692,17 @@ button.admin-btn, .admin-pagination button { transition: border-color 140ms ease
 /* ── patch-54: course details wrapping guard (mobile-safe) ── */
 .course-details { overflow-wrap: break-word; word-break: break-word; }
 .course-details h2 { overflow-wrap: anywhere; }
+
+/* ── patch-55: link layer ── */
+.read-next { padding: 18px 0 26px; }
+.read-next .kicker { display: block; margin-bottom: 10px; }
+.read-next ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.read-next li { border-left: 2px solid var(--cdrl-green); padding-left: 12px; font-size: 14px; }
+.related-training { border-top: 1px solid var(--cdrl-line); margin-top: 26px; padding-top: 16px; }
+.related-training .kicker { display: block; margin-bottom: 10px; }
+.related-training ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.related-training li { font-size: 14px; }
+.cross-band { padding: 26px 0 30px; }
+.cross-band p { color: var(--cdrl-text-light); font-size: 15.5px; line-height: 1.7; max-width: 760px; margin: 0; }
+.subnav { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 14px 0 0; font-size: 13.5px; color: var(--cdrl-text-muted-light); }
+@media (max-width: 640px) { .subnav { gap: 10px; } }

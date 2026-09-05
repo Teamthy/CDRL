@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import SiteLayout from '../../components/SiteLayout';
 import { getCourses } from '../../lib/data';
 import PageHero from '../../components/sections/PageHero';
@@ -22,6 +23,13 @@ export default async function TrainingPage() {
                 title="Credentials that build confidence."
                 description="Discover flexible, practitioner-led programs designed to advance careers and strengthen organizations."
             />
+            <div className="wrap subnav">
+                <span>Browse:</span>
+                <Link href="/pecb-training-nigeria" className="text-link">PECB training</Link>
+                <Link href="/iso-training-nigeria" className="text-link">ISO standards</Link>
+                <Link href="/data-protection-nigeria" className="text-link">Data protection &amp; NDPA</Link>
+                <Link href="/training-pricing" className="text-link">Prices &amp; registration</Link>
+            </div>
             <CourseMarketplace courses={courses} />
         </SiteLayout>
     );

@@ -332,3 +332,13 @@ cookie with reuse-detection) — this fills the comprehension/profile gap.
   (also protects future Windows-authored console edits)
 - ✅ Migration `20260905140000_strip_cr` strips CHR(13) from stored data
 - ✅ Mobile wrapping guard on .course-details
+
+## Patch 55 — page-1 plan: 4 new intent pages + internal-link layer
+- ✅ NEW /pecb-certification-nigeria (certification journey + FAQPage schema)
+- ✅ NEW /iso-training-nigeria (live ISO catalogue hub, ItemList schema)
+- ✅ NEW /data-protection-nigeria (NDPA moat page: obligations + course paths)
+- ✅ NEW /training-pricing (individuals/cohorts/bundles + cost factors)
+- ✅ Course pages: "Read next" strip → matched guides + hubs (max 3)
+- ✅ News posts: "Related training" strip → matched course family
+- ✅ About + Trainers: PECB cross-band → pillar/hub; /training: browse subnav
+- ✅ Sitemap: 4 new routes

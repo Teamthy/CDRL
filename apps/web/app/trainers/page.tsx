@@ -61,6 +61,21 @@ export default async function TrainersPage() {
                     )}
                 </div>
             </section>
+            <section className="cross-band">
+                <div className="wrap">
+                    <p>
+                        Our faculty delivers official PECB certification courses —{' '}
+                        <Link href="/pecb-training-nigeria" className="text-link">
+                            see the PECB portfolio
+                        </Link>{' '}
+                        or{' '}
+                        <Link href="/pecb-certification-nigeria" className="text-link">
+                            how PECB certification works
+                        </Link>
+                        .
+                    </p>
+                </div>
+            </section>
         </SiteLayout>
     );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import type { Route } from 'next';
 import SiteLayout from '../../../components/SiteLayout';
 import PageHero from '../../../components/sections/PageHero';
 import CTASection from '../../../components/sections/CTASection';
@@ -13,6 +14,34 @@ export const revalidate = 300;
 type Props = { params: Promise<{ slug: string }> };
 
 const URL_RE = /(https?:\/\/[^\s)]+)/g;
+
+const RELATED_TRAINING: Record<string, { href: string; label: string }[]> = {
+    'how-to-get-pecb-certification-in-nigeria': [
+        { href: '/pecb-training-nigeria', label: 'PECB training in Nigeria — full portfolio' },
+        { href: '/pecb-certification-nigeria', label: 'How PECB certification works' },
+        { href: '/training-pricing', label: 'Training prices & registration' },
+    ],
+    'iso-27001-training-in-nigeria-foundation-lead-implementer-or-lead-auditor': [
+        { href: '/training/iso-iec-27001-foundation', label: 'ISO/IEC 27001 Foundation' },
+        { href: '/training/iso-iec-27001-lead-implementer', label: 'ISO/IEC 27001 Lead Implementer' },
+        { href: '/training/iso-iec-27001-lead-auditor', label: 'ISO/IEC 27001 Lead Auditor' },
+    ],
+    'what-is-iso-42001-ai-governance-training-nigeria': [
+        { href: '/training/iso-iec-42001-foundation', label: 'ISO/IEC 42001 Foundation' },
+        { href: '/training/iso-iec-42001-lead-implementer', label: 'ISO/IEC 42001 Lead Implementer' },
+        { href: '/training/iso-iec-42001-lead-auditor', label: 'ISO/IEC 42001 Lead Auditor' },
+    ],
+    'business-continuity-training-nigeria-iso-22301': [
+        { href: '/training/iso-22301-foundation', label: 'ISO 22301 Foundation' },
+        { href: '/training/iso-22301-lead-implementer', label: 'ISO 22301 Lead Implementer' },
+        { href: '/training/iso-22301-lead-auditor', label: 'ISO 22301 Lead Auditor' },
+    ],
+    'cybersecurity-training-nigeria-choosing-a-certification-path': [
+        { href: '/training/cybersecurity-management-foundation', label: 'Cybersecurity Management Foundation' },
+        { href: '/training/cybersecurity-management-lead-cybersecurity-manager', label: 'Lead Cybersecurity Manager' },
+        { href: '/pecb-training-nigeria', label: 'PECB training in Nigeria' },
+    ],
+};
 
 /** Plain-text paragraph renderer that turns bare URLs into links
  *  (internal links stay same-tab; external open safely in a new tab). */
@@ -77,6 +106,20 @@ export default async function PostPage({ params }: Props) {
                     {paragraphs.map((p, i) => (
                         <ParagraphWithLinks key={i} text={p} />
                     ))}
+                    {(RELATED_TRAINING[post.slug] ?? []).length > 0 && (
+                        <div className="related-training">
+                            <span className="kicker">RELATED TRAINING</span>
+                            <ul>
+                                {(RELATED_TRAINING[post.slug] ?? []).map((l) => (
+                                    <li key={l.href}>
+                                        <Link href={l.href as Route} className="text-link">
+                                            {l.label}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                     <footer className="pr-links">
                         <Link href="/news">← All news</Link>
                     </footer>
