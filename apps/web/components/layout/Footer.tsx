@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import Logo from '../brand/Logo';
 import WhiteButton from '../actions/WhiteButton';
+import { DEFAULT_FOOTER_CTA, type FooterCta } from '../../lib/pageCta';
 
 const columns = [
     {
@@ -33,14 +34,18 @@ const columns = [
     },
 ] as const;
 
-export default function Footer() {
+/**
+ * @param cta Footer call-to-action, or `false` for pages that already have
+ * their own contact CTA (see lib/pageCta.ts — one contact CTA per page).
+ */
+export default function Footer({ cta = DEFAULT_FOOTER_CTA }: { cta?: FooterCta }) {
     const year = new Date().getFullYear();
     return (
         <footer className="site-footer">
             <div className="wrap footer-intro">
                 <Logo />
                 <p>Professional education for cybersecurity, governance, AI risk, and digital leadership.</p>
-                <WhiteButton href="/contact">Talk to our team</WhiteButton>
+                {cta ? <WhiteButton href={cta.href}>{cta.label}</WhiteButton> : null}
             </div>
             <div className="wrap footer-cols">
                 {columns.map((col) => (

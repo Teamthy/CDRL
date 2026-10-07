@@ -54,6 +54,15 @@ The app already contains route-based pages for:
 ### Content loading
 The frontend is wired to load content from the backend API when available, while falling back to local content during development or if the API is unavailable.
 
+### One contact CTA per page
+Every page ends with exactly one call-to-action that sends the visitor to `/contact` — never two.
+
+- A page that renders its own primary contact CTA (a `CTASection` such as "Get in touch" or "Request a proposal", or a `btn-primary` / `btn-white` link to `/contact`) keeps it, and the generic footer button ("Talk to our team") is dropped.
+- A page with no contact CTA of its own keeps the footer button, so the offer to talk to the team is never lost.
+- `/contact` itself renders no footer CTA (it would point back at the page the visitor is already on), and `/learning-plan` opts out explicitly because its "Complete Enquiry" button is rendered inside a client component.
+
+The rule lives in `apps/web/lib/pageCta.ts` (`hasPageContactCta`) and is applied by `SiteLayout` through its `footerCta` prop (`'auto'` by default, or `false` / `{ label, href }` to override). It is covered by `apps/web/lib/pageCta.test.tsx`.
+
 ---
 
 ## 4. Current implementation status

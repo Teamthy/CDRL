@@ -11,8 +11,9 @@ export const metadata = {
 };
 
 export default function ContactPage() {
+    // Already the contact page: no footer CTA pointing back at itself.
     return (
-        <SiteLayout>
+        <SiteLayout footerCta={false}>
             <PageHero
                 eyebrow="CONTACT"
                 title="Let's build digital trust together."
