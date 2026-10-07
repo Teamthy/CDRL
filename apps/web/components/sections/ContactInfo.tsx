@@ -14,7 +14,7 @@ export default function ContactInfo() {
                 <MapPin aria-hidden="true" /> Lagos, Nigeria
             </p>
             <p>
-                <a href="https://www.linkedin.com" target="_blank" rel="noreferrer noopener">
+                <a href="https://www.linkedin.com/in/yinka-oladimeji-ab9401208/" target="_blank" rel="noreferrer noopener">
                     Connect on LinkedIn ↗
                 </a>
             </p>
