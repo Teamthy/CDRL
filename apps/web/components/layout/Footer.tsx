@@ -28,7 +28,6 @@ const columns = [
             { label: 'About', href: '/about' },
             { label: 'Research', href: '/research' },
             { label: 'Events', href: '/events' },
-            { label: 'Leadership', href: '/leadership' },
             { label: 'Contact', href: '/contact' },
         ],
     },

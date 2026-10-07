@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 
 // Env must exist before importing the admin module (module-level config check).
 process.env.DATABASE_URL = process.env.DATABASE_URL ?? 'postgresql://test:test@127.0.0.1:5432/test';
-process.env.ADMIN_EMAIL = 'founder@example.com';
+process.env.ADMIN_EMAIL = 'admin@example.com';
 process.env.ADMIN_PASSWORD = 'correct-horse-battery';
 process.env.ADMIN_JWT_SECRET = 'test-secret-test-secret-test-secret-32!';
 
@@ -51,7 +51,7 @@ describe('requireAdmin', () => {
     it('admits a valid token from signAdminToken', () => {
         const res = mockRes();
         const next = vi.fn();
-        const token = guard.signAdminToken('founder@example.com');
+        const token = guard.signAdminToken('admin@example.com');
         guard.requireAdmin({ headers: { authorization: `Bearer ${token}` } } as unknown as Request, res, next);
         expect(next).toHaveBeenCalledOnce();
         expect(res.statusCode).toBe(0);

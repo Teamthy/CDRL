@@ -44,7 +44,6 @@ The app already contains route-based pages for:
 - Contact
 - Corporate training
 - Events
-- Leadership
 - Learning plan
 - Partnerships
 - Privacy

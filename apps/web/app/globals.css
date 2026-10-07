@@ -656,61 +656,6 @@ section.insights .section-head h2 em { color: var(--cdrl-green); }
   .insight-grid { grid-template-columns: 1fr; }
 }
 
-/* â•â•â• LEADERSHIP PREVIEW â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-section.leader-preview {
-  background: var(--cdrl-black);
-  color: var(--cdrl-text-light);
-  padding: 100px 0;
-}
-.leader-grid {
-  display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
-  gap: 90px;
-  align-items: center;
-}
-.leader-portrait {
-  width: 100%; height: 560px;
-  object-fit: cover; object-position: top;
-  background: var(--cdrl-deep-green);
-  display: grid; place-items: center;
-}
-.portrait-placeholder {
-  background: var(--cdrl-deep-green);
-  color: var(--cdrl-text-light);
-  display: grid; place-items: center;
-  text-align: center; padding: 40px;
-  font-size: 12px; letter-spacing: 0.12em;
-  opacity: 0.6;
-}
-.leader-preview h2 {
-  font-size: clamp(32px, 4vw, 44px);
-  margin: 14px 0 24px;
-  color: var(--cdrl-text-light);
-}
-.leader-preview h3 {
-  font-family: var(--font-heading), sans-serif;
-  font-size: 20px; font-weight: 600;
-  color: var(--cdrl-text-light);
-  margin-bottom: 6px;
-}
-.leader-preview .role {
-  color: var(--cdrl-green);
-  font-weight: 600; font-size: 14px;
-  margin-bottom: 12px;
-}
-.leader-preview p {
-  color: var(--cdrl-text-light);
-  opacity: 0.82;
-  line-height: 1.7;
-  margin-bottom: 26px;
-}
-@media (max-width: 900px) {
-  section.leader-preview { padding: 70px 0; }
-  .leader-grid { grid-template-columns: 1fr; gap: 40px; }
-  .leader-portrait { height: 440px; }
-}
-
-/* â•â•â• PAGE HERO (shared for inner pages) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 section.page-hero {
   background: var(--cdrl-black);
   color: var(--cdrl-text-light);
@@ -967,53 +912,6 @@ section.page-cta {
   .page-cta .wrap { flex-direction: column; align-items: flex-start; }
 }
 
-/* â•â•â• LEADERSHIP PAGE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-section.leadership-page {
-  background: var(--cdrl-black);
-  color: var(--cdrl-text-light);
-  padding: 90px 0 100px;
-}
-.leadership-page .wrap {
-  display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
-  gap: 90px;
-  align-items: center;
-}
-.leadership-page img, .leadership-page .portrait-placeholder {
-  width: 100%; max-height: 650px;
-  object-fit: cover; object-position: top;
-}
-.leadership-page h2 {
-  font-size: clamp(32px, 4vw, 44px);
-  margin: 14px 0 20px;
-  color: var(--cdrl-text-light);
-}
-.leadership-page .roles {
-  color: var(--cdrl-green);
-  font-weight: 600; font-size: 14px;
-  margin-bottom: 20px;
-}
-.leadership-page p {
-  color: var(--cdrl-text-light);
-  opacity: 0.82;
-  line-height: 1.75;
-  margin-bottom: 22px;
-}
-.leadership-page blockquote {
-  font-family: var(--font-heading), sans-serif;
-  font-size: 22px; font-weight: 500;
-  line-height: 1.5;
-  border-left: 3px solid var(--cdrl-green);
-  margin: 30px 0 0;
-  padding-left: 24px;
-  color: var(--cdrl-text-light);
-}
-@media (max-width: 900px) {
-  section.leadership-page { padding: 70px 0; }
-  .leadership-page .wrap { grid-template-columns: 1fr; gap: 40px; }
-}
-
-/* â•â•â• CONTACT PAGE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 section.contact-page {
   background: var(--cdrl-peach);
   color: var(--cdrl-text-dark);
@@ -2159,29 +2057,12 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .admin-search:focus-within { border-color: var(--cdrl-green); box-shadow: 0 0 0 3.5px rgba(47, 107, 79, 0.16); }
 .admin-count { font-weight: 600; color: var(--cdrl-green); }
 
-/* ── patch-33: trainers, bundles, exam strip, price bands ── */
-.trainer-index, .bundle-index { padding: 48px 0 64px; }
-.trainer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
-.trainer-card { background: #fff; border: 1px solid var(--cdrl-line,#e6ddcd); border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: transform .15s ease, border-color .15s ease; }
-.trainer-card:hover { transform: translateY(-2px); border-color: var(--cdrl-green); }
-.trainer-photo { height: 210px; background: linear-gradient(135deg, #e8e2d6, #dcd4c2); display: grid; place-items: center; overflow: hidden; }
-.trainer-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.trainer-initials { font-size: 34px; font-weight: 800; color: var(--cdrl-green); letter-spacing: 0.04em; }
-.trainer-card-body { padding: 16px 16px 18px; display: grid; gap: 4px; }
-.trainer-card-body strong { font-size: 16.5px; }
-.trainer-card-body > span { color: var(--cdrl-text-muted-light); font-size: 13.5px; }
-.trainer-card-body small { color: var(--cdrl-text-muted-light); }
+/* ── patch-33: bundles, exam strip, price bands ── */
+.bundle-index { padding: 48px 0 64px; }
 .trainer-go { display: inline-flex; gap: 6px; align-items: center; margin-top: 8px; color: var(--cdrl-green); font-size: 13px; }
 
 .trainer-hero { padding: 56px 0 40px; background: linear-gradient(180deg, #f7f2ea 0%, #fff 100%); }
-.trainer-hero-grid { display: grid; grid-template-columns: 280px 1fr; gap: 36px; align-items: center; }
-@media (max-width: 860px) { .trainer-hero-grid { grid-template-columns: 1fr; } }
-.trainer-photo-lg { width: 100%; aspect-ratio: 4/5; border-radius: 18px; overflow: hidden; background: linear-gradient(135deg, #e8e2d6, #dcd4c2); display: grid; place-items: center; }
-.trainer-photo-lg img { width: 100%; height: 100%; object-fit: cover; }
-.trainer-photo-lg span { font-size: 54px; font-weight: 800; color: var(--cdrl-green); }
-.trainer-title-lg { font-size: 18px; color: var(--cdrl-green); font-weight: 600; margin-top: 6px; }
 .trainer-bio { max-width: 62ch; margin-top: 14px; }
-.trainer-focus { display: inline-flex; gap: 8px; align-items: center; color: var(--cdrl-text-muted-light); margin-top: 10px; }
 
 .trainer-courses { padding: 44px 0 64px; }
 .trainer-courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin-top: 16px; }

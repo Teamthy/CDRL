@@ -14,33 +14,6 @@ export const priceBandSchema = z
     })
     .nullable();
 
-export const trainerSchema = z.object({
-    id: z.string(),
-    slug: z.string(),
-    name: z.string(),
-    title: z.string(),
-    bio: z.string(),
-    focus: z.string(),
-    photoUrl: z.string().nullable().optional(),
-    linkedIn: z.string().nullable().optional(),
-    sortOrder: z.number().int().optional(),
-    courses: z
-        .array(
-            z.object({
-                role: z.string().optional(),
-                course: z.object({
-                    id: z.string().optional(),
-                    slug: z.string(),
-                    title: z.string(),
-                    subtitle: z.string().optional(),
-                    track: z.string().optional(),
-                    level: z.string().optional(),
-                }),
-            }),
-        )
-        .optional(),
-});
-
 const bundleCourseSummary = z.object({
     id: z.string().optional(),
     slug: z.string(),
@@ -108,5 +81,4 @@ export type PageContent = z.infer<typeof pageContentSchema>;
 
 
 export type PriceBand = z.infer<typeof priceBandSchema>;
-export type Trainer = z.infer<typeof trainerSchema>;
 export type Bundle = z.infer<typeof bundleSchema>;

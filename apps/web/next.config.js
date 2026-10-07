@@ -33,6 +33,13 @@ const nextConfig = {
     async headers() {
         return [{ source: '/:path*', headers: securityHeaders }];
     },
+    async redirects() {
+        return [
+            { source: '/leadership', destination: '/about', permanent: true },
+            { source: '/trainers', destination: '/training', permanent: true },
+            { source: '/trainers/:slug', destination: '/training', permanent: true },
+        ];
+    },
 };
 
 module.exports = nextConfig;

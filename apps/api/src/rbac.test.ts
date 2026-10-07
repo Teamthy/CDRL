@@ -64,7 +64,7 @@ describe('token family isolation (cross-token confusion)', () => {
     });
 
     it('rejects an admin token against the learner family', () => {
-        const t = rbac.signScopedToken('admin', 'founder@example.com');
+        const t = rbac.signScopedToken('admin', 'admin@example.com');
         expect(rbac.verifyScopedToken('learner', t)).toBeNull();
     });
 
@@ -86,11 +86,11 @@ describe('authenticate()', () => {
     it('resolves admin principals without touching the DB', async () => {
         const res = mockRes();
         const next = vi.fn();
-        const token = rbac.signScopedToken('admin', 'founder@example.com');
+        const token = rbac.signScopedToken('admin', 'admin@example.com');
         await rbac.authenticate({ headers: { authorization: `Bearer ${token}` } } as unknown as Request, res, next);
         const principal = res.locals.principal as Principal | null;
         expect(next).toHaveBeenCalled();
-        expect(principal).toEqual({ kind: 'admin', email: 'founder@example.com', role: 'admin' });
+        expect(principal).toEqual({ kind: 'admin', email: 'admin@example.com', role: 'admin' });
         expect(lmsUserFindUnique.fn).not.toHaveBeenCalled();
     });
 
