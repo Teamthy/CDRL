@@ -5,7 +5,6 @@ import FeaturedCertifications from './sections/FeaturedCertifications';
 import CorporateBand from './sections/CorporateBand';
 import UpcomingProgram from './sections/UpcomingProgram';
 import Insights from './sections/Insights';
-import LeadershipPreview from './sections/LeadershipPreview';
 import PecbPartner from './sections/PecbPartner';
 import type { Course } from '../lib/content';
 
@@ -26,7 +25,6 @@ export default function HomePage({ courses }: Props) {
             <CorporateBand />
             <UpcomingProgram />
             <Insights />
-            <LeadershipPreview />
         </>
     );
 }

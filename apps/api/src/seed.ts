@@ -38,7 +38,6 @@ const content = [
     { pageKey: 'Research', content: { kicker: 'RESEARCH & INSIGHTS', title: 'Clear thinking for complex digital questions.', description: 'Analysis and practical commentary for decision-makers across Africa.', blocks: [{ title: 'The Future of AI Governance in Africa', text: 'How leaders can build responsible, locally relevant governance for rapidly advancing AI systems.' }, { title: 'Why Cybersecurity Leadership Matters', text: 'Cybersecurity is no longer a technical issue—it is an enterprise leadership mandate.' }, { title: 'Understanding ISO 27001 for Organizations', text: 'A practical introduction to building a systematic approach to information security.' }] } },
     { pageKey: 'Events', content: { kicker: 'EVENTS & MASTERCLASSES', title: 'Learn live. Lead with confidence.', description: 'Join upcoming certification programs, briefings, and practitioner masterclasses.', blocks: [{ title: 'ISO/IEC 27001 Lead Implementer', text: 'June 18–21, 2026 · Lagos / Virtual', items: ['Four-day intensive program', 'Official course materials', 'Certification exam preparation'] }, { title: 'Cyber Risk Leadership Masterclass', text: 'August 2026 · Virtual', items: ['For senior leaders and board members', 'Executive briefing format'] }] } },
     { pageKey: 'Partnerships', content: { kicker: 'PARTNERSHIPS', title: 'Stronger ecosystems build greater digital trust.', description: 'We collaborate with institutions that share our commitment to capability, standards, and responsible innovation.', blocks: [{ title: 'Certification Bodies', text: 'Collaborating to deliver credible, internationally aligned professional certifications.' }, { title: 'Universities', text: 'Bridging academic knowledge with practical digital risk and leadership capabilities.' }, { title: 'Corporate Partners', text: 'Co-creating workforce development programs that meet industry needs.' }] } },
-    { pageKey: 'Leadership', content: { title: 'Experience that turns knowledge into action.', description: 'Meet the practitioner behind YKAY Consult\'s mission.' } },
     { pageKey: 'Contact', content: { title: 'Let\'s build digital trust together.', description: 'Tell us how YKAY Consult can support your professional or organizational goals.' } },
 ];
 
@@ -59,31 +58,9 @@ async function main() {
         });
     }
 
-    // patch-33 demo rows (editable in console): 1 trainer + 1 bundle
-    const trainer = await prisma.trainer.upsert({
-        where: { slug: 'yinka-adebayo' },
-        update: {},
-        create: {
-            slug: 'yinka-adebayo',
-            name: 'Yinka Adebayo',
-            title: 'Lead Auditor · Information Security & AI Governance',
-            bio: 'Practitioner-instructor and founder of Ykay Consulting Hub. Leads CDRL\u2019s PECB-certified delivery with a focus on information security, AI governance, and organizational resilience across Africa.',
-            focus: 'ISO/IEC 27001 · ISO/IEC 42001 · Governance',
-            photoUrl: null,
-            linkedIn: null,
-            published: true,
-            sortOrder: 1,
-        },
-    });
+    // patch-33 demo bundle
     const demoCourseSlugs = ['iso-iec-27001-foundation', 'iso-31000-risk-management', 'iso-iec-42001-ai-management-systems'];
     const demoCourses = await prisma.course.findMany({ where: { slug: { in: demoCourseSlugs } }, select: { id: true, title: true } });
-    for (const c of demoCourses) {
-        await prisma.courseTrainer.upsert({
-            where: { courseId_trainerId: { courseId: c.id, trainerId: trainer.id } },
-            update: {},
-            create: { courseId: c.id, trainerId: trainer.id, role: 'Lead instructor' },
-        });
-    }
     const isoFoundation = demoCourses.find((c) => c.title.includes('27001'));
     if (isoFoundation) {
         const bundle = await prisma.bundle.upsert({

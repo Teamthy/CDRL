@@ -75,7 +75,7 @@ export default function PecpPressReleasePage() {
                             organizations.”
                         </p>
                         <p className="pr-attribution">
-                            — <strong>Adeyinka Oladimeji</strong>, Lead Trainer, Ykay Consulting Hub
+                            — Ykay Consulting Hub
                         </p>
                     </Reveal>
 
@@ -103,11 +103,7 @@ export default function PecpPressReleasePage() {
                             helping individuals and organizations build competence, manage digital risks, and
                             strengthen governance through internationally recognized standards. Its services span
                             information security, cybersecurity, artificial intelligence management, business
-                            continuity, and other ISO management systems.
-                        </p>
-                        <p>
-                            Led by Adeyinka Oladimeji, an experienced educator, IT professional, PECB Certified Trainer,
-                            and ISO/IEC 27001 Lead Auditor, Ykay Consulting Hub combines technology, education, and
+                            continuity, and other ISO management systems. The team combines technology, education, and
                             professional development to deliver practical, value-driven learning and advisory services.
                         </p>
                     </Reveal>

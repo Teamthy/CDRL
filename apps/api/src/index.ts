@@ -298,33 +298,6 @@ app.get(
 );
 
 app.get(
-    '/api/v1/trainers',
-    ah(async (_req, res) => {
-        const trainers = await prisma.trainer.findMany({
-            where: { published: true },
-            orderBy: { sortOrder: 'asc' },
-            take: 100,
-            include: { courses: { include: { course: { select: { slug: true, title: true, subtitle: true, track: true, level: true } } } } },
-        });
-        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
-        res.json(trainers);
-    }),
-);
-
-app.get(
-    '/api/v1/trainers/:slug',
-    ah(async (req, res) => {
-        const trainer = await prisma.trainer.findFirst({
-            where: { slug: req.params.slug, published: true },
-            include: { courses: { include: { course: true } } },
-        });
-        if (!trainer) return res.status(404).json({ message: 'Trainer not found' });
-        res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
-        res.json(trainer);
-    }),
-);
-
-app.get(
     '/api/v1/bundles',
     ah(async (_req, res) => {
         const bundles = await prisma.bundle.findMany({

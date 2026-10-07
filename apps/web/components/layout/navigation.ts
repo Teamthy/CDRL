@@ -18,7 +18,6 @@ export const navigationLinks: NavigationLink[] = [
     { label: 'Research', href: '/research' },
     { label: 'Events', href: '/events' },
     { label: 'Partnerships', href: '/partnerships' },
-    { label: 'Leadership', href: '/leadership' },
     { label: 'News', href: '/news' },
     { label: 'Contact', href: '/contact' },
 ];

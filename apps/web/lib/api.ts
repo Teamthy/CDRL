@@ -100,35 +100,7 @@ export async function fetchPostBySlug(slug: string): Promise<PublicPost | null> 
 export default API_BASE;
 
 
-// ── patch-33: trainers & bundles (public) ───────────────────────────────────
-
-const publicTrainerSchema = z.object({
-    id: z.string(),
-    slug: z.string(),
-    name: z.string(),
-    title: z.string(),
-    bio: z.string(),
-    focus: z.string(),
-    photoUrl: z.string().nullable().optional(),
-    linkedIn: z.string().nullable().optional(),
-    sortOrder: z.number().int().optional(),
-    courses: z
-        .array(
-            z.object({
-                role: z.string().optional(),
-                course: z.object({
-                    id: z.string().optional(),
-                    slug: z.string(),
-                    title: z.string(),
-                    subtitle: z.string().optional(),
-                    track: z.string().optional(),
-                    level: z.string().optional(),
-                }),
-            }),
-        )
-        .optional(),
-});
-export type PublicTrainer = z.infer<typeof publicTrainerSchema>;
+// ── patch-33: bundles (public) ──────────────────────────────────────────────
 
 const publicBundleSchema = z.object({
     id: z.string(),
@@ -156,28 +128,6 @@ const publicBundleSchema = z.object({
         .optional(),
 });
 export type PublicBundle = z.infer<typeof publicBundleSchema>;
-
-export async function fetchTrainers(): Promise<PublicTrainer[] | null> {
-    try {
-        const res = await fetch(`${API_BASE}/trainers`, FETCH_INIT);
-        if (!res.ok) return null;
-        const parsed = z.array(publicTrainerSchema).safeParse(await res.json());
-        return parsed.success ? parsed.data : null;
-    } catch {
-        return null;
-    }
-}
-
-export async function fetchTrainer(slug: string): Promise<PublicTrainer | null> {
-    try {
-        const res = await fetch(`${API_BASE}/trainers/${slug}`, FETCH_INIT);
-        if (!res.ok) return null;
-        const parsed = publicTrainerSchema.safeParse(await res.json());
-        return parsed.success ? parsed.data : null;
-    } catch {
-        return null;
-    }
-}
 
 export async function fetchBundles(): Promise<PublicBundle[] | null> {
     try {
