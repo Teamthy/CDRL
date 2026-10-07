@@ -12,8 +12,9 @@ export const metadata = {
 
 export default async function LearningPlanPage() {
     const courses = await getCourses();
+    // LearningPlanSelected renders its own "Complete Enquiry" contact CTA.
     return (
-        <SiteLayout>
+        <SiteLayout footerCta={false}>
             <PageHero
                 eyebrow="YOUR LEARNING PLAN"
                 title="Programs you're considering."

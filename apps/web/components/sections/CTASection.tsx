@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import Reveal from '../motion/Reveal';
 
+/** Where a page-level CTA sends the visitor unless the page overrides it. */
+export const DEFAULT_CTA_HREF: Route = '/contact';
+
 type Props = {
     heading?: string;
     ctaLabel?: string;
@@ -12,7 +15,7 @@ type Props = {
 export default function CTASection({
     heading = 'Ready to take the next step?',
     ctaLabel = 'Talk to CDRL',
-    ctaHref = '/contact',
+    ctaHref = DEFAULT_CTA_HREF,
 }: Props) {
     return (
         <section className="page-cta">
