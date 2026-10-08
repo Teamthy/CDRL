@@ -1,12 +1,12 @@
 'use client';
 
 import { Search } from 'lucide-react';
-import type { Course } from '../../lib/content';
+import type { CourseCardView } from '../../lib/content';
 
 export type CatalogFilter = string;
 
 type Props = {
-    courses: Course[];
+    courses: CourseCardView[];
     query: string;
     filter: CatalogFilter;
     onQueryChange: (value: string) => void;

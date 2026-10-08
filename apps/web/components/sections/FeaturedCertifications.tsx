@@ -3,9 +3,9 @@ import CourseCard from '../cards/CourseCard';
 import Reveal from '../motion/Reveal';
 import StaggerGroup from '../motion/StaggerGroup';
 import StaggerItem from '../motion/StaggerItem';
-import type { Course } from '../../lib/content';
+import type { CourseCardView } from '../../lib/content';
 
-type Props = { courses: Course[] };
+type Props = { courses: CourseCardView[] };
 
 export default function FeaturedCertifications({ courses }: Props) {
     return (

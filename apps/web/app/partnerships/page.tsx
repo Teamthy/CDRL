@@ -4,7 +4,7 @@ import EditorialRows from '../../components/sections/EditorialRows';
 import PecbPortfolioShowcase from '../../components/sections/PecbPortfolioShowcase';
 import Link from 'next/link';
 import type { Route } from 'next';
-import { getCourses, getPageContent } from '../../lib/data';
+import { getCourseCards, getPageContent } from '../../lib/data';
 import { pageData } from '../../lib/content';
 
 export const revalidate = 1800;
@@ -17,7 +17,7 @@ export const metadata = {
 
 export default async function PartnershipsPage() {
     const content = (await getPageContent('Partnerships')) ?? pageData['Partnerships'];
-    const courses = await getCourses();
+    const courses = await getCourseCards();
     const pecbCourses = courses.filter((c) => c.subtitle.includes('PECB'));
 
     return (

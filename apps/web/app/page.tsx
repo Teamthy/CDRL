@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import HomePage from '../components/HomePage';
 import SiteLayout from '../components/SiteLayout';
-import { getCourses } from '../lib/data';
+import { getCourseCards } from '../lib/data';
 
 export const revalidate = 1800;
 
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-    const courses = await getCourses();
+    const courses = await getCourseCards();
     return (
         <SiteLayout>
             <HomePage courses={courses} />

@@ -63,6 +63,42 @@ export const courseSchema = z.object({
 
 export type Course = z.infer<typeof courseSchema>;
 
+/**
+ * The fields a course CARD renders — nothing else (audit P1-8).
+ *
+ * Course arrays are handed to client components (CourseMarketplace,
+ * PecbPortfolioShowcase, FeaturedCertifications…), and every property on them
+ * gets serialized into the RSC payload of /, /training and /partnerships. The
+ * long-form `details` body and the `overview` paragraph are not rendered by any
+ * card, so passing whole rows shipped them to the browser for nothing.
+ */
+export const courseCardSchema = courseSchema.pick({
+    id: true,
+    slug: true,
+    title: true,
+    subtitle: true,
+    track: true,
+    level: true,
+    deliveryMode: true,
+});
+
+export type CourseCardView = z.infer<typeof courseCardSchema>;
+
+/** Narrow a full course to the card view model, dropping details/overview. */
+export function toCourseCardView(course: Course): CourseCardView {
+    return {
+        id: course.id,
+        slug: course.slug,
+        title: course.title,
+        subtitle: course.subtitle,
+        track: course.track,
+        level: course.level,
+        deliveryMode: course.deliveryMode,
+    };
+}
+
+export const toCourseCardViews = (courses: Course[]): CourseCardView[] => courses.map(toCourseCardView);
+
 export const editorialBlockSchema = z.object({
     title: z.string(),
     text: z.string(),

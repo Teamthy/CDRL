@@ -121,6 +121,29 @@ app.get(
 // Courses & content (public, cacheable)
 // ────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Fields a course CARD needs. `details` — the long-form markdown body rendered
+ * only on /training/<slug> — is deliberately absent: with no `select` the list
+ * shipped every course's full body (measured 265 KB for 116 rows, ~86% of it
+ * unread), and because the array is handed to client components it was then
+ * duplicated into the RSC payload of /, /training and /partnerships.
+ * GET /courses/:slug still returns the whole row. (audit P1-8)
+ */
+const courseCardSelect = {
+    id: true,
+    slug: true,
+    title: true,
+    subtitle: true,
+    track: true,
+    level: true,
+    deliveryMode: true,
+    overview: true,
+    priceKobo: true,
+    priceBand: true,
+    currency: true,
+    sortOrder: true,
+} as const;
+
 app.get(
     '/api/v1/courses',
     ah(async (req, res) => {
@@ -141,6 +164,7 @@ app.get(
             },
             orderBy: { sortOrder: 'asc' },
             take: 200,
+            select: courseCardSelect,
         });
         res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
         res.json(courses);
@@ -303,7 +327,8 @@ app.get(
         const bundles = await prisma.bundle.findMany({
             where: { published: true },
             orderBy: { sortOrder: 'asc' },
-            include: { courses: { orderBy: { order: 'asc' }, include: { course: true } } },
+            // Card fields only — a bundle listing never renders course bodies.
+            include: { courses: { orderBy: { order: 'asc' }, include: { course: { select: courseCardSelect } } } },
         });
         res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
         res.json(bundles.map((b) => ({ ...b, courseCount: b.courses.length })));
@@ -315,7 +340,8 @@ app.get(
     ah(async (req, res) => {
         const bundle = await prisma.bundle.findFirst({
             where: { slug: req.params.slug, published: true },
-            include: { courses: { orderBy: { order: 'asc' }, include: { course: true } } },
+            // Card fields only — a bundle listing never renders course bodies.
+            include: { courses: { orderBy: { order: 'asc' }, include: { course: { select: courseCardSelect } } } },
         });
         if (!bundle) return res.status(404).json({ message: 'Bundle not found' });
         res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');

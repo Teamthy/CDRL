@@ -4,11 +4,11 @@ import type { Route } from 'next';
 
 import Link from 'next/link';
 import { ArrowRight, BookOpen } from 'lucide-react';
-import type { Course } from '../../lib/content';
+import type { CourseCardView } from '../../lib/content';
 import { courseImageFor } from '../../lib/courseImages';
 
 type Props = {
-    course: Course;
+    course: CourseCardView;
     href?: Route;
 };
 

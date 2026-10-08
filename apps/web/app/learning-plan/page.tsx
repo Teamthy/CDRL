@@ -1,5 +1,5 @@
 import SiteLayout from '../../components/SiteLayout';
-import { getCourses } from '../../lib/data';
+import { getCourseCards } from '../../lib/data';
 import PageHero from '../../components/sections/PageHero';
 import LearningPlanSelected from '../../components/sections/LearningPlanSelected';
 
@@ -11,7 +11,7 @@ export const metadata = {
 };
 
 export default async function LearningPlanPage() {
-    const courses = await getCourses();
+    const courses = await getCourseCards();
     // LearningPlanSelected renders its own "Complete Enquiry" contact CTA.
     return (
         <SiteLayout footerCta={false}>
