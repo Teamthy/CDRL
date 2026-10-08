@@ -6,6 +6,7 @@ import SiteLayout from '../../../components/SiteLayout';
 import PageHero from '../../../components/sections/PageHero';
 import CTASection from '../../../components/sections/CTASection';
 import { getPostBySlug } from '../../../lib/data';
+import { formatLongDate } from '../../../lib/dates';
 import JsonLd from '../../../components/JsonLd';
 import { newsArticleJsonLd, SITE_URL } from '../../../lib/jsonld';
 
@@ -82,7 +83,7 @@ export default async function PostPage({ params }: Props) {
     if (!post) notFound();
 
     const dateIso = post.publishedAt ?? post.createdAt;
-    const dateLabel = new Date(dateIso).toLocaleDateString('en-NG', { dateStyle: 'long' });
+    const dateLabel = formatLongDate(dateIso);
     // Normalize CRLF/CR so Windows-authored bodies split into paragraphs correctly.
     const paragraphs = post.body
         .replace(/\r\n?/g, '\n')
