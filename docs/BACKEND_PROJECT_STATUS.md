@@ -75,18 +75,18 @@ Enabled when `LEARNER_JWT_SECRET` is set. Otherwise it returns 503.
 
 ## 6. Known gaps and open decisions
 
-The full list is in the audit tracker. The open items are:
+The full list is in the audit tracker.
 
-- **Two forms post to a route the API does not serve.** The waitlist and corporate-quote forms send `POST /api/v1/enquiries`. That path does not exist, so both forms always fail. The fix is to point them at `/api/v1/contact`, which accepts the same payload, or to add the route. This needs a decision.
-- **Signup can claim an admin-created account that has no password yet.** It needs an email-verification decision.
-- **Access tokens are returned in the JSON body and kept in `localStorage`** by the web app. Moving them to cookies changes the session model. The refresh token is already httpOnly.
+- **Account setup (open).** Signup can set a password on an admin-created account that has no password yet, using only its email address. The chosen fix is invite-only setup: the admin sends a single-use link when the account is created. It is not built yet. Two things must be settled first: whether SMTP is set in production (`SMTP_HOST` and `SMTP_USER` are optional in `docker-compose.prod.yml`, so the admin may need to hand over the link), and what happens to existing accounts that have no password.
+- **Access tokens (open).** The web app keeps access tokens in `localStorage`. The chosen fix is httpOnly cookies. It is blocked for now: the web app (Vercel) and the API (Render) are different sites, and the refresh cookie is already `SameSite=None`, which browsers that block third-party cookies, Safari by default, will drop.
 - **Dependency advisories.** `pnpm audit --prod` reports 9 high or critical advisories. Three are in the API tree: `express` → `proxy-addr` (critical) and two `nodemailer` highs. Six are in the web tree, through `next`. Each upgrade needs its own PR.
 - **No integration or end-to-end tests.** CI already runs PostgreSQL, so database-backed tests for payments, refresh and enrolment are a short next step.
 - **Reset emails need SMTP.** Without it, reset requests are accepted, no email is sent, and nothing is logged about the link.
 
 ## 7. Next steps
 
-1. Decide where the two forms should post, then fix them.
-2. Make the dependency upgrade PR: `next` 15.5.27 or later, `express` 4.22.3 or later, `nodemailer` 10.x, and a `qs` override.
-3. Add database-backed integration tests for payments, refresh and enrolment.
-4. Decide whether production should become the default `NODE_ENV`.
+1. Answer the SMTP and same-site questions, then build invite-only account setup.
+2. Decide cookie-based tokens once the hosting question is answered.
+3. Make the dependency upgrade PR: `next` 15.5.27 or later, `express` 4.22.3 or later, `nodemailer` 10.x, and a `qs` override.
+4. Add database-backed integration tests for payments, refresh and enrolment.
+5. Decide whether production should become the default `NODE_ENV`.

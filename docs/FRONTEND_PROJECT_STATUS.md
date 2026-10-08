@@ -50,15 +50,13 @@ The public website and the learner and admin portals for the CDRL / YKAY Consult
 
 ## 5. Known gaps and open decisions
 
-- **Waitlist and corporate-quote forms always fail.** Both post to `/api/v1/enquiries`, which the API does not serve. Pointing them at `/api/v1/contact` is the smallest fix. This needs a decision.
-- **CSP is report-only.** Enforcing it would break the site: `script-src` has no nonce, the app ships inline scripts, and `img-src` blocks remote images. The fix needs a nonce strategy first.
-- **The learner and admin access tokens are kept in `localStorage`.** Moving them to cookies changes the session model for every authenticated call.
+- **CSP is report-only.** Enforcing it would break the site: `script-src` has no nonce, the app ships inline scripts, and `img-src` blocks remote images. The recommended direction is a nonce-based policy from middleware, report-only first, then enforced. It is not built yet, because a per-request nonce makes every page render per request, which gives up static caching. The choice was delegated, so the caching trade-off still needs confirming.
+- **Access tokens are kept in `localStorage`** (`lib/learnerClient.ts`, `lib/adminClient.ts`). The chosen fix is httpOnly cookies. It is blocked for now: the web app and the API are on different sites, so the cookies would be third-party.
 - **No end-to-end tests.** The unit tests cover the client libraries and some pure logic. Nothing drives a browser through enrolment, enquiry or sign-in.
 - **Dependency advisories** come through `next@15.5.21`, along with `postcss` and `sharp` underneath it. Next 15.5.27 is the first release that fixes the Next advisories. The upgrade belongs in its own PR.
 
 ## 6. Next steps
 
-1. Decide where the waitlist and corporate-quote forms should post, then fix them.
-2. Decide the CSP nonce approach, then move the policy from report-only to enforced.
-3. Move the access tokens out of `localStorage`.
-4. Add a small browser test covering the enquiry forms and sign-in.
+1. Confirm the CSP trade-off, then ship the nonce policy in report-only mode.
+2. Answer the same-site question before moving tokens out of `localStorage`.
+3. Add a small browser test covering the enquiry forms and sign-in.
