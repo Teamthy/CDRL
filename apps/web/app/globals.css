@@ -1307,7 +1307,8 @@ a.pecb-badge img { border-radius: 10px; }
 .admin-sub { color: var(--cdrl-text-muted-light); font-size: 13px; max-width: 640px; }
 .admin-sub a { color: var(--cdrl-green); }
 .admin-error { background: rgba(255, 90, 90, 0.12); border: 1px solid rgba(255, 90, 90, 0.35); color: #ff9c9c; border-radius: 10px; padding: 12px 14px; font-size: 13px; max-width: 720px; }
-.admin-notice { background: rgba(112, 242, 80, 0.10); border: 1px solid var(--cdrl-border-dark); color: var(--cdrl-green); border-radius: 10px; padding: 12px 14px; font-size: 13px; max-width: 720px; }
+.admin-notice { background: rgba(112, 242, 80, 0.10); border: 1px solid var(--cdrl-border-dark); color: var(--cdrl-green); border-radius: 10px; padding: 12px 14px; font-size: 13px; max-width: 720px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.admin-notice .admin-ghost.danger { margin-left: auto; color: #b3261e; border-color: rgba(179, 38, 30, 0.4); }
 .admin-hint { margin-top: 26px; color: var(--cdrl-text-muted-light); font-size: 12.5px; }
 .admin-hint a { color: var(--cdrl-green); }
 

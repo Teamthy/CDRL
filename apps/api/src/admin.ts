@@ -289,6 +289,104 @@ function crudRoutes(path: string, delegate: Delegate, schema: z.ZodObject<z.ZodR
     );
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// Course deletion is NOT the generic delete (audit P0-4).
+//
+// Enrollment, CourseModule, Recording and ModuleCompletion are all
+// `onDelete: Cascade` from Course. A plain DELETE therefore wiped every
+// learner's enrolment and progress for that course, irreversibly, behind a
+// two-click button in the console — and Purchase rows lost their course link.
+//
+// So: DELETE retires the course (unpublish) by default; destroying the row
+// needs ?hard=true AND is refused outright while enrolments or purchases
+// reference it.
+// ────────────────────────────────────────────────────────────────────────────
+
+export function wantsHardDelete(query: Request['query']): boolean {
+    return query.hard === 'true' || query.hard === '1';
+}
+
+export type CourseDeletePlan =
+    | { action: 'archive'; alreadyArchived: boolean }
+    | { action: 'blocked'; blockedBy: string }
+    | { action: 'destroy' };
+
+/**
+ * The whole deletion policy, as a pure decision — so it can be tested without
+ * Express or a database, and so the rule is readable in one place.
+ */
+export function planCourseDelete(input: {
+    hard: boolean;
+    published: boolean;
+    enrollments: number;
+    purchases: number;
+}): CourseDeletePlan {
+    if (!input.hard) return { action: 'archive', alreadyArchived: !input.published };
+    const parts = [
+        input.enrollments > 0 ? `${input.enrollments} enrolment${input.enrollments === 1 ? '' : 's'}` : null,
+        input.purchases > 0 ? `${input.purchases} purchase${input.purchases === 1 ? '' : 's'}` : null,
+    ].filter(Boolean) as string[];
+    if (parts.length > 0) return { action: 'blocked', blockedBy: parts.join(' and ') };
+    return { action: 'destroy' };
+}
+
+adminRouter.delete(
+    '/courses/:id',
+    ah(async (req, res) => {
+        const id = req.params.id;
+        const course = await prisma.course.findUnique({ where: { id } });
+        if (!course) return res.status(404).json({ message: 'Not found' });
+
+        const [enrollments, purchases, modules, recordings] = await Promise.all([
+            prisma.enrollment.count({ where: { courseId: id } }),
+            prisma.purchase.count({ where: { courseId: id } }),
+            prisma.courseModule.count({ where: { courseId: id } }),
+            prisma.recording.count({ where: { courseId: id } }),
+        ]);
+
+        const plan = planCourseDelete({
+            hard: wantsHardDelete(req.query),
+            published: course.published,
+            enrollments,
+            purchases,
+        });
+
+        if (plan.action === 'archive') {
+            // Unpublishing removes it from every public surface immediately —
+            // all public queries filter on `published` — and destroys nothing.
+            if (!plan.alreadyArchived) {
+                await prisma.course.update({ where: { id }, data: { published: false } });
+                void audit(req, 'update', 'courses', id, `Unpublished (soft delete) courses/${course.slug}`);
+            }
+            return res.json({
+                archived: true,
+                alreadyArchived: plan.alreadyArchived,
+                enrollments,
+                purchases,
+                message: `“${course.title}” is unpublished and no longer visible on the site. Learner records are untouched.`,
+            });
+        }
+
+        if (plan.action === 'blocked') {
+            return res.status(409).json({
+                message: `Cannot delete “${course.title}”: ${plan.blockedBy} reference it. Unpublish it instead — deleting would erase learner progress.`,
+                enrollments,
+                purchases,
+            });
+        }
+
+        await prisma.course.delete({ where: { id } });
+        void audit(
+            req,
+            'delete',
+            'courses',
+            id,
+            `Permanently deleted courses/${course.slug} (${modules} modules, ${recordings} recordings)`,
+        );
+        return res.status(204).send();
+    }),
+);
+
 crudRoutes('courses', prisma.course as unknown as Delegate, courseUpsertSchema, { sortOrder: 'asc' });
 
 // patch-33: trainers, course<>trainer links, bundles (with course-membership sync)

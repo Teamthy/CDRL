@@ -76,6 +76,8 @@ export default function ResourceManager<T, D>({
     const [notice, setNotice] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(0);
+    // Set after a soft delete so the admin can still escalate to a real one.
+    const [pendingHardDelete, setPendingHardDelete] = useState<string | null>(null);
 
     // Notices self-clear so stale confirmations never linger.
     useEffect(() => {
@@ -217,10 +219,28 @@ export default function ResourceManager<T, D>({
         }
     }
 
-    async function remove(id: string) {
+    /**
+     * Delete, or — where the API protects dependent data — retire.
+     *
+     * /admin/courses answers a plain DELETE with `{ archived: true }`: the row is
+     * unpublished, not destroyed, because enrolments, modules, recordings and
+     * progress all cascade from Course. The permanent variant is opt-in and the
+     * API refuses it (409) while learners or purchases reference the course.
+     */
+    async function remove(id: string, hard = false) {
+        setError(null);
         try {
-            await adminFetch(`${endpoint}/${id}`, { method: 'DELETE' });
-            setNotice(`${entityName} deleted.`);
+            const result = await adminFetch<{ archived?: boolean; message?: string } | undefined>(
+                `${endpoint}/${id}${hard ? '?hard=true' : ''}`,
+                { method: 'DELETE' },
+            );
+            if (result?.archived) {
+                setNotice(result.message ?? `${entityName} unpublished.`);
+                setPendingHardDelete(id);
+            } else {
+                setNotice(`${entityName} deleted.`);
+                setPendingHardDelete(null);
+            }
             await reload();
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
@@ -247,7 +267,30 @@ export default function ResourceManager<T, D>({
             </header>
 
             {error && <p className="admin-error" role="alert">{error}</p>}
-            {notice && <p className="admin-notice" role="status">{notice}</p>}
+            {notice && (
+                <div className="admin-notice" role="status">
+                    <span>{notice}</span>
+                    {pendingHardDelete && (
+                        <button
+                            type="button"
+                            className="admin-ghost danger"
+                            onClick={() => {
+                                if (
+                                    window.confirm(
+                                        `Permanently delete this ${entityName.toLowerCase()}? This cannot be undone. It will be refused if any learner data still references it.`,
+                                    )
+                                ) {
+                                    const id = pendingHardDelete;
+                                    setPendingHardDelete(null);
+                                    void remove(id, true);
+                                }
+                            }}
+                        >
+                            Delete permanently
+                        </button>
+                    )}
+                </div>
+            )}
             {restorableDraft && !editing && (
                 <div className="admin-restore" role="status">
                     <span>A saved draft of a {entityName} exists from a previous session.</span>
