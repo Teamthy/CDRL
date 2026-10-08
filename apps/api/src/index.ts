@@ -2,11 +2,10 @@ import express, { type NextFunction, type Request, type RequestHandler, type Res
 import cors from 'cors';
 import helmet from 'helmet';
 import { Prisma } from '@prisma/client';
-import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible';
-import { Redis } from 'ioredis';
 import nodemailer from 'nodemailer';
 import { config, corsOrigins } from './config.js';
 import { prisma } from './db.js';
+import { closeRateLimitStore, rateLimitPlanEdits, rateLimitSubmissions } from './rateLimit.js';
 import { adminRouter } from './admin.js';
 import { learnerRouter } from './learnerAuth.js';
 import { paymentsRawBody, paymentsRouter, paymentsWebhook } from './payments.js';
@@ -26,42 +25,7 @@ const ah =
         fn(req, res, next).catch(next);
     };
 
-// ────────────────────────────────────────────────────────────────────────────
-// Rate limiting (shared via Redis when REDIS_URL is set)
-// ────────────────────────────────────────────────────────────────────────────
 
-let redis: Redis | null = null;
-const mutationLimiter = (() => {
-    if (config.REDIS_URL) {
-        redis = new Redis(config.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 1 });
-        redis.on('error', (err) => logger.warn({ err }, 'redis error (rate limiter store)'));
-        logger.info('rate limiting backed by Redis');
-        return new RateLimiterRedis({
-            storeClient: redis,
-            points: config.RATE_LIMIT_POINTS,
-            duration: config.RATE_LIMIT_DURATION,
-            keyPrefix: 'cdrl:rl',
-        });
-    }
-    if (config.NODE_ENV === 'production') {
-        logger.warn('REDIS_URL not set — in-memory rate limiting only works correctly on a single instance');
-    }
-    return new RateLimiterMemory({ points: config.RATE_LIMIT_POINTS, duration: config.RATE_LIMIT_DURATION });
-})();
-
-async function rateLimitMutations(req: Request, res: Response, next: NextFunction) {
-    try {
-        await mutationLimiter.consume(req.ip ?? 'unknown');
-        next();
-    } catch (err) {
-        if (err instanceof Error) {
-            // rate-limiter store failure — treat as a server error, not a 429
-            next(err);
-            return;
-        }
-        res.status(429).json({ message: 'Too many requests. Please try again shortly.' });
-    }
-}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Optional contact-notification mailer
@@ -199,7 +163,7 @@ app.get(
 
 app.post(
     '/api/v1/contact',
-    rateLimitMutations,
+    rateLimitSubmissions,
     ah(async (req, res) => {
         const parsed = contactSchema.safeParse(req.body);
         if (!parsed.success) {
@@ -253,7 +217,7 @@ app.get(
 
 app.post(
     '/api/v1/learning-plan/items',
-    rateLimitMutations,
+    rateLimitPlanEdits,
     ah(async (req, res) => {
         const sessionId = req.headers['x-session-id'];
         const parsed = learningPlanItemSchema.safeParse(req.body);
@@ -291,7 +255,7 @@ app.post(
 
 app.delete(
     '/api/v1/learning-plan/items/:courseId',
-    rateLimitMutations,
+    rateLimitPlanEdits,
     ah(async (req, res) => {
         const sessionId = req.headers['x-session-id'];
         if (!isValidSessionId(sessionId)) return res.status(404).json({ message: 'Plan not found' });
@@ -340,8 +304,7 @@ app.get(
     ah(async (req, res) => {
         const bundle = await prisma.bundle.findFirst({
             where: { slug: req.params.slug, published: true },
-            // Card fields only — a bundle listing never renders course bodies.
-            include: { courses: { orderBy: { order: 'asc' }, include: { course: { select: courseCardSelect } } } },
+            include: { courses: { orderBy: { order: 'asc' }, include: { course: true } } },
         });
         if (!bundle) return res.status(404).json({ message: 'Bundle not found' });
         res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
@@ -381,7 +344,7 @@ app.get(
 
 app.post(
     '/api/v1/applications',
-    rateLimitMutations,
+    rateLimitSubmissions,
     ah(async (req, res) => {
         const parsed = applicationSchema.safeParse(req.body);
         if (!parsed.success) {
@@ -466,7 +429,7 @@ async function shutdown(signal: string) {
     server.close(async () => {
         try {
             await prisma.$disconnect();
-            if (redis) await redis.quit();
+            await closeRateLimitStore();
             logger.info('shutdown complete');
             process.exit(0);
         } catch (err) {

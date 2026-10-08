@@ -20,6 +20,7 @@ type Enrollment = { studentId: string; courseId: string; status: string; progres
 
 const db = vi.hoisted(() => ({
     purchases: [] as Record<string, unknown>[],
+    courses: [] as Record<string, unknown>[],
     users: [] as { id: string; email: string; name: string; role: string }[],
     enrollments: [] as Enrollment[],
     transactions: 0,
@@ -45,6 +46,33 @@ Object.assign(prismaMock, {
             Object.assign(row!, data);
             return row;
         },
+        create: async ({ data }: { data: Record<string, unknown> }) => {
+            // `status` and `createdAt` come from schema defaults in Postgres.
+            const row = { id: `p${++db.seq}`, status: 'pending', createdAt: new Date(), ...data };
+            db.purchases.push(row);
+            return row;
+        },
+        updateMany: async ({
+            where,
+            data,
+        }: {
+            where: { status?: string; email?: string; courseId?: string; createdAt?: { lt: Date } };
+            data: Record<string, unknown>;
+        }) => {
+            const hit = db.purchases.filter(
+                (p) =>
+                    (where.status === undefined || p.status === where.status) &&
+                    (where.email === undefined || p.email === where.email) &&
+                    (where.courseId === undefined || p.courseId === where.courseId) &&
+                    (where.createdAt === undefined || (p.createdAt as Date) < where.createdAt.lt),
+            );
+            hit.forEach((p) => Object.assign(p, data));
+            return { count: hit.length };
+        },
+    },
+    course: {
+        findUnique: async ({ where }: { where: { slug: string } }) =>
+            db.courses.find((c) => c.slug === where.slug) ?? null,
     },
     lmsUser: {
         upsert: async ({ where, create }: { where: { email: string }; create: { email: string; name: string; role: string } }) => {
@@ -89,6 +117,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
     db.purchases = [];
+    db.courses = [];
     db.users = [];
     db.enrollments = [];
     db.transactions = 0;
@@ -222,5 +251,119 @@ describe('GET /payments/verify/:reference — already-success branch', () => {
 
         expect(result.body).toMatchObject({ already: true, repaired: false });
         expect(db.enrollments).toHaveLength(0);
+    });
+});
+
+/**
+ * Audit finding P1-11: `/payments/initialize` writes a purchase row BEFORE
+ * Paystack answers, and nothing ever cleaned those rows up — so every
+ * abandoned checkout and every reload of the pay page left a pending row
+ * behind forever.
+ */
+describe('pending purchase hygiene', () => {
+    const DAY = 24 * 60 * 60 * 1000;
+
+    function pending(overrides: Record<string, unknown> = {}) {
+        const row = {
+            id: `p${++db.seq}`,
+            reference: `ykh-${db.seq}`,
+            email: 'ada@example.com',
+            name: 'Ada',
+            courseSlug: 'iso-27001',
+            courseId: 'course-1',
+            amountKobo: 45_000_000,
+            currency: 'NGN',
+            status: 'pending',
+            createdAt: new Date(),
+            ...overrides,
+        };
+        db.purchases.push(row);
+        return row;
+    }
+
+    it('expires pending rows older than the TTL', async () => {
+        const now = Date.now();
+        pending({ createdAt: new Date(now - 2 * DAY) });
+        pending({ createdAt: new Date(now - 30 * 60 * 1000) });
+
+        const count = await payments.expireStalePendingPurchases(now);
+
+        expect(count).toBe(1);
+        expect(db.purchases.map((p) => p.status)).toEqual(['expired', 'pending']);
+    });
+
+    it('leaves settled purchases alone no matter how old', async () => {
+        const now = Date.now();
+        pending({ status: 'success', createdAt: new Date(now - 400 * DAY) });
+        pending({ status: 'failed', createdAt: new Date(now - 400 * DAY) });
+
+        expect(await payments.expireStalePendingPurchases(now)).toBe(0);
+        expect(db.purchases.map((p) => p.status)).toEqual(['success', 'failed']);
+    });
+
+    it('uses a 24-hour TTL', () => {
+        expect(payments.PENDING_PURCHASE_TTL_MS).toBe(DAY);
+    });
+
+    it('supersedes the previous pending attempt instead of piling rows up', async () => {
+        db.courses.push({
+            id: 'course-1',
+            slug: 'iso-27001',
+            published: true,
+            priceKobo: 45_000_000,
+            currency: 'NGN',
+        });
+        pending();
+        pending();
+
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => ({
+                ok: true,
+                json: async () => ({
+                    status: true,
+                    data: { authorization_url: 'https://checkout.paystack.com/x', reference: 'ykh-new' },
+                }),
+            })),
+        );
+
+        const result = await invoke(handlerFor('post', '/initialize'), {
+            body: { courseSlug: 'iso-27001', email: 'Ada@Example.com', name: 'Ada' },
+        });
+
+        expect(result.status).toBe(201);
+        // the two earlier attempts are closed out, exactly one is live
+        expect(db.purchases.filter((p) => p.status === 'pending')).toHaveLength(1);
+        expect(db.purchases.filter((p) => p.status === 'superseded')).toHaveLength(2);
+        vi.unstubAllGlobals();
+    });
+
+    it('does not supersede another learner\u2019s pending purchase', async () => {
+        db.courses.push({
+            id: 'course-1',
+            slug: 'iso-27001',
+            published: true,
+            priceKobo: 45_000_000,
+            currency: 'NGN',
+        });
+        pending({ email: 'grace@example.com' });
+
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => ({
+                ok: true,
+                json: async () => ({
+                    status: true,
+                    data: { authorization_url: 'https://checkout.paystack.com/x', reference: 'ykh-new' },
+                }),
+            })),
+        );
+
+        await invoke(handlerFor('post', '/initialize'), {
+            body: { courseSlug: 'iso-27001', email: 'ada@example.com' },
+        });
+
+        expect(db.purchases.find((p) => p.email === 'grace@example.com')!.status).toBe('pending');
+        vi.unstubAllGlobals();
     });
 });

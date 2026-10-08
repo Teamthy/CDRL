@@ -3,12 +3,12 @@ import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { RateLimiterMemory } from 'rate-limiter-flexible';
 import nodemailer from 'nodemailer';
 import { config, corsOrigins } from './config.js';
 import { z } from 'zod';
 import { prisma } from './db.js';
 import { logger } from './logger.js';
+import { createLimiter, rateLimit } from './rateLimit.js';
 import { JWT_ISSUER, signScopedToken, verifyScopedToken } from './rbac.js';
 import {
     assertAllowedOrigin,
@@ -50,8 +50,27 @@ const learnerConfigured = Boolean(learnerSecret);
 
 const publicWebUrl = config.PUBLIC_WEB_URL ?? corsOrigins[0] ?? 'http://localhost:3000';
 
-/** Shared limiter for all credential endpoints (5/min/IP). */
-const authLimiter = new RateLimiterMemory({ points: 5, duration: 60 });
+/**
+ * Credential endpoints get TWO buckets, not one (audit P1-12).
+ *
+ * A single 5/min bucket covered login, signup, forgot-password AND
+ * reset-password, so five failed sign-in attempts locked the user out of the
+ * password-recovery flow they needed in order to succeed — the lockout
+ * actively prevented the fix. Recovery now has its own budget that login
+ * failures cannot spend.
+ *
+ * Both are built through the shared factory, so they are Redis-backed when
+ * REDIS_URL is set; they used to be RateLimiterMemory, which on a multi-
+ * instance deployment meant the real limit was 5 x the number of instances.
+ */
+const rateLimitCredentials = rateLimit(createLimiter('auth', 5, 60));
+
+/**
+ * Recovery is tighter per minute but over a longer window: forgot-password
+ * sends mail, so it must not be a spam cannon, while a legitimate user only
+ * ever needs it once or twice.
+ */
+const rateLimitRecovery = rateLimit(createLimiter('auth-recovery', 5, 300));
 
 // Compared against when the account doesn't exist so timing leaks nothing.
 const DUMMY_HASH = '$2b$10$9kH0w8Vz0YlW3Z1QzQ0G0O6b8Jb0nqQ0ZQ0ZQ0ZQ0ZQ0ZQ0ZQ0ZQ0W';
@@ -114,16 +133,6 @@ const transporter: nodemailer.Transporter | null =
           })
         : null;
 
-async function consumeRate(req: Request, res: Response): Promise<boolean> {
-    try {
-        await authLimiter.consume(req.ip ?? 'unknown');
-        return true;
-    } catch {
-        res.status(429).json({ message: 'Too many attempts. Try again shortly.' });
-        return false;
-    }
-}
-
 export const learnerRouter = Router();
 
 function publicUser(u: { id: string; name: string; email: string; role: string; onboardedAt?: Date | null }) {
@@ -133,8 +142,8 @@ function publicUser(u: { id: string; name: string; email: string; role: string; 
 // POST /signup — create a student account, or claim an admin-created one.
 learnerRouter.post(
     '/signup',
+    rateLimitCredentials,
     ah(async (req, res) => {
-        if (!(await consumeRate(req, res))) return;
         if (!learnerConfigured) return res.status(503).json({ message: 'Learner accounts not enabled on this deployment' });
         const parsed = learnerSignupSchema.safeParse(req.body);
         if (!parsed.success) return res.status(400).json({ message: 'Check your details and try again' });
@@ -159,8 +168,8 @@ learnerRouter.post(
 // POST /login
 learnerRouter.post(
     '/login',
+    rateLimitCredentials,
     ah(async (req, res) => {
-        if (!(await consumeRate(req, res))) return;
         if (!learnerConfigured) return res.status(503).json({ message: 'Learner accounts not enabled on this deployment' });
         const parsed = learnerLoginSchema.safeParse(req.body);
         if (!parsed.success) return res.status(401).json({ message: 'Invalid credentials' });
@@ -386,8 +395,8 @@ learnerRouter.post(
 // POST /forgot-password — always 200 so emails cannot be enumerated.
 learnerRouter.post(
     '/forgot-password',
+    rateLimitRecovery,
     ah(async (req, res) => {
-        if (!(await consumeRate(req, res))) return;
         const parsed = learnerResetRequestSchema.safeParse(req.body);
         if (!parsed.success) return res.json({ ok: true });
         if (!learnerConfigured) return res.json({ ok: true });
@@ -419,8 +428,8 @@ learnerRouter.post(
 // POST /reset-password — single-use token + new password.
 learnerRouter.post(
     '/reset-password',
+    rateLimitRecovery,
     ah(async (req, res) => {
-        if (!(await consumeRate(req, res))) return;
         if (!learnerConfigured) return res.status(503).json({ message: 'Learner accounts not enabled on this deployment' });
         const parsed = learnerResetSchema.safeParse(req.body);
         if (!parsed.success) return res.status(400).json({ message: 'Password must be at least 8 characters.' });

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { config, corsOrigins } from './config.js';
 import { prisma } from './db.js';
 import { logger } from './logger.js';
+import { rateLimitPaymentInit, rateLimitPaymentVerify } from './rateLimit.js';
 
 const ah =
     (fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>): RequestHandler =>
@@ -102,11 +103,69 @@ async function settlePurchase(purchaseId: string, purchase: PurchaseLike): Promi
     });
 }
 
+/**
+ * How long a started-but-never-completed checkout stays "pending" (audit P1-11).
+ *
+ * `initialize` writes a purchase row BEFORE Paystack answers and nothing ever
+ * cleaned those rows up, so every abandoned checkout — and every reload of the
+ * pay page — left a row behind permanently. Paystack itself abandons an
+ * unpaid transaction well inside a day.
+ */
+export const PENDING_PURCHASE_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** Don't sweep on every request; once an hour per instance is plenty. */
+const SWEEP_INTERVAL_MS = 60 * 60 * 1000;
+let lastSweepAt = 0;
+
+/**
+ * Flip long-abandoned pending purchases to `expired`.
+ *
+ * Deliberately a status change rather than a delete: a row is the only record
+ * that a learner tried to pay, which is worth keeping for support. Nothing
+ * reads `expired`, and `verify` is unaffected — it re-checks Paystack by
+ * reference regardless of the local status, so a genuinely-paid purchase that
+ * got swept still settles correctly.
+ */
+export async function expireStalePendingPurchases(now = Date.now()): Promise<number> {
+    const { count } = await prisma.purchase.updateMany({
+        where: { status: 'pending', createdAt: { lt: new Date(now - PENDING_PURCHASE_TTL_MS) } },
+        data: { status: 'expired' },
+    });
+    if (count > 0) logger.info({ count }, 'expired stale pending purchases');
+    return count;
+}
+
+/** Run the sweep at most once per SWEEP_INTERVAL_MS, never blocking the request. */
+function maybeSweep(now = Date.now()): void {
+    if (now - lastSweepAt < SWEEP_INTERVAL_MS) return;
+    lastSweepAt = now;
+    void expireStalePendingPurchases(now).catch((err: unknown) =>
+        logger.warn({ err }, 'pending-purchase sweep failed'),
+    );
+}
+
+/**
+ * One live pending purchase per learner per course.
+ *
+ * Reloading the pay page used to mint a brand-new reference and a brand-new
+ * row each time, so a hesitant buyer could leave dozens behind. Superseding
+ * the previous attempt keeps the table proportional to real intent while
+ * leaving the old reference resolvable if Paystack reports it paid later.
+ */
+async function supersedePendingPurchases(email: string, courseId: string): Promise<number> {
+    const { count } = await prisma.purchase.updateMany({
+        where: { email, courseId, status: 'pending' },
+        data: { status: 'superseded' },
+    });
+    return count;
+}
+
 export const paymentsRouter = Router();
 
 // POST /api/v1/payments/initialize — create a pending purchase, return Paystack URL.
 paymentsRouter.post(
     '/initialize',
+    rateLimitPaymentInit,
     ah(async (req, res) => {
         if (!paymentsConfigured) {
             return res.status(503).json({ message: 'Online payment is not enabled yet — apply instead and we will share payment details.' });
@@ -120,6 +179,12 @@ paymentsRouter.post(
         if (!course || !course.published) return res.status(404).json({ message: 'Course not found' });
         if (!course.priceKobo || course.priceKobo <= 0) {
             return res.status(409).json({ message: 'This course is application-based — please use the apply form instead.' });
+        }
+
+        maybeSweep();
+        const superseded = await supersedePendingPurchases(email, course.id);
+        if (superseded > 0) {
+            logger.info({ email, courseSlug, superseded }, 'superseded earlier pending purchases');
         }
 
         const reference = `ykh-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -154,6 +219,7 @@ paymentsRouter.post(
 // GET /api/v1/payments/verify/:reference — landing-page verification after redirect.
 paymentsRouter.get(
     '/verify/:reference',
+    rateLimitPaymentVerify,
     ah(async (req, res) => {
         if (!paymentsConfigured) return res.status(503).json({ message: 'Payments not enabled' });
         const purchase = await prisma.purchase.findUnique({ where: { reference: req.params.reference } });

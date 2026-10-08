@@ -184,7 +184,7 @@ model Purchase {
   courseSlug  String
   amountKobo  Int
   currency    String   @default("NGN")
-  status      String   @default("pending")   // pending | success | failed
+  status      String   @default("pending")   // pending | success | failed | expired | superseded
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   paidAt      DateTime?
