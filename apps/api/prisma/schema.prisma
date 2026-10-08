@@ -53,6 +53,9 @@ model ContactEnquiry {
   status       String   @default("new")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // The admin inbox lists `where status = ? order by createdAt desc`.
+  @@index([status, createdAt])
 }
 
 model LearningPlan {
@@ -61,6 +64,9 @@ model LearningPlan {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   items     LearningPlanItem[]
+
+  // Anonymous session plans are swept once they go cold.
+  @@index([updatedAt])
 }
 
 model LearningPlanItem {
@@ -224,6 +230,8 @@ model RefreshToken {
 
   @@index([userId])
   @@index([familyId])
+  // Purge sweeps delete by expiry; without this they seq-scan the whole table.
+  @@index([expiresAt])
 }
 
 

@@ -6,6 +6,7 @@ import nodemailer from 'nodemailer';
 import { config, corsOrigins } from './config.js';
 import { prisma } from './db.js';
 import { closeRateLimitStore, rateLimitPlanEdits, rateLimitSubmissions } from './rateLimit.js';
+import { runRetentionSweeps, startRetentionSweeps } from './retention.js';
 import { adminRouter } from './admin.js';
 import { learnerRouter } from './learnerAuth.js';
 import { paymentsRawBody, paymentsRouter, paymentsWebhook } from './payments.js';
@@ -419,7 +420,12 @@ app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
 
 const server = app.listen(config.PORT, () => {
     logger.info({ port: config.PORT, env: config.NODE_ENV }, 'API listening');
+    // Expired refresh tokens and abandoned learning plans accumulated forever
+    // (audit P1-13). Sweep once at boot, then on a timer.
+    void runRetentionSweeps();
 });
+
+const stopRetentionSweeps = startRetentionSweeps();
 
 let shuttingDown = false;
 async function shutdown(signal: string) {
@@ -428,6 +434,7 @@ async function shutdown(signal: string) {
     logger.info({ signal }, 'shutdown requested');
     server.close(async () => {
         try {
+            stopRetentionSweeps();
             await prisma.$disconnect();
             await closeRateLimitStore();
             logger.info('shutdown complete');
