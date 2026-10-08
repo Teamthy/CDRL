@@ -50,7 +50,7 @@ The public website and the learner and admin portals for the CDRL / YKAY Consult
 
 ## 5. Known gaps and open decisions
 
-- **CSP is report-only.** The policy is nonce-based and has no `'unsafe-inline'` for scripts. Per-request nonces make every page render per request, so pages are no longer served from the static cache; that was agreed in review. Enforcing it needs a review of the reports in a real browser. The employer-letter print helper must be fixed first, because its inline script would likely be blocked.
+- **CSP is report-only.** The policy is nonce-based and has no `'unsafe-inline'` for scripts. Per-request nonces make every page render per request, so pages are no longer served from the static cache; that was agreed in review. Enforcing it needs a review of the reports in a real browser. The policy has no `report-uri` or `report-to`, so violations show only in the browser console, and nothing collects them yet. A report endpoint would make the review practical. The employer-letter print helper must be fixed first, because its inline script would likely be blocked.
 - **Access tokens are kept in `localStorage`** (`lib/learnerClient.ts`, `lib/adminClient.ts`). The decided fix is httpOnly cookies. Same-site hosting makes that possible, but the API must move to a subdomain first (see the backend status doc).
 - **Employer-letter print** (`components/course/EmployerFunding.tsx`): `window.open(..., 'noopener')` returns `null` in current browsers, so the print helper appears to do nothing. It needs a browser check.
 - **No end-to-end tests.** The unit tests cover the client libraries and some pure logic. Nothing drives a browser through enrolment, enquiry, invite or sign-in.
