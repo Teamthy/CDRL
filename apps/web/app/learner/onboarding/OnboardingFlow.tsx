@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, BadgeCheck, BookOpen, Compass, Rocket } from 'lucide-react';
 import {
     LearnerUnauthorizedError,
+    learnerCompleteOnboarding,
     learnerMe,
     type LearnerMe,
 } from '../../../lib/learnerClient';
@@ -49,16 +50,29 @@ export default function OnboardingFlow() {
             });
     }, [router]);
 
+    /**
+     * Finish onboarding.
+     *
+     * This used to redirect unconditionally: `fetch` only rejects on a network
+     * failure, so a 401 or a 500 still sent the learner to /learner — where,
+     * still not marked onboarded, they were bounced straight back here. The
+     * catch could never fire for the most likely failures. (audit UX-20)
+     */
     async function finish() {
         setSaving(true);
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/learner/me/complete-onboarding`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { Authorization: `Bearer ${localStorage.getItem('ykh_learner_token')}` },
-            });
+            const result = await learnerCompleteOnboarding();
+            if (!result.ok) {
+                setError(result.message ?? 'Could not save — try again.');
+                setSaving(false);
+                return;
+            }
             router.replace('/learner');
-        } catch {
+        } catch (err) {
+            if (err instanceof LearnerUnauthorizedError) {
+                router.replace('/sign-in');
+                return;
+            }
             setError('Could not save — try again.');
             setSaving(false);
         }

@@ -270,6 +270,22 @@ export async function learnerChangePassword(currentPassword: string, newPassword
     return { ok: true, message: body.message ?? 'Password changed' };
 }
 
+/**
+ * POST /learner/me/complete-onboarding
+ *
+ * OnboardingFlow used to inline this fetch and then redirect unconditionally
+ * (audit UX-20). Going through authFetch means a 401 triggers the normal
+ * refresh-then-sign-in path instead of a silent failure.
+ */
+export async function learnerCompleteOnboarding(): Promise<PostResult> {
+    const res = await authFetch('/learner/me/complete-onboarding', { method: 'POST' });
+    if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        return { ok: false, message: body.message ?? `Could not save your setup (${res.status}).` };
+    }
+    return { ok: true };
+}
+
 export interface ProgressResult {
     ok: boolean;
     progress: number;

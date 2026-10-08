@@ -148,3 +148,71 @@ describe('learnerClient credentials', () => {
         expect(mod.getLearnerToken()).toBe('tok');
     });
 });
+
+/**
+ * Audit finding UX-20: OnboardingFlow inlined this request and then redirected
+ * unconditionally. `fetch` only rejects on a network failure, so a 401 or a
+ * 500 still sent the learner to /learner — where, still not marked onboarded,
+ * they were bounced straight back to onboarding. The catch block could never
+ * fire for the most likely failures.
+ */
+describe('learnerCompleteOnboarding', () => {
+    let fetchMock: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        const storage = installBrowserGlobals();
+        storage.setItem('ykh_learner_token', 'access-token');
+        fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.resetModules();
+        vi.restoreAllMocks();
+    });
+
+    it('reports ok on success', async () => {
+        fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
+        const { learnerCompleteOnboarding } = await import('./learnerClient');
+
+        expect(await learnerCompleteOnboarding()).toEqual({ ok: true });
+    });
+
+    it('reports failure on a 500 instead of looking like success', async () => {
+        fetchMock.mockResolvedValue(jsonResponse({ message: 'Database unavailable' }, 500));
+        const { learnerCompleteOnboarding } = await import('./learnerClient');
+
+        const result = await learnerCompleteOnboarding();
+
+        expect(result.ok).toBe(false);
+        expect(result.message).toBe('Database unavailable');
+    });
+
+    it('falls back to a readable message when the body has none', async () => {
+        fetchMock.mockResolvedValue(jsonResponse({}, 503));
+        const { learnerCompleteOnboarding } = await import('./learnerClient');
+
+        const result = await learnerCompleteOnboarding();
+
+        expect(result.ok).toBe(false);
+        expect(result.message).toContain('503');
+    });
+
+    it('throws LearnerUnauthorizedError on an unrecoverable 401', async () => {
+        fetchMock.mockResolvedValue(jsonResponse({}, 401));
+        const { learnerCompleteOnboarding, LearnerUnauthorizedError } = await import('./learnerClient');
+
+        await expect(learnerCompleteOnboarding()).rejects.toBeInstanceOf(LearnerUnauthorizedError);
+    });
+
+    it('sends credentials so the refresh cookie travels with it', async () => {
+        fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
+        const { learnerCompleteOnboarding } = await import('./learnerClient');
+
+        await learnerCompleteOnboarding();
+
+        const [, init] = fetchMock.mock.calls[0] as FetchCall;
+        expect(init?.credentials).toBe('include');
+    });
+});
