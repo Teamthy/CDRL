@@ -1,4 +1,5 @@
 import type { Course } from './contracts';
+import { CONTACT_PHONE_E164 } from './siteContact';
 
 /**
  * schema.org JSON-LD builders for rich results (Organization, WebSite,
@@ -11,7 +12,6 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:30
 const ORG_NAME = 'Ykay Consulting Hub';
 const ORG_ALT_NAMES = ['YKAY Consult', 'Centre for Digital Risk & Leadership'];
 const ORG_EMAIL = 'info@ykayconsultinghub.com.ng';
-const ORG_PHONE = '+2348060533847';
 
 export function organizationJsonLd() {
     return {
@@ -34,7 +34,8 @@ export function organizationJsonLd() {
                 '@type': 'ContactPoint',
                 contactType: 'customer service',
                 email: ORG_EMAIL,
-                telephone: ORG_PHONE,
+                // Dialable E.164. Never a wa.me link: `telephone` must be a phone number.
+                telephone: CONTACT_PHONE_E164,
                 areaServed: 'NG',
                 availableLanguage: ['en'],
             },

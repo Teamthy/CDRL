@@ -3,12 +3,11 @@
 import { useState, type FormEvent } from 'react';
 import { Bell, CheckCircle2 } from 'lucide-react';
 import type { Course } from '../../lib/content';
+import { submitWaitlist } from '../../lib/enquiries';
 
 type Props = { course: Course };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-
-/** "Notify me when this runs next" (elective #8, light): posts to /enquiries so it lands in the CRM. */
+/** "Notify me when this runs next". Submitted as a contact enquiry, so it lands in the CRM. */
 export default function WaitlistCTA({ course }: Props) {
     const [email, setEmail] = useState('');
     const [state, setState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
@@ -16,22 +15,8 @@ export default function WaitlistCTA({ course }: Props) {
     async function submit(e: FormEvent) {
         e.preventDefault();
         setState('busy');
-        try {
-            const res = await fetch(`${API_BASE}/enquiries`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: 'Waitlist subscriber',
-                    email: email.trim(),
-                    interest: 'Professional Training',
-                    message: `WAITLIST: ${course.title} ${course.subtitle} (${course.slug})`,
-                }),
-            });
-            if (!res.ok) throw new Error(String(res.status));
-            setState('done');
-        } catch {
-            setState('error');
-        }
+        const result = await submitWaitlist(course, email);
+        setState(result.ok ? 'done' : 'error');
     }
 
     if (state === 'done') {

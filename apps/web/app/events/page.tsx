@@ -8,6 +8,7 @@ import { getPageContent, getPublishedEvents } from '../../lib/data';
 import JsonLd from '../../components/JsonLd';
 import { pageData } from '../../lib/content';
 import { formatEventDate } from '../../lib/dates';
+import { WhatsAppEnquiryLink } from '../../components/contact/WhatsAppLink';
 
 export const revalidate = 1800;
 
@@ -81,6 +82,7 @@ async function PublishedEvents() {
                                             <span>Enquire about this event</span>
                                         </a>
                                     )}
+                                    <WhatsAppEnquiryLink about={ev.title} className="text-link" />
                                 </article>
                             </Reveal>
                         );
@@ -105,6 +107,7 @@ async function PublishedEvents() {
                                             {d.day}, {d.label}
                                         </span>
                                         {ev.location && <span>{ev.location}</span>}
+                                        <WhatsAppEnquiryLink about={ev.title} className="text-link" />
                                     </div>
                                 );
                             })}

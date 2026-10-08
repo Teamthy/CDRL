@@ -12,6 +12,7 @@ import { learnerRouter } from './learnerAuth.js';
 import { paymentsRawBody, paymentsRouter, paymentsWebhook } from './payments.js';
 import { tutorRouter } from './tutor.js';
 import { logger } from './logger.js';
+import { JSON_BODY_LIMIT_BYTES, requestErrorHandler } from './requestErrors.js';
 import { applicationSchema, contactSchema, isValidSessionId, learningPlanItemSchema } from './validation.js';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ app.use(cors({ origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins, 
 // Paystack webhook needs the RAW body for HMAC verification — mount before json().
 app.use('/api/v1/payments/webhook', paymentsRawBody, paymentsWebhook());
 
-app.use(express.json({ limit: '50kb' }));
+app.use(express.json({ limit: JSON_BODY_LIMIT_BYTES }));
 
 // Structured request logging
 app.use((req, res, next) => {
@@ -405,14 +406,7 @@ app.use((_req, res) => {
     res.status(404).json({ message: 'Not found' });
 });
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
-    if (err instanceof SyntaxError && 'body' in err) {
-        return res.status(400).json({ message: 'Malformed JSON body' });
-    }
-    logger.error({ err, method: req.method, path: req.originalUrl }, 'unhandled request error');
-    res.status(500).json({ message: 'Internal server error' });
-});
+app.use(requestErrorHandler);
 
 // ────────────────────────────────────────────────────────────────────────────
 // Startup + graceful shutdown

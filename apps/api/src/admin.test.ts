@@ -7,8 +7,14 @@ process.env.ADMIN_EMAIL = 'admin@example.com';
 process.env.ADMIN_PASSWORD = 'correct-horse-battery';
 process.env.ADMIN_JWT_SECRET = 'test-secret-test-secret-test-secret-32!';
 
+// The guard is pure. Keep the generated Prisma client out so the suite loads on a
+// fresh clone (admin.ts only uses Prisma.PrismaClientKnownRequestError inside handlers).
+vi.mock('./db.js', () => ({ prisma: {} }));
+vi.mock('@prisma/client', () => ({ Prisma: { PrismaClientKnownRequestError: class extends Error {} } }));
+
 type Guard = { requireAdmin: (req: Request, res: Response, next: NextFunction) => unknown; signAdminToken: (email: string) => string };
 let guard: Guard;
+let lmsUserView: (user: { passwordHash: string | null }) => Record<string, unknown>;
 
 function mockRes() {
     const res = {
@@ -27,7 +33,9 @@ function mockRes() {
 }
 
 beforeAll(async () => {
-    guard = (await import('./admin.js')) as unknown as Guard;
+    const admin = await import('./admin.js');
+    guard = admin as unknown as Guard;
+    lmsUserView = admin.lmsUserView;
 });
 
 describe('requireAdmin', () => {
@@ -57,3 +65,13 @@ describe('requireAdmin', () => {
         expect(res.statusCode).toBe(0);
     });
 });
+
+describe('lmsUserView', () => {
+    it('never returns the password hash, and says whether one is set', () => {
+        const withPassword = lmsUserView({ id: 'u_1', email: 'a@example.com', passwordHash: '$2b$10$secret' } as never);
+        expect(JSON.stringify(withPassword)).not.toContain('$2b$10$secret');
+        expect(withPassword).toMatchObject({ id: 'u_1', hasPassword: true });
+        expect(lmsUserView({ id: 'u_2', email: 'b@example.com', passwordHash: null } as never)).toMatchObject({ hasPassword: false });
+    });
+});
+

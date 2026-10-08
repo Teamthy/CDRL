@@ -1,4 +1,5 @@
-import { Mail, MapPin, Phone } from 'lucide-react';
+import { Mail, MapPin } from 'lucide-react';
+import { PhoneContactLinks } from '../contact/WhatsAppLink';
 
 export default function ContactInfo() {
     return (
@@ -8,7 +9,7 @@ export default function ContactInfo() {
                 <Mail aria-hidden="true" /> <a href="mailto:info@ykayconsultinghub.com.ng">info@ykayconsultinghub.com.ng</a>
             </p>
             <p>
-                <Phone aria-hidden="true" /> <a href="tel:+2348060533847">+2348060533847</a>
+                <PhoneContactLinks />
             </p>
             <p>
                 <MapPin aria-hidden="true" /> Lagos, Nigeria

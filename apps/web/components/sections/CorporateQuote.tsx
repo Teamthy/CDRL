@@ -2,11 +2,11 @@
 
 import { useState, type FormEvent } from 'react';
 import { Building2, CheckCircle2, Send } from 'lucide-react';
+import { submitCorporateQuote } from '../../lib/enquiries';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 const SIZES = ['2–5 people', '6–15 people', '16–50 people', '50+ people'] as const;
 
-/** Corporate training quote request (elective #6): structured B2B form posting to /enquiries. */
+/** Corporate training quote request (elective #6): structured B2B form, submitted as a contact enquiry. */
 export default function CorporateQuote() {
     const [company, setCompany] = useState('');
     const [name, setName] = useState('');
@@ -18,22 +18,8 @@ export default function CorporateQuote() {
     async function submit(e: FormEvent) {
         e.preventDefault();
         setState('busy');
-        try {
-            const res = await fetch(`${API_BASE}/enquiries`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: `${name.trim()} — ${company.trim()}`,
-                    email: email.trim(),
-                    interest: 'Corporate Training',
-                    message: `Team size: ${teamSize}. Training focus: ${focus.trim()}`,
-                }),
-            });
-            if (!res.ok) throw new Error(`(${res.status})`);
-            setState('done');
-        } catch {
-            setState('error');
-        }
+        const result = await submitCorporateQuote({ name, organization: company, email, teamSize, focus });
+        setState(result.ok ? 'done' : 'error');
     }
 
     if (state === 'done') {

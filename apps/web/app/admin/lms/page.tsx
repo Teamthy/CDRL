@@ -14,7 +14,12 @@ interface LmsUser {
     role: string;
     status: string;
     createdAt: string;
+    /** The API never sends the hash; it says whether a password has been set. */
+    hasPassword: boolean;
 }
+
+/** A one-time sign-in link an admin hands to someone who has no password yet. */
+type InviteLink = { name: string; link: string; expiresInDays: number };
 
 interface EnrollmentRow {
     id: string;
@@ -69,6 +74,7 @@ function PeopleSection() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [users, setUsers] = useState<LmsUser[]>([]);
+    const [invite, setInvite] = useState<InviteLink | null>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
@@ -93,18 +99,30 @@ function PeopleSection() {
         setError(null);
         setNotice(null);
         try {
-            await adminFetch('/admin/lms/users', {
+            const saved = await adminFetch<LmsUser & { invite: Omit<InviteLink, 'name'> | null }>('/admin/lms/users', {
                 method: 'POST',
                 body: JSON.stringify({ name: name.trim(), email: email.trim(), role }),
             });
             setNotice(`${role === 'tutor' ? 'Tutor' : 'Student'} "${name.trim()}" saved.`);
             setName('');
             setEmail('');
+            setInvite(saved.invite ? { name: saved.name, ...saved.invite } : null);
             await reload();
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
         } finally {
             setBusy(false);
+        }
+    }
+
+    async function inviteFor(u: LmsUser) {
+        setError(null);
+        setNotice(null);
+        try {
+            const res = await adminFetch<Omit<InviteLink, 'name'>>(`/admin/lms/users/${u.id}/invite`, { method: 'POST' });
+            setInvite({ name: u.name, ...res });
+        } catch (err) {
+            if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
         }
     }
 
@@ -138,6 +156,28 @@ function PeopleSection() {
             </form>
             {error && <p className="admin-error">{error}</p>}
             {notice && <p className="admin-notice">{notice}</p>}
+            {invite && (
+                <div className="admin-notice" role="status">
+                    <p>
+                        Invite for <strong>{invite.name}</strong>. Send them this link. It sets their password and expires in {invite.expiresInDays} days.
+                    </p>
+                    <input
+                        readOnly
+                        value={invite.link}
+                        aria-label="Invite link"
+                        onFocus={(e) => e.currentTarget.select()}
+                        style={{ width: '100%', marginTop: '0.5rem' }}
+                    />
+                    <p>
+                        <button type="button" className="admin-ghost" onClick={() => void navigator.clipboard?.writeText(invite.link).catch(() => undefined)}>
+                            Copy link
+                        </button>{' '}
+                        <button type="button" className="admin-ghost" onClick={() => setInvite(null)}>
+                            Dismiss
+                        </button>
+                    </p>
+                </div>
+            )}
             <div className="admin-table admin-table-plain">
                 <div className="admin-tr admin-th admin-tr-lms">
                     <span>Name</span>
@@ -155,6 +195,11 @@ function PeopleSection() {
                             <span className={`status-pill ${u.status === 'active' ? 's-qualified' : 's-closed'}`}>{u.status}</span>
                         </span>
                         <span>
+                            {!u.hasPassword && u.status === 'active' && (
+                                <button type="button" className="admin-ghost" onClick={() => void inviteFor(u)}>
+                                    Invite link
+                                </button>
+                            )}
                             <button type="button" className="admin-ghost" onClick={() => void toggleStatus(u)}>
                                 {u.status === 'active' ? 'Suspend' : 'Reactivate'}
                             </button>

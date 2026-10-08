@@ -106,10 +106,45 @@ export function verifyResetToken(
             issuer: JWT_ISSUER,
             audience: 'password-reset',
         }) as { sub?: string; kind?: string; fp?: string };
-        return payload.kind === 'reset' && payload.sub === user.id && payload.fp === resetFingerprint(user);
+        return isResetKind(payload.kind) && payload.sub === user.id && payload.fp === resetFingerprint(user);
     } catch {
         return false;
     }
+}
+
+/** Reset and invite tokens share one shape; `kind` says which one a token is. */
+function isResetKind(kind: string | undefined): boolean {
+    return kind === 'reset' || kind === 'invite';
+}
+
+/** Invite links are how an admin sets up an account that has no password yet. The
+ *  token carries the same fingerprint as a reset token, so it stops working once a
+ *  password is set. It lives longer than a reset link, because an admin hands it over. */
+export const INVITE_TTL_DAYS = 7;
+
+export function issueInviteToken(user: { id: string; email: string; passwordHash: string | null }): string {
+    return jwt.sign(
+        { sub: user.id, kind: 'invite', fp: resetFingerprint(user) },
+        learnerSecret as string,
+        { expiresIn: `${INVITE_TTL_DAYS}d`, issuer: JWT_ISSUER, audience: 'password-reset' },
+    );
+}
+
+export function issueInviteLink(
+    user: { id: string; email: string; passwordHash: string | null },
+): { link: string; expiresInDays: number } {
+    return { link: `${publicWebUrl}/sign-in?reset=${issueInviteToken(user)}`, expiresInDays: INVITE_TTL_DAYS };
+}
+
+/** Why an admin may not issue an invite for this account, or null if they may. */
+export function inviteBlocker(
+    user: { passwordHash: string | null; status: string },
+    enabled: boolean = learnerConfigured,
+): { status: number; message: string } | null {
+    if (!enabled) return { status: 503, message: 'Learner accounts are not enabled on this deployment' };
+    if (user.passwordHash) return { status: 409, message: 'This person already has a password, so there is nothing to invite them to.' };
+    if (user.status === 'suspended') return { status: 409, message: 'This account is suspended. Reactivate it before sending an invite.' };
+    return null;
 }
 
 export function requireLearner(req: Request, res: Response, next: NextFunction) {
@@ -154,10 +189,16 @@ learnerRouter.post(
         if (existing?.passwordHash) {
             return res.status(409).json({ message: 'An account with this email already exists — sign in instead.' });
         }
+        if (existing) {
+            // An admin created this account without a password. Only its invite link may
+            // set one: anyone can type an email address, so letting signup claim the
+            // account would hand it to whoever asks first.
+            return res.status(409).json({
+                message: 'This email has been set up for an invitation. Ask us for your invite link to set a password.',
+            });
+        }
         const passwordHash = await bcrypt.hash(password, 10);
-        const user = existing
-            ? await prisma.lmsUser.update({ where: { email }, data: { name, passwordHash } })
-            : await prisma.lmsUser.create({ data: { name, email, role: 'student', passwordHash } });
+        const user = await prisma.lmsUser.create({ data: { name, email, role: 'student', passwordHash } });
         logger.info({ userId: user.id }, 'learner account created');
         const refresh = await issueRefreshToken(user.id);
         setRefreshCookie(res, refresh);
@@ -217,9 +258,12 @@ learnerRouter.post(
 );
 
 // POST /logout — kill the refresh family; client also drops its access token.
+// The refresh cookie is SameSite=None, so a cross-site POST would carry it: the Origin
+// check is the same one /refresh uses (audit: no Origin check on logout).
 learnerRouter.post(
     '/logout',
     ah(async (req, res) => {
+        if (!assertAllowedOrigin(req, res)) return;
         const presented = readRefreshCookie(req);
         if (presented) await revokePresented(presented); // family-scoped: logs out everywhere this rotation chain lives
         clearRefreshCookie(res);
@@ -418,7 +462,9 @@ learnerRouter.post(
                     logger.warn({ err }, 'learner reset email failed');
                 }
             } else {
-                logger.info({ email, link }, 'learner reset link (no SMTP configured)');
+                // Never log the link: it is a live credential, and anyone who can read the
+                // logs could reset the password. Without SMTP the email is simply not sent.
+                logger.warn({ userId: user.id }, 'learner reset email not sent: SMTP is not configured');
             }
         }
         return res.json({ ok: true, message: 'If an account exists for that email, a reset link is on its way.' });
@@ -441,7 +487,7 @@ learnerRouter.post(
                 issuer: JWT_ISSUER,
                 audience: 'password-reset',
             }) as { sub?: string; kind?: string };
-            if (payload.kind === 'reset' && payload.sub) sub = payload.sub;
+            if (isResetKind(payload.kind) && payload.sub) sub = payload.sub;
         } catch {
             /* falls through to invalid-token 400 */
         }

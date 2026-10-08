@@ -16,6 +16,7 @@ process.env.ADMIN_PASSWORD = 'correct-horse-battery';
 process.env.ADMIN_JWT_SECRET = 'test-secret-test-secret-test-secret-32!';
 
 // The policy is pure; the router around it is not. Keep Prisma out of the test.
+vi.mock('@prisma/client', () => ({ Prisma: { PrismaClientKnownRequestError: class extends Error {} } }));
 vi.mock('./db.js', () => ({ prisma: {} }));
 
 type AdminModule = typeof import('./admin.js');

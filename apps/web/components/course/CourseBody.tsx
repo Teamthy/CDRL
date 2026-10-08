@@ -2,6 +2,7 @@ import { Check, Clock3, Globe2, MonitorPlay, BadgeCheck, CalendarClock, FileText
 import Reveal from '../motion/Reveal';
 import ModuleText from '../learn/ModuleText';
 import AddToPlanButton from '../actions/AddToPlanButton';
+import { WhatsAppEnquiryLink, WhatsAppIcon } from '../contact/WhatsAppLink';
 import ApplyCard from './ApplyCard';
 import PayCard from './PayCard';
 import CourseToc from './CourseToc';
@@ -106,6 +107,10 @@ export default function CourseBody({ course }: { course: Course }) {
                                 <Globe2 aria-hidden="true" /> Available across Africa
                             </p>
                             <AddToPlanButton courseId={course.id} />
+                            <p>
+                                <WhatsAppIcon />{' '}
+                                <WhatsAppEnquiryLink about={`${course.title} ${course.subtitle}`} className="text-link" />
+                            </p>
                             <ApplyCard course={course} />
                             <PayCard course={course} />
                             <small>Corporate enrollment available for teams.</small>

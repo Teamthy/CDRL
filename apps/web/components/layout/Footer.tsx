@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { Mail, MapPin, Phone } from 'lucide-react';
+import { Mail, MapPin } from 'lucide-react';
 import Logo from '../brand/Logo';
 import WhiteButton from '../actions/WhiteButton';
+import { PhoneContactLinks } from '../contact/WhatsAppLink';
 import { DEFAULT_FOOTER_CTA, type FooterCta } from '../../lib/pageCta';
 
 const columns = [
@@ -64,7 +65,7 @@ export default function Footer({ cta = DEFAULT_FOOTER_CTA }: { cta?: FooterCta }
                         <Mail /> <a href="mailto:info@ykayconsultinghub.com.ng">info@ykayconsultinghub.com.ng</a>
                     </p>
                     <p>
-                        <Phone /> <a href="tel:+2348060533847">+2348060533847</a>
+                        <PhoneContactLinks />
                     </p>
                     <p>
                         <MapPin /> Lagos, Nigeria · Serving Africa

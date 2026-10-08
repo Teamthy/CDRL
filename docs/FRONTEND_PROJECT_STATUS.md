@@ -1,135 +1,64 @@
 # CDRL Frontend Project Status
 
-## 1. What we are building
+_Reviewed 2026-10-08 against `main`, after the audit remediation pass. Findings and their status are tracked in [AUDIT_2026-10-08.md](AUDIT_2026-10-08.md)._
 
-The frontend is the public-facing website for CDRL, the Centre for Digital Risk & Leadership. It is being built as a modern marketing and learning platform that helps visitors:
+## 1. What it is
 
-- discover CDRL training and leadership programs
-- view course information and learning tracks
-- explore institutional content such as about, advisory, partnerships, research, and contact pages
-- interact with a learning plan experience for saving courses
-- submit enquiries through the website
+The public website and the learner and admin portals for the CDRL / YKAY Consulting Hub, in `apps/web`. The site presents the training catalogue, PECB certification and ISO training pages, events and news, and the enquiry and application forms. Learners sign in to see their enrolments and modules. Staff use the admin console.
 
-The site is currently implemented as a Next.js application with TypeScript, React, and a component-driven architecture.
+## 2. Stack
 
----
+- Next.js 15.5 with the App Router, React 18.3, TypeScript.
+- framer-motion for reveal animations, lucide-react for icons, zod for response checks.
+- Fonts come from `next/font/google`, so the build needs outbound access to Google Fonts.
+- Vitest for unit tests. Run them with `TZ=UTC`: `lib/dates.test.ts` pins Africa/Lagos.
 
-## 2. Current stack
+## 3. What is built
 
-- Framework: Next.js 14
-- Language: TypeScript
-- UI: React 18
-- Styling: global CSS with component-based structure
-- Motion: Framer Motion
-- Data source: API-backed course and content loading with fallback local content
+### Public site
 
----
+- Home, about, advisory, partnerships, research, privacy, terms, accessibility, the Nigeria data-protection page, and an offline page.
+- Training: the catalogue (`/training`), course pages (`/training/[slug]`), pricing, corporate training, and bundles (`/bundles`, `/bundles/[slug]`).
+- Local-market pages: PECB certification and training in Nigeria, ISO training in Nigeria, and the PECB partnership announcement.
+- Events (`/events`), news (`/news`, `/news/[slug]`), and the learning plan (`/learning-plan`).
+- Contact (`/contact`): the contact form, which prefills from `?interest=`, and the phone line. The number is defined once, in `lib/siteContact.ts`. It opens a WhatsApp chat, with a separate call link beside it. The footer and the contact page use the generic greeting.
+- Course pages: an action panel (links to brochures, upcoming events and an apply call-to-action), and an enrolment card with an "Ask on WhatsApp" link prefilled with the course name, the apply form and the pay card. Every course page ends with a waitlist strip. Event and exam cards on `/events` have the same kind of link, prefilled with the event title.
+- Course data comes from the API. If the API is unavailable, the pages fall back to the local content in `lib/content.ts`.
 
-## 3. What is already built
+### Learner portal
 
-### Core experience
-- Home page with hero section and program highlights
-- Site layout and reusable page structure
-- Reusable UI components for buttons, cards, typography, and actions
-- Course cards and training track cards
-- Course detail experience scaffolding
-- Learning plan interaction buttons and plan-related client logic
+- Sign-in (`/sign-in`), sign-up (not for accounts an admin created: those use an invite link), forgot and reset password, onboarding (`/learner/onboarding`), the dashboard (`/learner`), the course player and module completion (`/learner/[slug]`), and the certificate page (`/learner/[slug]/certificate`).
+- The access token is kept in `localStorage`. The refresh token is an httpOnly cookie that the app uses to renew the session.
 
-### Page structure
-The app already contains route-based pages for:
-- Home
-- About
-- Accessibility
-- Advisory
-- Contact
-- Corporate training
-- Events
-- Learning plan
-- Partnerships
-- Privacy
-- Research
-- Terms
-- Training
+### Admin console (`/admin/*`)
 
-### Content loading
-The frontend is wired to load content from the backend API when available, while falling back to local content during development or if the API is unavailable.
+- Sign-in, then guarded pages for the overview, activity (audit log), courses, events, posts, bundles, enquiries, applications, LMS (users, with an invite link for anyone who has no password; enrolments; modules; recordings), and PECB exam sessions.
+- The resource editor autosaves drafts to `localStorage`.
 
-### One contact CTA per page
-Every page ends with exactly one call-to-action that sends the visitor to `/contact` — never two.
+### Cross-cutting
 
-- A page that renders its own primary contact CTA (a `CTASection` such as "Get in touch" or "Request a proposal", or a `btn-primary` / `btn-white` link to `/contact`) keeps it, and the generic footer button ("Talk to our team") is dropped.
-- A page with no contact CTA of its own keeps the footer button, so the offer to talk to the team is never lost.
-- `/contact` itself renders no footer CTA (it would point back at the page the visitor is already on), and `/learning-plan` opts out explicitly because its "Complete Enquiry" button is rendered inside a client component.
+- One contact button per page. `lib/pageCta.ts` enforces this. The footer's call-to-action is skipped when the page already has one.
+- JSON-LD for the organisation and for courses (`lib/jsonld.ts`). The organisation's `telephone` is the E.164 number, never a WhatsApp link.
+- The Content Security Policy is built per request in `middleware.ts` (`lib/csp.ts`). It is nonce-based and report-only, with `img-src 'self' data: blob:`. `connect-src` covers the site and the API origin, and the analytics hosts only when `NEXT_PUBLIC_GA_ID` is set.
 
-The rule lives in `apps/web/lib/pageCta.ts` (`hasPageContactCta`) and is applied by `SiteLayout` through its `footerCta` prop (`'auto'` by default, or `false` / `{ label, href }` to override). It is covered by `apps/web/lib/pageCta.test.tsx`.
+## 4. Tests and checks
 
----
+- `TZ=UTC pnpm --filter web test`: 13 files, 100 tests.
+- `pnpm --filter web exec tsc --noEmit` and `pnpm --filter web lint` (with `--max-warnings=0`).
+- `pnpm --filter web build` needs network access to Google Fonts.
+- A local preview runs with `pnpm --filter web exec next dev -H 0.0.0.0 -p 3000`. Course pages render without the API, because of the local fallback. Events and the admin console need it.
 
-## 4. Current implementation status
+## 5. Known gaps and open decisions
 
-The frontend is in a strong early-to-mid implementation stage. The site structure, core pages, and UI system are present, and the platform is already usable as a polished informational website.
+- **CSP is report-only.** The policy is nonce-based and has no `'unsafe-inline'` for scripts. Per-request nonces make every page render per request, so pages are no longer served from the static cache; that was agreed in review. Enforcing it needs a review of the reports in a real browser. The policy has no `report-uri` or `report-to`, so violations show only in the browser console, and nothing collects them yet. A report endpoint would make the review practical. The employer-letter print helper must be fixed first, because its inline script would likely be blocked.
+- **Access tokens are kept in `localStorage`** (`lib/learnerClient.ts`, `lib/adminClient.ts`). The decided fix is httpOnly cookies. Same-site hosting makes that possible, but the API must move to a subdomain first (see the backend status doc).
+- **Employer-letter print** (`components/course/EmployerFunding.tsx`): `window.open(..., 'noopener')` returns `null` in current browsers, so the print helper appears to do nothing. It needs a browser check.
+- **No end-to-end tests.** The unit tests cover the client libraries and some pure logic. Nothing drives a browser through enrolment, enquiry, invite or sign-in.
+- **Dependency advisories** come through `next@15.5.21`, along with `postcss` and `sharp` underneath it. Next 15.5.27 is the first release that fixes the Next advisories. The upgrade belongs in its own PR.
 
-However, the project is not yet fully complete from a production-readiness perspective. Some features are present but still need refinement, integration, or hardening.
+## 6. Next steps
 
----
-
-## 5. What is still left to do
-
-### A. Content and data completeness
-- Replace placeholder or fallback content where necessary with fully curated real content
-- Ensure all pages have consistent messaging, branding, and copy quality
-- Review training and course data for completeness and accuracy
-
-### B. Dynamic experience improvements
-- Finish the full course detail experience so it is fully polished across all routes
-- Improve filtering and search behavior for courses and tracks
-- Make the learning plan experience more robust and persistent for returning users
-
-### C. Form and interaction reliability
-- Ensure the contact form submission flow is fully tested end to end
-- Improve success, error, and loading states for forms and async actions
-- Handle API failures gracefully with better UX messaging
-
-### D. Quality and production readiness
-- Add automated tests for key pages and components
-- Increase accessibility validation across the site
-- Run a full responsiveness and cross-browser review
-- Improve SEO metadata coverage for all important pages
-
-### E. Maintenance and scaling
-- Introduce a CMS or admin-friendly content workflow if the site will grow
-- Improve page performance and image handling
-- Consider caching and content revalidation strategies for frequent updates
-
----
-
-## 6. Known gaps and risks
-
-- Some content is likely still dependent on fallback local data rather than fully trusted production API data.
-- The current frontend is visually strong, but some interactions may still require more runtime validation and polish.
-- The project needs stronger testing and QA coverage before treating it as fully production-ready.
-- A more formal content management workflow would make future updates easier.
-
----
-
-## 7. Recommended next steps
-
-### Priority 1
-- Review all pages for consistency and missing content
-- Finalize course and training content flow
-- Make sure the contact and learning plan experiences are reliable
-
-### Priority 2
-- Add stronger loading and empty states
-- Improve SEO metadata and Open Graph details for all key pages
-- Refine mobile experience and typography spacing
-
-### Priority 3
-- Add tests and CI checks
-- Introduce a proper content management strategy for future expansion
-
----
-
-## 8. Summary
-
-The frontend is already shaping into a professional, modern website for CDRL with a strong visual foundation and a clear information architecture. The main work left is not foundational structure, but refinement, complete content integration, interaction reliability, and production hardening.
+1. Check the employer-letter print helper in a browser, and fix it.
+2. Review the CSP reports in a real browser, then switch the header to enforcement.
+3. Move the access tokens to cookies, once the API is on the same site.
+4. Add a small browser test covering the enquiry forms, the invite link and sign-in.

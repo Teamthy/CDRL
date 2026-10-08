@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { Router, raw } from 'express';
 import { z } from 'zod';
@@ -260,13 +260,29 @@ paymentsRouter.get(
     }),
 );
 
+/**
+ * Does `header` carry Paystack's HMAC-SHA512 of the raw request body?
+ *
+ * Compared in constant time. `!==` returns at the first differing byte, so how
+ * long the comparison takes depends on how much of a forged signature matched
+ * (audit: webhook HMAC uses `!==`).
+ */
+export function isValidPaystackSignature(header: unknown, body: Buffer, secret: string): boolean {
+    if (typeof header !== 'string') return false;
+    const expected = createHmac('sha512', secret).update(body).digest();
+    const given = Buffer.from(header, 'hex');
+    // timingSafeEqual throws on unequal lengths, so compare lengths first.
+    return given.length === expected.length && timingSafeEqual(given, expected);
+}
+
 // POST /api/v1/payments/webhook — raw body + HMAC signature (mounted BEFORE json parser).
 export function paymentsWebhook(): RequestHandler {
     return ah(async (req, res) => {
         if (!paymentsConfigured) return res.status(503).json({ message: 'Payments not enabled' });
         const signature = req.headers['x-paystack-signature'];
-        const computed = createHmac('sha512', paystackSecret as string).update(req.body as Buffer).digest('hex');
-        if (signature !== computed) return res.status(401).json({ message: 'Invalid signature' });
+        if (!isValidPaystackSignature(signature, req.body as Buffer, paystackSecret as string)) {
+            return res.status(401).json({ message: 'Invalid signature' });
+        }
 
         let event: { event?: string; data?: { reference?: string; status?: string; amount?: number } };
         try {
