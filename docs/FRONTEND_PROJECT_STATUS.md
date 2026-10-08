@@ -27,19 +27,19 @@ The public website and the learner and admin portals for the CDRL / YKAY Consult
 
 ### Learner portal
 
-- Sign-in (`/sign-in`), sign-up, forgot and reset password, onboarding (`/learner/onboarding`), the dashboard (`/learner`), the course player and module completion (`/learner/[slug]`), and the certificate page (`/learner/[slug]/certificate`).
+- Sign-in (`/sign-in`), sign-up (not for accounts an admin created: those use an invite link), forgot and reset password, onboarding (`/learner/onboarding`), the dashboard (`/learner`), the course player and module completion (`/learner/[slug]`), and the certificate page (`/learner/[slug]/certificate`).
 - The access token is kept in `localStorage`. The refresh token is an httpOnly cookie that the app uses to renew the session.
 
 ### Admin console (`/admin/*`)
 
-- Sign-in, then guarded pages for the overview, activity (audit log), courses, events, posts, bundles, enquiries, applications, LMS (users, enrolments, modules, recordings), and PECB exam sessions.
+- Sign-in, then guarded pages for the overview, activity (audit log), courses, events, posts, bundles, enquiries, applications, LMS (users, with an invite link for anyone who has no password; enrolments; modules; recordings), and PECB exam sessions.
 - The resource editor autosaves drafts to `localStorage`.
 
 ### Cross-cutting
 
 - One contact button per page. `lib/pageCta.ts` enforces this. The footer's call-to-action is skipped when the page already has one.
 - JSON-LD for the organisation and for courses (`lib/jsonld.ts`). The organisation's `telephone` is the E.164 number, never a WhatsApp link.
-- The Content Security Policy is report-only (`next.config.js`). It allows `img-src 'self' data: blob:` and `connect-src` for the site and the API origin.
+- The Content Security Policy is built per request in `middleware.ts` (`lib/csp.ts`). It is nonce-based and report-only, with `img-src 'self' data: blob:`. `connect-src` covers the site and the API origin, and the analytics hosts only when `NEXT_PUBLIC_GA_ID` is set.
 
 ## 4. Tests and checks
 
@@ -50,13 +50,15 @@ The public website and the learner and admin portals for the CDRL / YKAY Consult
 
 ## 5. Known gaps and open decisions
 
-- **CSP is report-only.** Enforcing it would break the site: `script-src` has no nonce, the app ships inline scripts, and `img-src` blocks remote images. The recommended direction is a nonce-based policy from middleware, report-only first, then enforced. It is not built yet, because a per-request nonce makes every page render per request, which gives up static caching. The choice was delegated, so the caching trade-off still needs confirming.
-- **Access tokens are kept in `localStorage`** (`lib/learnerClient.ts`, `lib/adminClient.ts`). The chosen fix is httpOnly cookies. It is blocked for now: the web app and the API are on different sites, so the cookies would be third-party.
-- **No end-to-end tests.** The unit tests cover the client libraries and some pure logic. Nothing drives a browser through enrolment, enquiry or sign-in.
+- **CSP is report-only.** The policy is nonce-based and has no `'unsafe-inline'` for scripts. Per-request nonces make every page render per request, so pages are no longer served from the static cache; that was agreed in review. Enforcing it needs a review of the reports in a real browser. The employer-letter print helper must be fixed first, because its inline script would likely be blocked.
+- **Access tokens are kept in `localStorage`** (`lib/learnerClient.ts`, `lib/adminClient.ts`). The decided fix is httpOnly cookies. Same-site hosting makes that possible, but the API must move to a subdomain first (see the backend status doc).
+- **Employer-letter print** (`components/course/EmployerFunding.tsx`): `window.open(..., 'noopener')` returns `null` in current browsers, so the print helper appears to do nothing. It needs a browser check.
+- **No end-to-end tests.** The unit tests cover the client libraries and some pure logic. Nothing drives a browser through enrolment, enquiry, invite or sign-in.
 - **Dependency advisories** come through `next@15.5.21`, along with `postcss` and `sharp` underneath it. Next 15.5.27 is the first release that fixes the Next advisories. The upgrade belongs in its own PR.
 
 ## 6. Next steps
 
-1. Confirm the CSP trade-off, then ship the nonce policy in report-only mode.
-2. Answer the same-site question before moving tokens out of `localStorage`.
-3. Add a small browser test covering the enquiry forms and sign-in.
+1. Check the employer-letter print helper in a browser, and fix it.
+2. Review the CSP reports in a real browser, then switch the header to enforcement.
+3. Move the access tokens to cookies, once the API is on the same site.
+4. Add a small browser test covering the enquiry forms, the invite link and sign-in.

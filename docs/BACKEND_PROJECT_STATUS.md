@@ -40,6 +40,7 @@ Enabled when `LEARNER_JWT_SECRET` is set. Otherwise it returns 503.
 - `POST /refresh` rotates an httpOnly refresh cookie and detects reuse. `POST /logout` revokes the session family. Both check the Origin.
 - Course modules and module completion
 - Forgot and reset password. Reset tokens expire after 30 minutes, and each one is tied to the account's current password hash, so it stops working once the password changes.
+- Invite links, created by an admin for an account with no password, use the same reset endpoint. They last 7 days and stop working once a password is set.
 
 ### Payments (`/api/v1/payments`)
 
@@ -58,7 +59,7 @@ Enabled when `LEARNER_JWT_SECRET` is set. Otherwise it returns 503.
 - Enquiries: list and update
 - Applications: list, update, and admit
 - Bundles: list, create, update and delete
-- LMS: users (list, create, update), enrolments (list, create, update), modules and recordings (list, create, update and delete)
+- LMS: users (list, create, update; an invite link for anyone with no password), enrolments (list, create, update), modules and recordings (list, create, update and delete)
 
 ## 4. Operations
 
@@ -77,16 +78,15 @@ Enabled when `LEARNER_JWT_SECRET` is set. Otherwise it returns 503.
 
 The full list is in the audit tracker.
 
-- **Account setup (open).** Signup can set a password on an admin-created account that has no password yet, using only its email address. The chosen fix is invite-only setup: the admin sends a single-use link when the account is created. It is not built yet. Two things must be settled first: whether SMTP is set in production (`SMTP_HOST` and `SMTP_USER` are optional in `docker-compose.prod.yml`, so the admin may need to hand over the link), and what happens to existing accounts that have no password.
-- **Access tokens (open).** The web app keeps access tokens in `localStorage`. The chosen fix is httpOnly cookies. It is blocked for now: the web app (Vercel) and the API (Render) are different sites, and the refresh cookie is already `SameSite=None`, which browsers that block third-party cookies, Safari by default, will drop.
+- **Access tokens (decided, not built).** The web app keeps access tokens in `localStorage`. The chosen fix is httpOnly cookies. The web app (`www.ykayconsultinghub.com.ng`) and the API can share a site, so the cookie move is unblocked. It still needs the API on a subdomain of that site, Origin checks on cookie-authenticated writes, and a browser check of both sign-in flows. Merging it before the API moves would break sign-in.
+- **Account setup.** Admin-created accounts are set up with a single-use invite link (`POST /api/v1/admin/lms/users/:id/invite`, valid 7 days). Self-signup refuses those emails. Existing passwordless accounts need an invite each, and there is no bulk action. Emailing invites is not built, because SMTP is not set in production.
 - **Dependency advisories.** `pnpm audit --prod` reports 9 high or critical advisories. Three are in the API tree: `express` → `proxy-addr` (critical) and two `nodemailer` highs. Six are in the web tree, through `next`. Each upgrade needs its own PR.
 - **No integration or end-to-end tests.** CI already runs PostgreSQL, so database-backed tests for payments, refresh and enrolment are a short next step.
-- **Reset emails need SMTP.** Without it, reset requests are accepted, no email is sent, and nothing is logged about the link.
+- **Reset emails need SMTP.** Without it, reset requests are accepted, no email is sent, and nothing is logged about the link. Use an invite link instead.
 
 ## 7. Next steps
 
-1. Answer the SMTP and same-site questions, then build invite-only account setup.
-2. Decide cookie-based tokens once the hosting question is answered.
-3. Make the dependency upgrade PR: `next` 15.5.27 or later, `express` 4.22.3 or later, `nodemailer` 10.x, and a `qs` override.
-4. Add database-backed integration tests for payments, refresh and enrolment.
-5. Decide whether production should become the default `NODE_ENV`.
+1. Move the API to a subdomain of `ykayconsultinghub.com.ng`, then build cookie-based tokens.
+2. Make the dependency upgrade PR: `next` 15.5.27 or later, `express` 4.22.3 or later, `nodemailer` 10.x, and a `qs` override.
+3. Add database-backed integration tests for payments, refresh and enrolment.
+4. Decide whether production should become the default `NODE_ENV`.
