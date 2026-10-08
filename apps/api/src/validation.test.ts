@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     contactSchema,
+    listQuerySchema,
+    LIST_LIMIT_DEFAULT,
+    LIST_LIMIT_MAX,
     recordingUpsertSchema,
     isValidSessionId,
     learningPlanItemSchema,
@@ -100,5 +103,41 @@ describe('recording schemas (patch-22)', () => {
     });
     it('upsert rejects non-URLs', () => {
         expect(recordingUpsertSchema.safeParse({ courseSlug: 'c', title: 'S1', url: 'not-a-url' }).success).toBe(false);
+    });
+});
+
+describe('listQuerySchema (audit P0-3)', () => {
+    it('accepts the page size the admin console actually asks for', () => {
+        const parsed = listQuerySchema.safeParse({ limit: '200' });
+        expect(parsed.success).toBe(true);
+        expect(parsed.success && parsed.data.limit).toBe(200);
+    });
+
+    it('clamps an oversized limit instead of failing into the 50-row fallback', () => {
+        const parsed = listQuerySchema.safeParse({ limit: '100000' });
+        expect(parsed.success).toBe(true);
+        expect(parsed.success && parsed.data.limit).toBe(LIST_LIMIT_MAX);
+    });
+
+    it('clamps nonsense values rather than rejecting the whole query', () => {
+        for (const limit of ['0', '-5', 'abc', '']) {
+            const parsed = listQuerySchema.safeParse({ limit });
+            expect(parsed.success).toBe(true);
+            expect(parsed.success && parsed.data.limit).toBeGreaterThanOrEqual(1);
+            expect(parsed.success && parsed.data.limit).toBeLessThanOrEqual(LIST_LIMIT_MAX);
+        }
+    });
+
+    it('defaults sensibly and never returns a negative offset', () => {
+        const empty = listQuerySchema.safeParse({});
+        expect(empty.success && empty.data).toEqual({ status: undefined, limit: LIST_LIMIT_DEFAULT, offset: 0 });
+
+        const negative = listQuerySchema.safeParse({ offset: '-10' });
+        expect(negative.success && negative.data.offset).toBe(0);
+    });
+
+    it('keeps paging usable: offset survives alongside limit', () => {
+        const parsed = listQuerySchema.safeParse({ limit: '50', offset: '100' });
+        expect(parsed.success && parsed.data).toMatchObject({ limit: 50, offset: 100 });
     });
 });

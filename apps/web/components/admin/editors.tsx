@@ -101,9 +101,10 @@ export function CourseFields({
         if (slugDebounce) clearTimeout(slugDebounce);
         const t = setTimeout(async () => {
             try {
-                const { adminFetch, UnauthorizedError } = await import('../../lib/adminClient');
-                const data = await adminFetch<{ items?: { slug: string }[] }>(`/admin/courses?limit=200`);
-                const taken = (data?.items ?? data as unknown as { slug: string }[])?.some?.((c: { slug: string }) => c.slug === value);
+                const { adminFetchAll } = await import('../../lib/adminClient');
+                // Every slug, not the first page — a collision on page 2 still collides.
+                const rows = await adminFetchAll<{ slug: string }>('/admin/courses');
+                const taken = rows.some((c) => c.slug === value);
                 setSlugState(taken ? 'taken' : 'free');
             } catch (err) {
                 // 401 is handled globally by adminFetch; everything else → neutral

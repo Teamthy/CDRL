@@ -88,10 +88,33 @@ export const postUpsertSchema = z.object({
     published: z.boolean().optional().default(false),
 });
 
+/**
+ * Largest page an admin list endpoint will serve. The console asks for bigger
+ * pages than the old max(100) allowed; because every handler used
+ * `q.success ? q.data : { limit: 50 }`, an out-of-range limit did not 400 — it
+ * silently collapsed the page to 50 rows, so the console only ever showed 50 of
+ * 141 courses with no indication anything was missing (audit P0-3).
+ */
+export const LIST_LIMIT_MAX = 200;
+export const LIST_LIMIT_DEFAULT = 50;
+
+/**
+ * Pagination is CLAMPED, never rejected: a silly `?limit=100000` is pinned to
+ * the max rather than discarded into a tiny fallback page. `.catch()` keeps the
+ * parse infallible so the fallback branch in the handlers can no longer bite.
+ */
 export const listQuerySchema = z.object({
-    status: z.string().optional(),
-    limit: z.coerce.number().int().min(1).max(100).optional().default(50),
-    offset: z.coerce.number().int().min(0).optional().default(0),
+    status: z.string().optional().catch(undefined),
+    limit: z.coerce
+        .number()
+        .int()
+        .catch(LIST_LIMIT_DEFAULT)
+        .transform((n) => Math.min(Math.max(n, 1), LIST_LIMIT_MAX)),
+    offset: z.coerce
+        .number()
+        .int()
+        .catch(0)
+        .transform((n) => Math.max(n, 0)),
 });
 
 // ────────────────────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import ResourceManager from '../../../components/admin/ResourceManager';
 import { Field, TextArea, TextInput, Checkbox } from '../../../components/admin/fields';
-import { adminFetch, UnauthorizedError, type AdminCourse, type ListResponse } from '../../../lib/adminClient';
+import { adminFetch, adminFetchAll, UnauthorizedError, type AdminCourse, type ListResponse } from '../../../lib/adminClient';
 
 interface BundleRow {
     id: string;
@@ -90,8 +90,8 @@ function BundleEditor({
 }) {
     const [courses, setCourses] = useState<AdminCourse[]>([]);
     useEffect(() => {
-        adminFetch<ListResponse<AdminCourse>>('/admin/courses?limit=200')
-            .then((d) => setCourses(d.items))
+        adminFetchAll<AdminCourse>('/admin/courses')
+            .then(setCourses)
             .catch((err) => {
                 if (!(err instanceof UnauthorizedError)) console.error(err);
             });

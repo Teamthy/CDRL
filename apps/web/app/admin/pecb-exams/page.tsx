@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, ClipboardList, Copy, Mail } from 'lucide-react';
-import { adminFetch, type AdminCourse, UnauthorizedError } from '../../../lib/adminClient';
+import { adminFetchAll, type AdminCourse, UnauthorizedError } from '../../../lib/adminClient';
 
 type Candidate = { name: string; email: string };
 type Mode = 'exam-request' | 'credit-purchase';
@@ -40,10 +40,9 @@ export default function PecExamRequestsPage() {
     const [creditCount, setCreditCount] = useState('10');
 
     useEffect(() => {
-        adminFetch<AdminCourse[] | { items: AdminCourse[]; total: number }>('/admin/courses?limit=200')
-            .then((data) => {
-                // /admin/courses is paginated: { items, total } — never assume a bare array.
-                const rows = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+        // Needs the WHOLE catalogue, not one page — adminFetchAll follows `total`.
+        adminFetchAll<AdminCourse>('/admin/courses')
+            .then((rows) => {
                 const pecb = rows.filter((c) => c.subtitle.includes('PECB'));
                 setCourses(pecb);
                 if (pecb.length) setCourseSlug(pecb[0].slug);

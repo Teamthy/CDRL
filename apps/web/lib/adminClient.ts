@@ -68,6 +68,42 @@ export async function adminFetch<T>(path: string, init: RequestInit = {}): Promi
     return (await res.json()) as T;
 }
 
+export interface ListResponse<T> {
+    items: T[];
+    total: number;
+}
+
+/**
+ * Largest page the API will serve — mirrors LIST_LIMIT_MAX in
+ * apps/api/src/validation.ts. Asking for more used to make the API's query
+ * schema fail and silently fall back to 50 rows (audit P0-3).
+ */
+export const LIST_LIMIT_MAX = 200;
+
+/**
+ * Fetch every row of a paginated admin collection.
+ *
+ * For the places that genuinely need the whole set (bundle course pickers, slug
+ * uniqueness checks, the PECB exam planner) rather than a page. Hard-coding
+ * `?limit=200` only works until the catalogue passes 200 rows; this follows
+ * `total` instead.
+ */
+export async function adminFetchAll<T>(endpoint: string): Promise<T[]> {
+    const items: T[] = [];
+    const joiner = endpoint.includes('?') ? '&' : '?';
+    for (let offset = 0, total = Infinity; offset < total; offset += LIST_LIMIT_MAX) {
+        const page = await adminFetch<ListResponse<T> | T[]>(
+            `${endpoint}${joiner}limit=${LIST_LIMIT_MAX}&offset=${offset}`,
+        );
+        // Older endpoints answered with a bare array — never assume the shape.
+        if (Array.isArray(page)) return page;
+        items.push(...(page.items ?? []));
+        total = Number.isFinite(page.total) ? page.total : items.length;
+        if (!page.items?.length) break; // defensive: never spin on a broken total
+    }
+    return items;
+}
+
 // ── Types mirroring the API ────────────────────────────────────────────────
 
 export type EnquiryStatus = 'new' | 'contacted' | 'qualified' | 'closed';
@@ -137,7 +173,3 @@ export interface AdminPost {
     publishedAt: string | null;
 }
 
-export interface ListResponse<T> {
-    items: T[];
-    total: number;
-}

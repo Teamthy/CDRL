@@ -2055,7 +2055,21 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .admin-search input { flex: 1; border: 0; background: transparent; padding: 9px 0; font: inherit; }
 .admin-search input:focus { outline: none; box-shadow: none; }
 .admin-search:focus-within { border-color: var(--cdrl-green); box-shadow: 0 0 0 3.5px rgba(47, 107, 79, 0.16); }
-.admin-count { font-weight: 600; color: var(--cdrl-green); }
+.admin-count { font-weight: 600; color: var(--cdrl-green); margin-left: auto; font-size: 13px; white-space: nowrap; }
+
+/* Pagination for admin lists (audit P0-3: lists silently showed only 50 rows). */
+.admin-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--cdrl-text-muted-light);
+}
+.admin-pager button { display: inline-flex; align-items: center; gap: 6px; }
+.admin-pager button:disabled { opacity: 0.45; cursor: not-allowed; }
+.admin-pager svg { width: 15px; height: 15px; }
 
 /* ── patch-33: bundles, exam strip, price bands ── */
 .bundle-index { padding: 48px 0 64px; }
