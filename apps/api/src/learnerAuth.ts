@@ -36,7 +36,13 @@ const ah =
 // ────────────────────────────────────────────────────────────────────────────
 // Learner auth (LMS Phase 2): signup, login, /me, single-use password reset.
 // Tokens are distinct from admin tokens (separate secret + role claim).
-// No refresh rotation at scaffold level — 12h access token, same as console.
+//
+// Session model (patch-25 onwards — NOT the old 12h single-token scaffold):
+//   · short-lived access JWT (LEARNER_ACCESS_TTL) carried in Authorization
+//   · 30-day httpOnly refresh cookie, rotated on every /refresh (see refresh.ts)
+// The access TTL is deliberately short because rotation can silently renew it;
+// clients must send `credentials: 'include'` on login/signup/refresh/logout or
+// the cookie never reaches the browser and sessions die at the TTL.
 // ────────────────────────────────────────────────────────────────────────────
 
 const learnerSecret = config.LEARNER_JWT_SECRET;
@@ -50,8 +56,11 @@ const authLimiter = new RateLimiterMemory({ points: 5, duration: 60 });
 // Compared against when the account doesn't exist so timing leaks nothing.
 const DUMMY_HASH = '$2b$10$9kH0w8Vz0YlW3Z1QzQ0G0O6b8Jb0nqQ0ZQ0ZQ0ZQ0ZQ0ZQ0ZQ0ZQ0W';
 
+/** Access-token lifetime. Short on purpose: the refresh cookie renews it. */
+export const LEARNER_ACCESS_TTL = '2h';
+
 export function signLearnerToken(userId: string, role = 'learner'): string {
-    return signScopedToken('learner', userId, { role }, '2h');
+    return signScopedToken('learner', userId, { role }, LEARNER_ACCESS_TTL);
 }
 
 /** Fingerprint of the current password state — a reset token dies the moment

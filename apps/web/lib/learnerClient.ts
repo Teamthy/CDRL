@@ -2,7 +2,17 @@
 
 /**
  * Learner session client (LMS Phase 2) — mirrors adminClient.
- * 12h JWT from /api/v1/learner/login|signup lives in localStorage;
+ *
+ * Sessions are two tokens working together:
+ *   · a SHORT-LIVED access JWT (2h, see LEARNER_ACCESS_TTL in the API) kept in
+ *     localStorage and attached as `Authorization: Bearer …`;
+ *   · a 30-day httpOnly refresh cookie the browser stores and replays.
+ *
+ * EVERY request that can receive or send that cookie must set
+ * `credentials: 'include'` — the web app and the API are cross-origin
+ * (Netlify ↔ Render), so without it the browser silently DROPS the
+ * `Set-Cookie` on login/signup and refresh can never work.
+ *
  * 401s clear the session so pages can bounce to /sign-in.
  */
 
@@ -59,6 +69,9 @@ async function post(path: string, body: unknown): Promise<PostResult & { token?:
     try {
         const res = await fetch(`${API_BASE}${path}`, {
             method: 'POST',
+            // Required: login/signup answer with the httpOnly refresh cookie, and a
+            // cross-origin response's Set-Cookie is discarded without this.
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
