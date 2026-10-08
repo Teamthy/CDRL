@@ -2,6 +2,12 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 
+// `next dev` is routinely viewed through an embedding preview proxy (Codespaces,
+// Gitpod, container preview panes). Clickjacking protection is a production
+// concern, so it is enforced in production builds and relaxed for dev only —
+// the deployed headers are unchanged.
+const isDev = process.env.NODE_ENV !== 'production';
+
 // CSP starts in report-only mode; tighten with a nonce strategy later.
 const contentSecurityPolicy = [
     "default-src 'self'",
@@ -10,13 +16,13 @@ const contentSecurityPolicy = [
     "img-src 'self' data: blob:",
     "font-src 'self'",
     "connect-src 'self' " + (process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).origin : ''),
-    "frame-ancestors 'none'",
+    isDev ? 'frame-ancestors *' : "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
 ].join('; ');
 
 const securityHeaders = [
-    { key: 'X-Frame-Options', value: 'DENY' },
+    ...(isDev ? [] : [{ key: 'X-Frame-Options', value: 'DENY' }]),
     { key: 'X-Content-Type-Options', value: 'nosniff' },
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
     { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
