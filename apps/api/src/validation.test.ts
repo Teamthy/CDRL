@@ -9,6 +9,7 @@ import {
     learningPlanItemSchema,
     courseModuleUpdateSchema,
     courseModuleUpsertSchema,
+    parseListQuery,
 } from './validation.js';
 
 describe('contactSchema', () => {
@@ -139,5 +140,38 @@ describe('listQuerySchema (audit P0-3)', () => {
     it('keeps paging usable: offset survives alongside limit', () => {
         const parsed = listQuerySchema.safeParse({ limit: '50', offset: '100' });
         expect(parsed.success && parsed.data).toMatchObject({ limit: 50, offset: 100 });
+    });
+});
+
+/**
+ * Audit finding P1-14: four LMS admin lists hard-coded `take: 200`/`take: 500`
+ * and answered `total: items.length`, so the console reported "200 learners"
+ * whether there were 200 or 20,000 — and offered no way to reach the rest.
+ * They now share this helper, which always yields a usable {limit, offset}.
+ */
+describe('parseListQuery', () => {
+    it('defaults a missing query to the standard page', () => {
+        expect(parseListQuery({})).toMatchObject({ limit: LIST_LIMIT_DEFAULT, offset: 0 });
+    });
+
+    it('reads limit and offset from the query string', () => {
+        expect(parseListQuery({ limit: '25', offset: '75' })).toMatchObject({ limit: 25, offset: 75 });
+    });
+
+    it('clamps an oversized limit to the cap rather than failing the parse', () => {
+        expect(parseListQuery({ limit: '100000' }).limit).toBe(LIST_LIMIT_MAX);
+    });
+
+    it('never returns a negative offset', () => {
+        expect(parseListQuery({ offset: '-10' }).offset).toBe(0);
+    });
+
+    it('falls back to the default page on junk input', () => {
+        expect(parseListQuery('not-an-object')).toMatchObject({ limit: LIST_LIMIT_DEFAULT, offset: 0 });
+        expect(parseListQuery(null)).toMatchObject({ limit: LIST_LIMIT_DEFAULT, offset: 0 });
+    });
+
+    it('passes a status filter through', () => {
+        expect(parseListQuery({ status: 'new' }).status).toBe('new');
     });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Activity, CircleSlash, RefreshCw } from 'lucide-react';
 import EmptyArt from '../../../components/admin/EmptyArt';
 import { adminFetch, UnauthorizedError, type ListResponse } from '../../../lib/adminClient';
@@ -21,24 +21,45 @@ const ACTION_COLORS: Record<string, string> = {
     delete: 'audit-delete',
 };
 
+/** The audit log grows forever, so it is paged rather than fetched whole. */
+const PAGE_SIZE = 100;
+
 export default function ActivityPage() {
     const [rows, setRows] = useState<AuditRow[] | null>(null);
+    const [total, setTotal] = useState(0);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    async function reload() {
+    /**
+     * `offset` was parsed server-side and then dropped, so asking for a second
+     * page returned the first one again — paging was impossible and the console
+     * simply asked for 150 rows and called it history. (audit P1-14)
+     */
+    const loadPage = useCallback(async (offset: number) => {
         setError(null);
         try {
-            const data = await adminFetch<ListResponse<AuditRow>>('/admin/audit-log?limit=150');
-            setRows(data.items);
+            const data = await adminFetch<ListResponse<AuditRow>>(
+                `/admin/audit-log?limit=${PAGE_SIZE}&offset=${offset}`,
+            );
+            setTotal(data.total ?? 0);
+            setRows((prev) => (offset === 0 ? data.items : [...(prev ?? []), ...data.items]));
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
-            setRows([]);
+            setRows((prev) => prev ?? []);
         }
+    }, []);
+
+    const reload = useCallback(() => loadPage(0), [loadPage]);
+
+    async function loadMore() {
+        setLoadingMore(true);
+        await loadPage(rows?.length ?? 0);
+        setLoadingMore(false);
     }
 
     useEffect(() => {
         void reload();
-    }, []);
+    }, [reload]);
     const [filter, setFilter] = useState('');
 
     const [actionFilter, setActionFilter] = useState<'all' | 'create' | 'update' | 'delete'>('all');
@@ -52,7 +73,7 @@ export default function ActivityPage() {
     );
 
     // patch-46: action counts strip
-    const counts = { all: rows?.length ?? 0 };
+    const counts = { all: total || (rows?.length ?? 0) };
     if (rows) for (const r of rows) counts[r.action as keyof typeof counts] = (counts[r.action as keyof typeof counts] ?? 0) + 1;
 
     return (
@@ -123,6 +144,21 @@ export default function ActivityPage() {
                             <span>{r.actor}</span>
                         </div>
                     ))}
+                    {rows.length < total && (
+                        <div className="audit-more">
+                            <p className="admin-sub">
+                                Showing {rows.length} of {total} events.
+                            </p>
+                            <button
+                                type="button"
+                                className="btn btn-ghost"
+                                onClick={() => void loadMore()}
+                                disabled={loadingMore}
+                            >
+                                {loadingMore ? 'Loading…' : `Load ${Math.min(PAGE_SIZE, total - rows.length)} more`}
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

@@ -103,6 +103,21 @@ export const LIST_LIMIT_DEFAULT = 50;
  * the max rather than discarded into a tiny fallback page. `.catch()` keeps the
  * parse infallible so the fallback branch in the handlers can no longer bite.
  */
+/**
+ * Parse list pagination from a query string, with the schema's clamping and a
+ * guaranteed shape (audit P1-14).
+ *
+ * Every admin list used to inline `safeParse` plus its own fallback literal,
+ * and four of them then ignored the result entirely: they hard-coded
+ * `take: 200`/`take: 500` and answered `total: items.length`, so the console
+ * showed "200 learners" whether there were 200 or 20,000 and offered no way to
+ * reach the rest. A shared helper makes the correct thing the easy thing.
+ */
+export function parseListQuery(query: unknown): { limit: number; offset: number; status?: string } {
+    const parsed = listQuerySchema.safeParse(query);
+    return parsed.success ? parsed.data : { limit: LIST_LIMIT_DEFAULT, offset: 0, status: undefined };
+}
+
 export const listQuerySchema = z.object({
     status: z.string().optional().catch(undefined),
     limit: z.coerce

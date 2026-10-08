@@ -25,7 +25,7 @@ import {
     enquiryUpdateSchema,
     trainerUpsertSchema,
     eventUpsertSchema,
-    listQuerySchema,
+    parseListQuery,
     postUpsertSchema,
 } from './validation.js';
 
@@ -158,10 +158,11 @@ adminRouter.get(
 adminRouter.get(
     '/audit-log',
     ah(async (req, res) => {
-        const q = listQuerySchema.safeParse(req.query);
-        const limit = q.success ? Math.min(q.data.limit, 200) : 100;
+        const { limit, offset } = listQuery(req);
         const [items, total] = await Promise.all([
-            prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: limit }),
+            // `offset` was parsed and then dropped, so page 2 of the activity
+            // log served page 1 again (audit P1-14).
+            prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: limit, skip: offset }),
             prisma.auditLog.count(),
         ]);
         res.json({ items, total });
@@ -172,11 +173,13 @@ adminRouter.get(
 // CRM: contact enquiries
 // ────────────────────────────────────────────────────────────────────────────
 
+/** Pagination for an admin list endpoint. */
+const listQuery = (req: Request) => parseListQuery(req.query);
+
 adminRouter.get(
     '/enquiries',
     ah(async (req, res) => {
-        const q = listQuerySchema.safeParse(req.query);
-        const { limit, offset, status } = q.success ? q.data : { limit: 50, offset: 0, status: undefined };
+        const { limit, offset, status } = listQuery(req);
         const [items, total] = await Promise.all([
             prisma.contactEnquiry.findMany({
                 where: status ? { status } : {},
@@ -223,8 +226,7 @@ function crudRoutes(path: string, delegate: Delegate, schema: z.ZodObject<z.ZodR
     adminRouter.get(
         `/${path}`,
         ah(async (req, res) => {
-            const q = listQuerySchema.safeParse(req.query);
-            const { limit, offset } = q.success ? q.data : { limit: 50, offset: 0 };
+            const { limit, offset } = listQuery(req);
             const [items, total] = await Promise.all([
                 delegate.findMany({ orderBy, take: limit, skip: offset }),
                 delegate.count(),
@@ -441,8 +443,7 @@ adminRouter.patch(
 adminRouter.get(
     '/bundles',
     ah(async (req, res) => {
-        const q = listQuerySchema.safeParse(req.query);
-        const { limit, offset } = q.success ? q.data : { limit: 50, offset: 0 };
+        const { limit, offset } = listQuery(req);
         const [items, total] = await Promise.all([
             prisma.bundle.findMany({ orderBy: { sortOrder: 'asc' }, take: limit, skip: offset, include: { courses: { include: { course: true } } } }),
             prisma.bundle.count(),
@@ -468,8 +469,7 @@ crudRoutes('posts', prisma.post as unknown as Delegate, postUpsertSchema, { publ
 adminRouter.get(
     '/applications',
     ah(async (req, res) => {
-        const q = listQuerySchema.safeParse(req.query);
-        const { limit, offset, status } = q.success ? q.data : { limit: 50, offset: 0, status: undefined };
+        const { limit, offset, status } = listQuery(req);
         const [items, total] = await Promise.all([
             prisma.application.findMany({
                 where: status ? { status } : {},
@@ -508,12 +508,13 @@ adminRouter.get(
     '/lms/users',
     ah(async (req, res) => {
         const role = typeof req.query.role === 'string' ? req.query.role : undefined;
-        const users = await prisma.lmsUser.findMany({
-            where: role ? { role } : {},
-            orderBy: { createdAt: 'desc' },
-            take: 200,
-        });
-        res.json({ items: users, total: users.length });
+        const { limit, offset } = listQuery(req);
+        const where = role ? { role } : {};
+        const [items, total] = await Promise.all([
+            prisma.lmsUser.findMany({ where, orderBy: { createdAt: 'desc' }, take: limit, skip: offset }),
+            prisma.lmsUser.count({ where }),
+        ]);
+        res.json({ items, total });
     }),
 );
 
@@ -590,17 +591,22 @@ adminRouter.post(
 
 adminRouter.get(
     '/lms/enrollments',
-    ah(async (_req, res) => {
-        const items = await prisma.enrollment.findMany({
-            orderBy: { createdAt: 'desc' },
-            take: 200,
-            include: {
-                student: { select: { name: true, email: true } },
-                tutor: { select: { name: true, email: true } },
-                course: { select: { title: true, slug: true } },
-            },
-        });
-        res.json({ items, total: items.length });
+    ah(async (req, res) => {
+        const { limit, offset } = listQuery(req);
+        const [items, total] = await Promise.all([
+            prisma.enrollment.findMany({
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset,
+                include: {
+                    student: { select: { name: true, email: true } },
+                    tutor: { select: { name: true, email: true } },
+                    course: { select: { title: true, slug: true } },
+                },
+            }),
+            prisma.enrollment.count(),
+        ]);
+        res.json({ items, total });
     }),
 );
 
@@ -683,13 +689,19 @@ adminRouter.get(
     '/lms/modules',
     ah(async (req, res) => {
         const courseSlug = typeof req.query.courseSlug === 'string' ? req.query.courseSlug : undefined;
-        const items = await prisma.courseModule.findMany({
-            where: courseSlug ? { course: { slug: courseSlug } } : {},
-            orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
-            take: 500,
-            include: { course: { select: { slug: true, title: true } } },
-        });
-        res.json({ items, total: items.length });
+        const { limit, offset } = listQuery(req);
+        const where = courseSlug ? { course: { slug: courseSlug } } : {};
+        const [items, total] = await Promise.all([
+            prisma.courseModule.findMany({
+                where,
+                orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
+                take: limit,
+                skip: offset,
+                include: { course: { select: { slug: true, title: true } } },
+            }),
+            prisma.courseModule.count({ where }),
+        ]);
+        res.json({ items, total });
     }),
 );
 
@@ -746,13 +758,19 @@ adminRouter.get(
     '/lms/recordings',
     ah(async (req, res) => {
         const courseSlug = typeof req.query.courseSlug === 'string' ? req.query.courseSlug : undefined;
-        const items = await prisma.recording.findMany({
-            where: courseSlug ? { course: { slug: courseSlug } } : {},
-            orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
-            take: 500,
-            include: { course: { select: { slug: true, title: true } } },
-        });
-        res.json({ items, total: items.length });
+        const { limit, offset } = listQuery(req);
+        const where = courseSlug ? { course: { slug: courseSlug } } : {};
+        const [items, total] = await Promise.all([
+            prisma.recording.findMany({
+                where,
+                orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
+                take: limit,
+                skip: offset,
+                include: { course: { select: { slug: true, title: true } } },
+            }),
+            prisma.recording.count({ where }),
+        ]);
+        res.json({ items, total });
     }),
 );
 

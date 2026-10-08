@@ -2516,6 +2516,9 @@ button.admin-btn, .admin-pagination button { transition: border-color 140ms ease
 .audit-table .audit-delete { background: rgba(208,58,58,.12); color: #c0392b; }
 .admin-chip-count { font-variant-numeric: tabular-nums; }
 .audit-tr small.admin-mono { font-family: ui-monospace, Consolas, monospace; color: var(--cdrl-text-muted-light); }
+/* Paged audit log footer (audit P1-14) */
+.audit-more { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 14px 15px; background: #fff; border-top: 1px solid var(--cdrl-line,#f1ece1); }
+.audit-more .admin-sub { margin: 0; font-size: 12.5px; }
 
 /* ── patch-48: partnerships portfolio + dedupe CTA + global contrast pins ── */
 
