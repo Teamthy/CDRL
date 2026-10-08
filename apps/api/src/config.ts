@@ -2,6 +2,18 @@ import 'dotenv/config';
 import { z } from 'zod';
 
 /**
+ * Treat a blank env var as "not set".
+ *
+ * Orchestrators pass an unset optional through as an EMPTY STRING —
+ * `LEARNER_JWT_SECRET: ${LEARNER_JWT_SECRET:-}` in docker-compose.prod.yml
+ * literally sets it to "". Without this, `''` reached `.email()`/`.url()`/
+ * `.min(32)`, validation failed, and the API called process.exit(1): the
+ * container crash-looped instead of simply running with that feature dormant.
+ */
+const blankAsUnset = <T extends z.ZodTypeAny>(schema: T) =>
+    z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), schema);
+
+/**
  * Central, validated configuration. The process fails fast on invalid
  * configuration instead of limping along with silent fallbacks.
  */
@@ -13,24 +25,24 @@ const envSchema = z.object({
     LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
     RATE_LIMIT_POINTS: z.coerce.number().int().positive().default(6),
     RATE_LIMIT_DURATION: z.coerce.number().int().positive().default(60),
-    REDIS_URL: z.string().url().optional(),
-    SMTP_HOST: z.string().optional(),
-    SMTP_PORT: z.coerce.number().int().positive().default(587),
-    SMTP_SECURE: z.enum(['true', 'false']).default('false'),
-    SMTP_USER: z.string().optional(),
-    SMTP_PASS: z.string().optional(),
-    SMTP_FROM: z.string().default('no-reply@ykayconsultinghub.com.ng'),
-    NOTIFY_EMAIL: z.string().optional(),
+    REDIS_URL: blankAsUnset(z.string().url().optional()),
+    SMTP_HOST: blankAsUnset(z.string().optional()),
+    SMTP_PORT: blankAsUnset(z.coerce.number().int().positive().default(587)),
+    SMTP_SECURE: blankAsUnset(z.enum(['true', 'false']).default('false')),
+    SMTP_USER: blankAsUnset(z.string().optional()),
+    SMTP_PASS: blankAsUnset(z.string().optional()),
+    SMTP_FROM: blankAsUnset(z.string().default('no-reply@ykayconsultinghub.com.ng')),
+    NOTIFY_EMAIL: blankAsUnset(z.string().optional()),
     // Solo-admin console (Phase A). All three must be set for /admin to activate.
-    ADMIN_EMAIL: z.string().email().optional(),
-    ADMIN_PASSWORD: z.string().min(10).optional(),
-    ADMIN_JWT_SECRET: z.string().min(32).optional(),
+    ADMIN_EMAIL: blankAsUnset(z.string().email().optional()),
+    ADMIN_PASSWORD: blankAsUnset(z.string().min(10).optional()),
+    ADMIN_JWT_SECRET: blankAsUnset(z.string().min(32).optional()),
     // Learner portal auth (patch-18). Without this, /learner endpoints answer 503.
-    LEARNER_JWT_SECRET: z.string().min(32).optional(),
+    LEARNER_JWT_SECRET: blankAsUnset(z.string().min(32).optional()),
     // Used for learner-facing links (password reset). Defaults to first CORS origin.
-    PUBLIC_WEB_URL: z.string().url().optional(),
+    PUBLIC_WEB_URL: blankAsUnset(z.string().url().optional()),
     // Phase 5 payments. Dormant (503) until PAYSTACK_SECRET_KEY is set.
-    PAYSTACK_SECRET_KEY: z.string().optional(),
+    PAYSTACK_SECRET_KEY: blankAsUnset(z.string().optional()),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
