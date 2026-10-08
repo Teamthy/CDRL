@@ -111,8 +111,7 @@ export async function learnerResetPassword(token: string, password: string): Pro
     return post('/learner/reset-password', { token, password });
 }
 
-/** Try the refresh cookie → new access token. One retry only. */
-async function tryRefresh(): Promise<boolean> {
+async function requestRefresh(): Promise<boolean> {
     try {
         const res = await fetch(`${API_BASE}/learner/refresh`, { method: 'POST', credentials: 'include' });
         if (!res.ok) return false;
@@ -123,6 +122,23 @@ async function tryRefresh(): Promise<boolean> {
     } catch {
         return false;
     }
+}
+
+/**
+ * Single-flight refresh. Several requests failing with 401 at once (a dashboard
+ * fires /me + /enrollments together) must rotate the cookie ONCE: parallel
+ * rotations present the same cookie twice and used to trip the server's
+ * reuse-detection, logging the user out. Everyone joins the same promise.
+ */
+let refreshInFlight: Promise<boolean> | null = null;
+
+function tryRefresh(): Promise<boolean> {
+    if (!refreshInFlight) {
+        refreshInFlight = requestRefresh().finally(() => {
+            refreshInFlight = null;
+        });
+    }
+    return refreshInFlight;
 }
 
 /** Authed fetch with refresh-on-401 retry (the rotation client half). */

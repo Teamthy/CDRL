@@ -91,6 +91,57 @@ describe('learnerClient credentials', () => {
         }
     });
 
+    it('coalesces simultaneous 401s into a single refresh (audit P0-2)', async () => {
+        const mod = await import('./learnerClient');
+        mod.setLearnerToken('stale-token');
+
+        let refreshCalls = 0;
+        fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+            if (url.includes('/learner/refresh')) {
+                refreshCalls += 1;
+                // Latency keeps every caller in flight at once — without the
+                // shared promise each would rotate the cookie separately and the
+                // server's reuse detection would nuke the session.
+                await new Promise((resolve) => setTimeout(resolve, 10));
+                return jsonResponse({ token: 'fresh-token' });
+            }
+            const auth = (init?.headers as Record<string, string> | undefined)?.Authorization;
+            if (auth === 'Bearer stale-token') return jsonResponse({ message: 'expired' }, 401);
+            return jsonResponse({ user: {}, enrollments: [] });
+        });
+
+        await Promise.all([mod.learnerMe(), mod.learnerMe(), mod.learnerMe()]);
+
+        expect(refreshCalls).toBe(1);
+        expect(mod.getLearnerToken()).toBe('fresh-token');
+    });
+
+    it('can refresh again later once the in-flight refresh has settled', async () => {
+        const mod = await import('./learnerClient');
+        mod.setLearnerToken('stale-token');
+
+        let refreshCalls = 0;
+        let currentToken = 'stale-token';
+        fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+            if (url.includes('/learner/refresh')) {
+                refreshCalls += 1;
+                currentToken = `fresh-${refreshCalls}`;
+                return jsonResponse({ token: currentToken });
+            }
+            const auth = (init?.headers as Record<string, string> | undefined)?.Authorization;
+            if (auth !== `Bearer ${currentToken}` || refreshCalls === 0) {
+                return jsonResponse({ message: 'expired' }, 401);
+            }
+            return jsonResponse({ user: {}, enrollments: [] });
+        });
+
+        await mod.learnerMe();
+        mod.setLearnerToken('stale-again');
+        await mod.learnerMe();
+
+        expect(refreshCalls).toBe(2);
+    });
+
     it('stores the access token returned by sign-in', async () => {
         const mod = await import('./learnerClient');
         await mod.learnerSignIn('ada@example.com', 'hunter2hunter2');

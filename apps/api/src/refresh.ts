@@ -9,9 +9,19 @@ import { corsOrigins } from './config.js';
 //   · access JWT stays short-ish (2h) in localStorage
 //   · refresh lives in an httpOnly SameSite=None cookie JS can never read
 //   · every refresh ROTATES: old token is marked used, a new one is issued
-//   · if a USED token is ever presented again → token theft signal → the whole
-//     family is revoked. Legit holders never replay; only an attacker does.
+//   · if a USED token is presented again LONG after it was rotated → token theft
+//     signal → the whole family is revoked.
 //   · Origin header must match the CORS allowlist (CSRF shield for the cookie).
+//
+// Concurrency (audit P0-2): "legit holders never replay" was wrong. Two tabs
+// waking at once, or a retried request whose first response was lost, both
+// present the SAME cookie — the browser has only one. The old read-then-update
+// also let both callers pass the usedAt check before either wrote, so the loser
+// revoked the entire family and signed the user out everywhere. Two guards now:
+//   1. the claim is ATOMIC (updateMany … where usedAt:null, count === 1 wins)
+//   2. a short REUSE_GRACE_MS window treats a replay as a benign double-submit
+//      and re-issues, because real theft shows up minutes/hours later, not in
+//      the same handful of seconds.
 // No cookie-parser dependency — the cookie line is parsed by hand below.
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -63,23 +73,49 @@ export type RotateResult =
     | { ok: true; userId: string; familyId: string; newToken: string }
     | { ok: false; reason: 'invalid' | 'expired' | 'revoked' | 'reuse' };
 
+/** How long after rotation a replay of the same token is still forgiven. */
+export const REUSE_GRACE_MS = 10_000;
+
 export async function rotateRefreshToken(presented: string): Promise<RotateResult> {
-    const row = await prisma.refreshToken.findUnique({ where: { tokenHash: sha256(presented) } });
+    const tokenHash = sha256(presented);
+    const row = await prisma.refreshToken.findUnique({ where: { tokenHash } });
     if (!row) return { ok: false, reason: 'invalid' };
     if (row.revokedAt) return { ok: false, reason: 'revoked' };
     if (row.expiresAt.getTime() < Date.now()) return { ok: false, reason: 'expired' };
-    if (row.usedAt) {
-        // Reuse of a rotated token → treat as theft; kill the family.
-        await prisma.refreshToken.updateMany({
-            where: { familyId: row.familyId, revokedAt: null },
-            data: { revokedAt: new Date() },
-        });
-        logger.warn({ familyId: row.familyId }, 'refresh-token reuse detected — family revoked');
-        return { ok: false, reason: 'reuse' };
+
+    // Atomic claim. tokenHash is @unique, so this matches at most one row and
+    // exactly one concurrent caller can flip usedAt from null → now.
+    const claim = await prisma.refreshToken.updateMany({
+        where: { tokenHash, usedAt: null, revokedAt: null },
+        data: { usedAt: new Date() },
+    });
+    if (claim.count === 1) {
+        const newToken = await issueRefreshToken(row.userId, row.familyId);
+        return { ok: true, userId: row.userId, familyId: row.familyId, newToken };
     }
-    await prisma.refreshToken.update({ where: { id: row.id }, data: { usedAt: new Date() } });
-    const newToken = await issueRefreshToken(row.userId, row.familyId);
-    return { ok: true, userId: row.userId, familyId: row.familyId, newToken };
+
+    // We did not win the claim: the token was already used. Re-read to find out
+    // how long ago, since the row we loaded above may be stale.
+    const current = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+    if (!current) return { ok: false, reason: 'invalid' };
+    if (current.revokedAt) return { ok: false, reason: 'revoked' };
+
+    const usedAgo = Date.now() - (current.usedAt?.getTime() ?? 0);
+    if (current.usedAt && usedAgo <= REUSE_GRACE_MS) {
+        // Benign double-submit (second tab, retry, lost response). Hand out a
+        // fresh token in the SAME family rather than revoking the session.
+        logger.info({ familyId: current.familyId, usedAgo }, 'concurrent refresh within grace window — re-issued');
+        const newToken = await issueRefreshToken(current.userId, current.familyId);
+        return { ok: true, userId: current.userId, familyId: current.familyId, newToken };
+    }
+
+    // A replay long after rotation is the theft signal — kill the family.
+    await prisma.refreshToken.updateMany({
+        where: { familyId: current.familyId, revokedAt: null },
+        data: { revokedAt: new Date() },
+    });
+    logger.warn({ familyId: current.familyId, usedAgo }, 'refresh-token reuse detected — family revoked');
+    return { ok: false, reason: 'reuse' };
 }
 
 export async function revokeFamily(familyId: string) {
