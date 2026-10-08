@@ -8,25 +8,14 @@ const path = require('path');
 // the deployed headers are unchanged.
 const isDev = process.env.NODE_ENV !== 'production';
 
-// CSP starts in report-only mode; tighten with a nonce strategy later.
-const contentSecurityPolicy = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
-    "font-src 'self'",
-    "connect-src 'self' " + (process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).origin : ''),
-    isDev ? 'frame-ancestors *' : "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-].join('; ');
+// The Content-Security-Policy is built per request in middleware.ts (nonce-based,
+// report-only). It is not set here, so there is only one policy in play.
 
 const securityHeaders = [
     ...(isDev ? [] : [{ key: 'X-Frame-Options', value: 'DENY' }]),
     { key: 'X-Content-Type-Options', value: 'nosniff' },
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
     { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-    { key: 'Content-Security-Policy-Report-Only', value: contentSecurityPolicy },
 ];
 
 const nextConfig = {
