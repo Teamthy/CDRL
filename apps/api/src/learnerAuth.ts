@@ -217,9 +217,12 @@ learnerRouter.post(
 );
 
 // POST /logout — kill the refresh family; client also drops its access token.
+// The refresh cookie is SameSite=None, so a cross-site POST would carry it: the Origin
+// check is the same one /refresh uses (audit: no Origin check on logout).
 learnerRouter.post(
     '/logout',
     ah(async (req, res) => {
+        if (!assertAllowedOrigin(req, res)) return;
         const presented = readRefreshCookie(req);
         if (presented) await revokePresented(presented); // family-scoped: logs out everywhere this rotation chain lives
         clearRefreshCookie(res);
@@ -418,7 +421,9 @@ learnerRouter.post(
                     logger.warn({ err }, 'learner reset email failed');
                 }
             } else {
-                logger.info({ email, link }, 'learner reset link (no SMTP configured)');
+                // Never log the link: it is a live credential, and anyone who can read the
+                // logs could reset the password. Without SMTP the email is simply not sent.
+                logger.warn({ userId: user.id }, 'learner reset email not sent: SMTP is not configured');
             }
         }
         return res.json({ ok: true, message: 'If an account exists for that email, a reset link is on its way.' });

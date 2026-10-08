@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Request, Response } from 'express';
+import { createHmac } from 'crypto';
 
 /**
  * Audit finding P0-7: a learner could pay and never be enrolled, with no way
@@ -159,6 +160,11 @@ function invoke(
             },
             send() {
                 resolve({ status: this.statusCode, body: undefined });
+                return this;
+            },
+            sendStatus(code: number) {
+                this.statusCode = code;
+                resolve({ status: code, body: undefined });
                 return this;
             },
         };
@@ -365,5 +371,47 @@ describe('pending purchase hygiene', () => {
 
         expect(db.purchases.find((p) => p.email === 'grace@example.com')!.status).toBe('pending');
         vi.unstubAllGlobals();
+    });
+});
+
+describe('POST /payments/webhook — signature check', () => {
+    // Paystack signs the raw body with HMAC-SHA512 (hex) in x-paystack-signature.
+    const body = Buffer.from(JSON.stringify({ event: 'charge.success', data: { reference: 'ykh-unknown' } }));
+    const sign = (payload: Buffer, key = 'sk_test_fake') => createHmac('sha512', key).update(payload).digest('hex');
+
+    it('acknowledges a body signed with the Paystack secret', async () => {
+        const res = await invoke(payments.paymentsWebhook(), { headers: { 'x-paystack-signature': sign(body) }, body });
+        expect(res.status).toBe(200);
+    });
+
+    it('rejects a request with no signature', async () => {
+        const res = await invoke(payments.paymentsWebhook(), { headers: {}, body });
+        expect(res.status).toBe(401);
+    });
+
+    it('rejects a signature made with another key', async () => {
+        const res = await invoke(payments.paymentsWebhook(), { headers: { 'x-paystack-signature': sign(body, 'other') }, body });
+        expect(res.status).toBe(401);
+    });
+
+    it('rejects a body that changed after it was signed', async () => {
+        const tampered = Buffer.from(body.toString().replace('ykh-unknown', 'ykh-other'));
+        const res = await invoke(payments.paymentsWebhook(), { headers: { 'x-paystack-signature': sign(body) }, body: tampered });
+        expect(res.status).toBe(401);
+    });
+
+    it('rejects a truncated signature with a 401, not a crash in timingSafeEqual', async () => {
+        const res = await invoke(payments.paymentsWebhook(), { headers: { 'x-paystack-signature': sign(body).slice(0, 40) }, body });
+        expect(res.status).toBe(401);
+    });
+
+    it('rejects a non-hex signature', async () => {
+        const res = await invoke(payments.paymentsWebhook(), { headers: { 'x-paystack-signature': 'z'.repeat(128) }, body });
+        expect(res.status).toBe(401);
+    });
+
+    it('accepts the signature in either hex case, since it is the same MAC', () => {
+        expect(payments.isValidPaystackSignature(sign(body).toUpperCase(), body, 'sk_test_fake')).toBe(true);
+        expect(payments.isValidPaystackSignature(sign(body), body, 'sk_test_fake')).toBe(true);
     });
 });
