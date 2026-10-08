@@ -44,30 +44,62 @@ async function paystack<T>(path: string, init?: RequestInit): Promise<T> {
     return body;
 }
 
-/** After a successful payment: upsert the learner (by email) and enroll them. */
-async function grantEnrollment(args: { email: string; name?: string | null; courseId: string; courseSlug: string }) {
-    const email = args.email.toLowerCase();
-    const user = await prisma.lmsUser.upsert({
+/**
+ * The slice of the Prisma client this module uses. Declared structurally so the
+ * same helpers work with `prisma` and with an interactive transaction client.
+ */
+type Tx = Pick<typeof prisma, 'lmsUser' | 'enrollment' | 'purchase'>;
+
+type PurchaseLike = { email: string; name: string | null; courseId: string | null; courseSlug: string };
+
+/**
+ * After a successful payment: upsert the learner (by email) and enroll them.
+ *
+ * Idempotent, and safe inside a transaction (audit P0-7). It used to catch
+ * P2002 from a bare create — which is fine standalone but fatal inside a
+ * transaction, where a failed statement aborts the whole thing in Postgres.
+ * The compound unique @@unique([studentId, courseId]) lets us upsert instead,
+ * so there is no error to swallow.
+ *
+ * Returns true when it actually created the enrolment.
+ */
+async function ensureEnrollment(tx: Tx, purchase: PurchaseLike): Promise<boolean> {
+    if (!purchase.courseId) return false;
+    const email = purchase.email.toLowerCase();
+    const user = await tx.lmsUser.upsert({
         where: { email },
         update: {},
         create: {
             email,
-            name: args.name?.trim() || email.split('@')[0],
+            name: purchase.name?.trim() || email.split('@')[0],
             role: 'student',
         },
     });
-    try {
-        await prisma.enrollment.create({
-            data: { studentId: user.id, courseId: args.courseId, status: 'active', progress: 0 },
-        });
-        logger.info({ email, courseSlug: args.courseSlug }, 'enrollment granted from payment');
-    } catch (err) {
-        // @@unique([studentId, courseId]) — already enrolled is a benign no-op.
-        const code = (err as { code?: string }).code;
-        if (code !== 'P2002') throw err;
-        logger.info({ email, courseSlug: args.courseSlug }, 'payment re-confirmed existing enrollment');
-    }
-    return user.id;
+    const key = { studentId_courseId: { studentId: user.id, courseId: purchase.courseId } };
+    const existing = await tx.enrollment.findUnique({ where: key });
+    if (existing) return false;
+    await tx.enrollment.upsert({
+        where: key,
+        update: {},
+        create: { studentId: user.id, courseId: purchase.courseId, status: 'active', progress: 0 },
+    });
+    return true;
+}
+
+/**
+ * Mark a purchase paid AND grant access as one unit.
+ *
+ * Previously these were two independent awaits: a crash, a dropped connection
+ * or a failing enrolment between them left a row saying "paid" with no
+ * enrolment attached — and /verify's already-success short-circuit meant the
+ * learner could never recover it by retrying. Both writes now commit together.
+ */
+async function settlePurchase(purchaseId: string, purchase: PurchaseLike): Promise<boolean> {
+    return prisma.$transaction(async (tx: Tx) => {
+        await tx.purchase.update({ where: { id: purchaseId }, data: { status: 'success', paidAt: new Date() } });
+        const granted = await ensureEnrollment(tx, purchase);
+        return granted;
+    });
 }
 
 export const paymentsRouter = Router();
@@ -127,7 +159,19 @@ paymentsRouter.get(
         const purchase = await prisma.purchase.findUnique({ where: { reference: req.params.reference } });
         if (!purchase) return res.status(404).json({ message: 'Unknown reference' });
         if (purchase.status === 'success') {
-            return res.json({ status: 'success', courseSlug: purchase.courseSlug, already: true });
+            // Do NOT just report success: a purchase settled by the old
+            // non-transactional path (or interrupted between its two writes)
+            // can be paid with no enrolment, and this branch was the only one a
+            // learner could reach by retrying — so the state was unrecoverable.
+            // Re-granting is idempotent, so repairing here costs nothing.
+            const repaired = await prisma.$transaction((tx: Tx) => ensureEnrollment(tx, purchase));
+            if (repaired) {
+                logger.warn(
+                    { reference: purchase.reference, courseSlug: purchase.courseSlug },
+                    'paid purchase had no enrollment — re-granted on verify',
+                );
+            }
+            return res.json({ status: 'success', courseSlug: purchase.courseSlug, already: true, repaired });
         }
 
         const ps = await paystack<{ data: { status: string; reference: string; amount: number } }>(
@@ -141,10 +185,11 @@ paymentsRouter.get(
             return res.json({ status: 'failed', courseSlug: purchase.courseSlug });
         }
 
-        await prisma.purchase.update({ where: { id: purchase.id }, data: { status: 'success', paidAt: new Date() } });
-        if (purchase.courseId) {
-            await grantEnrollment({ email: purchase.email, name: purchase.name, courseId: purchase.courseId, courseSlug: purchase.courseSlug });
-        }
+        const granted = await settlePurchase(purchase.id, purchase);
+        logger.info(
+            { reference: purchase.reference, courseSlug: purchase.courseSlug, granted },
+            granted ? 'enrollment granted from payment' : 'payment re-confirmed existing enrollment',
+        );
         return res.json({ status: 'success', courseSlug: purchase.courseSlug });
     }),
 );
@@ -166,10 +211,18 @@ export function paymentsWebhook(): RequestHandler {
 
         if (event.event === 'charge.success' && event.data?.reference) {
             const purchase = await prisma.purchase.findUnique({ where: { reference: event.data.reference } });
-            if (purchase && purchase.status !== 'success' && event.data.amount === purchase.amountKobo) {
-                await prisma.purchase.update({ where: { id: purchase.id }, data: { status: 'success', paidAt: new Date() } });
-                if (purchase.courseId) {
-                    await grantEnrollment({ email: purchase.email, name: purchase.name, courseId: purchase.courseId, courseSlug: purchase.courseSlug });
+            if (purchase && event.data.amount === purchase.amountKobo) {
+                if (purchase.status !== 'success') {
+                    // Same transactional settle as /verify — whichever of the
+                    // two arrives first wins and the other becomes a no-op.
+                    const granted = await settlePurchase(purchase.id, purchase);
+                    logger.info({ reference: purchase.reference, granted }, 'purchase settled from webhook');
+                } else {
+                    // Already marked paid: still make sure access exists.
+                    const repaired = await prisma.$transaction((tx: Tx) => ensureEnrollment(tx, purchase));
+                    if (repaired) {
+                        logger.warn({ reference: purchase.reference }, 'paid purchase had no enrollment — re-granted from webhook');
+                    }
                 }
             }
         }
