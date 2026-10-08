@@ -8,6 +8,7 @@ import { config } from './config.js';
 import { signScopedToken, verifyScopedToken } from './rbac.js';
 import { prisma } from './db.js';
 import { logger } from './logger.js';
+import { inviteBlocker, issueInviteLink } from './learnerAuth.js';
 import {
     adminLoginSchema,
     applicationUpdateSchema,
@@ -504,6 +505,11 @@ adminRouter.patch(
 // LMS scaffold: people (students/tutors), enrollments, course modules
 // ────────────────────────────────────────────────────────────────────────────
 
+/** The console never receives a password hash. It sees whether a password is set. */
+export function lmsUserView<T extends { passwordHash: string | null }>(user: T) {
+    return { ...user, passwordHash: undefined, hasPassword: Boolean(user.passwordHash) };
+}
+
 adminRouter.get(
     '/lms/users',
     ah(async (req, res) => {
@@ -514,7 +520,7 @@ adminRouter.get(
             prisma.lmsUser.findMany({ where, orderBy: { createdAt: 'desc' }, take: limit, skip: offset }),
             prisma.lmsUser.count({ where }),
         ]);
-        res.json({ items, total });
+        res.json({ items: items.map(lmsUserView), total });
     }),
 );
 
@@ -529,7 +535,21 @@ adminRouter.post(
             update: { name: parsed.data.name, role: parsed.data.role },
             create: { ...parsed.data, email },
         });
-        res.status(201).json(user);
+        // A person with no password gets an invite link to hand over. Re-saving an
+        // unclaimed person issues a fresh link, which is how a lost link is replaced.
+        const invite = inviteBlocker(user) ? null : issueInviteLink(user);
+        res.status(201).json({ ...lmsUserView(user), invite });
+    }),
+);
+
+adminRouter.post(
+    '/lms/users/:id/invite',
+    ah(async (req, res) => {
+        const user = await prisma.lmsUser.findUnique({ where: { id: req.params.id } });
+        if (!user) return res.status(404).json({ message: 'Person not found' });
+        const blocked = inviteBlocker(user);
+        if (blocked) return res.status(blocked.status).json({ message: blocked.message });
+        return res.json(issueInviteLink(user));
     }),
 );
 
@@ -540,7 +560,7 @@ adminRouter.patch(
         if (!parsed.success) return res.status(400).json({ message: 'Invalid payload', errors: parsed.error.flatten() });
         try {
             const user = await prisma.lmsUser.update({ where: { id: req.params.id }, data: parsed.data });
-            return res.json(user);
+            return res.json(lmsUserView(user));
         } catch (err) {
             if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
                 return res.status(404).json({ message: 'User not found' });

@@ -9,7 +9,10 @@ process.env.LEARNER_JWT_SECRET = 'learner-secret-learner-secret-32xyz!';
 // Keep the generated Prisma client out of this suite so it loads on a fresh clone,
 // where `prisma generate` has not run. The only query the routes below make is the
 // user lookup in /forgot-password, which is stubbed here.
-const db = vi.hoisted(() => ({ lmsUser: { findUnique: vi.fn() } }));
+const db = vi.hoisted(() => ({
+    lmsUser: { findUnique: vi.fn(), update: vi.fn(), create: vi.fn() },
+    refreshToken: { updateMany: vi.fn() },
+}));
 vi.mock('./db.js', () => ({ prisma: db }));
 vi.mock('./logger.js', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 
@@ -21,6 +24,9 @@ type LearnerAuth = {
     issueResetToken: (user: { id: string; email: string; passwordHash: string | null }) => string;
     verifyResetToken: (token: string, user: { id: string; email: string; passwordHash: string | null }) => boolean;
     learnerRouter: unknown;
+    issueInviteLink: (user: { id: string; email: string; passwordHash: string | null }) => { link: string; expiresInDays: number };
+    issueInviteToken: (user: { id: string; email: string; passwordHash: string | null }) => string;
+    inviteBlocker: (user: { passwordHash: string | null; status: string }, enabled?: boolean) => { status: number; message: string } | null;
 };
 let auth: LearnerAuth;
 
@@ -193,3 +199,65 @@ describe('POST /forgot-password without SMTP', () => {
         expect(logger.warn).toHaveBeenCalledWith({ userId: 'u_1' }, expect.stringContaining('not sent'));
     });
 });
+
+const invitee = { id: 'u_9', email: 'bola@example.com', passwordHash: null as string | null, status: 'active' };
+
+describe('invite links', () => {
+    it('gives a sign-in link whose token works until a password is set', () => {
+        const { link, expiresInDays } = auth.issueInviteLink(invitee);
+        expect(expiresInDays).toBe(7);
+        expect(link).toMatch(/\/sign-in\?reset=/);
+        const token = new URL(link).searchParams.get('reset') ?? '';
+        expect(auth.verifyResetToken(token, invitee)).toBe(true);
+        // Setting a password changes the fingerprint, so the invite is spent.
+        expect(auth.verifyResetToken(token, { ...invitee, passwordHash: '$2b$10$new' })).toBe(false);
+    });
+
+    it('expires seven days after it is issued', () => {
+        const claims = jwt.decode(auth.issueInviteToken(invitee)) as { iat: number; exp: number; kind: string };
+        expect(claims.kind).toBe('invite');
+        expect(claims.exp - claims.iat).toBe(7 * 24 * 60 * 60);
+    });
+
+    it('is refused for accounts with a password, suspended accounts, and when learner accounts are off', () => {
+        expect(auth.inviteBlocker({ passwordHash: '$2b$10$x', status: 'active' })?.status).toBe(409);
+        expect(auth.inviteBlocker({ passwordHash: null, status: 'suspended' })?.status).toBe(409);
+        expect(auth.inviteBlocker({ passwordHash: null, status: 'active' })).toBeNull();
+        expect(auth.inviteBlocker({ passwordHash: null, status: 'active' }, false)?.status).toBe(503);
+    });
+});
+
+describe('signup and invites', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('does not let signup claim an admin-created account that has no password', async () => {
+        db.lmsUser.findUnique.mockResolvedValueOnce({ id: 'u_9', email: 'bola@example.com', passwordHash: null });
+        const out = await callRoute(routeHandler('post', '/signup'), {
+            body: { name: 'Mallory', email: 'bola@example.com', password: 'hunter2hunter2' },
+            headers: {} as Request['headers'],
+        });
+        expect(out.status).toBe(409);
+        expect(db.lmsUser.create).not.toHaveBeenCalled();
+        expect(db.lmsUser.update).not.toHaveBeenCalled();
+    });
+
+    it('lets the invitee set the first password once, then refuses the same link', async () => {
+        const { link } = auth.issueInviteLink(invitee);
+        const token = new URL(link).searchParams.get('reset') ?? '';
+        const reset = routeHandler('post', '/reset-password');
+
+        db.lmsUser.findUnique.mockResolvedValueOnce(invitee);
+        const first = await callRoute(reset, { body: { token, password: 'a-new-password' }, headers: {} as Request['headers'] });
+        expect(first.body).toMatchObject({ ok: true });
+        expect(db.lmsUser.update).toHaveBeenCalledTimes(1);
+
+        // The account now has a password, so the same link no longer matches it.
+        db.lmsUser.findUnique.mockResolvedValueOnce({ ...invitee, passwordHash: '$2b$10$set' });
+        const second = await callRoute(reset, { body: { token, password: 'another-password' }, headers: {} as Request['headers'] });
+        expect(second.status).toBe(400);
+        expect(db.lmsUser.update).toHaveBeenCalledTimes(1);
+    });
+});
+
