@@ -41,15 +41,50 @@ const content = [
     { pageKey: 'Contact', content: { title: 'Let\'s build digital trust together.', description: 'Tell us how YKAY Consult can support your professional or organizational goals.' } },
 ];
 
+/**
+ * Course seeding is ADDITIVE by default (audit P0-5).
+ *
+ * The old `update: course` rewrote the whole row on every run, so any price,
+ * copy or publish state an admin had edited in the console was silently reset
+ * the next time the seed ran — directly contradicting the guarantee written at
+ * the top of pecb-catalogue.ts ("edits made in the console stay").
+ *
+ * Re-running the seed now only fills in rows that do not exist yet. To
+ * deliberately reset the catalogue back to the shipped copy:
+ *
+ *   pnpm --filter api exec prisma db seed -- --force
+ *   SEED_FORCE=true pnpm --filter api exec prisma db seed
+ */
+const FORCE = process.argv.includes('--force') || process.env.SEED_FORCE === 'true';
+
 async function main() {
-    for (const course of [...courses, ...pecbCatalogue]) {
+    const catalogue = [...courses, ...pecbCatalogue];
+    const before = await prisma.course.findMany({
+        where: { slug: { in: catalogue.map((c) => c.slug) } },
+        select: { slug: true },
+    });
+    const existing = new Set(before.map((c: { slug: string }) => c.slug));
+
+    for (const course of catalogue) {
         await prisma.course.upsert({
             where: { slug: course.slug },
-            update: course,
+            // `{}` = leave console edits alone. Upsert (not create) so a
+            // concurrent run still cannot trip the unique constraint.
+            update: FORCE ? course : {},
             create: course,
         });
     }
 
+    const created = catalogue.filter((c) => !existing.has(c.slug)).length;
+    const kept = catalogue.length - created;
+    console.log(
+        FORCE
+            ? `Courses: ${created} created, ${kept} overwritten from the catalogue (--force)`
+            : `Courses: ${created} created, ${kept} left untouched (pass --force to overwrite console edits)`,
+    );
+
+    // SiteContent has no console editor — it is code-owned page copy, so it
+    // always tracks the catalogue file rather than being treated as user data.
     for (const item of content) {
         await prisma.siteContent.upsert({
             where: { pageKey: item.pageKey },
