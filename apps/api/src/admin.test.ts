@@ -7,6 +7,11 @@ process.env.ADMIN_EMAIL = 'admin@example.com';
 process.env.ADMIN_PASSWORD = 'correct-horse-battery';
 process.env.ADMIN_JWT_SECRET = 'test-secret-test-secret-test-secret-32!';
 
+// The guard is pure. Keep the generated Prisma client out so the suite loads on a
+// fresh clone (admin.ts only uses Prisma.PrismaClientKnownRequestError inside handlers).
+vi.mock('./db.js', () => ({ prisma: {} }));
+vi.mock('@prisma/client', () => ({ Prisma: { PrismaClientKnownRequestError: class extends Error {} } }));
+
 type Guard = { requireAdmin: (req: Request, res: Response, next: NextFunction) => unknown; signAdminToken: (email: string) => string };
 let guard: Guard;
 
