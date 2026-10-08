@@ -8,7 +8,7 @@ import Logo from '../brand/Logo';
 import { navigationLinks } from './navigation';
 import SearchPanel from './SearchPanel';
 import MobileNavigation from './MobileNavigation';
-import { getLearningPlan } from '../../lib/learningPlanClient';
+import { getLearningPlan, subscribeToLearningPlan } from '../../lib/learningPlanClient';
 
 export default function Header({ initialCount = 0 }: { initialCount?: number }) {
     const pathname = usePathname();
@@ -16,6 +16,10 @@ export default function Header({ initialCount = 0 }: { initialCount?: number }) 
     const [menuOpen, setMenuOpen] = useState(false);
     const [count, setCount] = useState(initialCount);
 
+    // Load the plan ONCE, then track changes by subscription (audit P1-15).
+    // Keying this on `pathname` cost a request per navigation and flickered the
+    // badge to 0 while each one was in flight — and still missed any add that
+    // happened without a route change.
     useEffect(() => {
         let mounted = true;
         (async () => {
@@ -26,10 +30,14 @@ export default function Header({ initialCount = 0 }: { initialCount?: number }) 
                 /* silent */
             }
         })();
+        const unsubscribe = subscribeToLearningPlan((next) => {
+            if (mounted) setCount(next);
+        });
         return () => {
             mounted = false;
+            unsubscribe();
         };
-    }, [pathname]);
+    }, []);
 
     useEffect(() => {
         setMenuOpen(false);
