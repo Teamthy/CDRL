@@ -6,9 +6,9 @@ import CorporateBand from './sections/CorporateBand';
 import UpcomingProgram from './sections/UpcomingProgram';
 import Insights from './sections/Insights';
 import PecbPartner from './sections/PecbPartner';
-import type { Course } from '../lib/content';
+import type { CourseCardView } from '../lib/content';
 
-type Props = { courses: Course[] };
+type Props = { courses: CourseCardView[] };
 
 /**
  * Pure homepage content. No header / footer here — the surrounding

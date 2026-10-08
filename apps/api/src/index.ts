@@ -2,11 +2,11 @@ import express, { type NextFunction, type Request, type RequestHandler, type Res
 import cors from 'cors';
 import helmet from 'helmet';
 import { Prisma } from '@prisma/client';
-import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible';
-import { Redis } from 'ioredis';
 import nodemailer from 'nodemailer';
 import { config, corsOrigins } from './config.js';
 import { prisma } from './db.js';
+import { closeRateLimitStore, rateLimitPlanEdits, rateLimitSubmissions } from './rateLimit.js';
+import { runRetentionSweeps, startRetentionSweeps } from './retention.js';
 import { adminRouter } from './admin.js';
 import { learnerRouter } from './learnerAuth.js';
 import { paymentsRawBody, paymentsRouter, paymentsWebhook } from './payments.js';
@@ -26,42 +26,7 @@ const ah =
         fn(req, res, next).catch(next);
     };
 
-// ────────────────────────────────────────────────────────────────────────────
-// Rate limiting (shared via Redis when REDIS_URL is set)
-// ────────────────────────────────────────────────────────────────────────────
 
-let redis: Redis | null = null;
-const mutationLimiter = (() => {
-    if (config.REDIS_URL) {
-        redis = new Redis(config.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 1 });
-        redis.on('error', (err) => logger.warn({ err }, 'redis error (rate limiter store)'));
-        logger.info('rate limiting backed by Redis');
-        return new RateLimiterRedis({
-            storeClient: redis,
-            points: config.RATE_LIMIT_POINTS,
-            duration: config.RATE_LIMIT_DURATION,
-            keyPrefix: 'cdrl:rl',
-        });
-    }
-    if (config.NODE_ENV === 'production') {
-        logger.warn('REDIS_URL not set — in-memory rate limiting only works correctly on a single instance');
-    }
-    return new RateLimiterMemory({ points: config.RATE_LIMIT_POINTS, duration: config.RATE_LIMIT_DURATION });
-})();
-
-async function rateLimitMutations(req: Request, res: Response, next: NextFunction) {
-    try {
-        await mutationLimiter.consume(req.ip ?? 'unknown');
-        next();
-    } catch (err) {
-        if (err instanceof Error) {
-            // rate-limiter store failure — treat as a server error, not a 429
-            next(err);
-            return;
-        }
-        res.status(429).json({ message: 'Too many requests. Please try again shortly.' });
-    }
-}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Optional contact-notification mailer
@@ -121,6 +86,29 @@ app.get(
 // Courses & content (public, cacheable)
 // ────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Fields a course CARD needs. `details` — the long-form markdown body rendered
+ * only on /training/<slug> — is deliberately absent: with no `select` the list
+ * shipped every course's full body (measured 265 KB for 116 rows, ~86% of it
+ * unread), and because the array is handed to client components it was then
+ * duplicated into the RSC payload of /, /training and /partnerships.
+ * GET /courses/:slug still returns the whole row. (audit P1-8)
+ */
+const courseCardSelect = {
+    id: true,
+    slug: true,
+    title: true,
+    subtitle: true,
+    track: true,
+    level: true,
+    deliveryMode: true,
+    overview: true,
+    priceKobo: true,
+    priceBand: true,
+    currency: true,
+    sortOrder: true,
+} as const;
+
 app.get(
     '/api/v1/courses',
     ah(async (req, res) => {
@@ -141,6 +129,7 @@ app.get(
             },
             orderBy: { sortOrder: 'asc' },
             take: 200,
+            select: courseCardSelect,
         });
         res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
         res.json(courses);
@@ -175,7 +164,7 @@ app.get(
 
 app.post(
     '/api/v1/contact',
-    rateLimitMutations,
+    rateLimitSubmissions,
     ah(async (req, res) => {
         const parsed = contactSchema.safeParse(req.body);
         if (!parsed.success) {
@@ -229,7 +218,7 @@ app.get(
 
 app.post(
     '/api/v1/learning-plan/items',
-    rateLimitMutations,
+    rateLimitPlanEdits,
     ah(async (req, res) => {
         const sessionId = req.headers['x-session-id'];
         const parsed = learningPlanItemSchema.safeParse(req.body);
@@ -267,7 +256,7 @@ app.post(
 
 app.delete(
     '/api/v1/learning-plan/items/:courseId',
-    rateLimitMutations,
+    rateLimitPlanEdits,
     ah(async (req, res) => {
         const sessionId = req.headers['x-session-id'];
         if (!isValidSessionId(sessionId)) return res.status(404).json({ message: 'Plan not found' });
@@ -303,7 +292,8 @@ app.get(
         const bundles = await prisma.bundle.findMany({
             where: { published: true },
             orderBy: { sortOrder: 'asc' },
-            include: { courses: { orderBy: { order: 'asc' }, include: { course: true } } },
+            // Card fields only — a bundle listing never renders course bodies.
+            include: { courses: { orderBy: { order: 'asc' }, include: { course: { select: courseCardSelect } } } },
         });
         res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
         res.json(bundles.map((b) => ({ ...b, courseCount: b.courses.length })));
@@ -355,7 +345,7 @@ app.get(
 
 app.post(
     '/api/v1/applications',
-    rateLimitMutations,
+    rateLimitSubmissions,
     ah(async (req, res) => {
         const parsed = applicationSchema.safeParse(req.body);
         if (!parsed.success) {
@@ -430,7 +420,12 @@ app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
 
 const server = app.listen(config.PORT, () => {
     logger.info({ port: config.PORT, env: config.NODE_ENV }, 'API listening');
+    // Expired refresh tokens and abandoned learning plans accumulated forever
+    // (audit P1-13). Sweep once at boot, then on a timer.
+    void runRetentionSweeps();
 });
+
+const stopRetentionSweeps = startRetentionSweeps();
 
 let shuttingDown = false;
 async function shutdown(signal: string) {
@@ -439,8 +434,9 @@ async function shutdown(signal: string) {
     logger.info({ signal }, 'shutdown requested');
     server.close(async () => {
         try {
+            stopRetentionSweeps();
             await prisma.$disconnect();
-            if (redis) await redis.quit();
+            await closeRateLimitStore();
             logger.info('shutdown complete');
             process.exit(0);
         } catch (err) {

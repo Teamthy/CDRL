@@ -6,6 +6,15 @@
 #
 # Required env (shell or .env beside this file):
 #   POSTGRES_PASSWORD, NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_API_URL (public origin!)
+#
+# Optional but needed to actually ENABLE features (see .env.example):
+#   ADMIN_EMAIL / ADMIN_PASSWORD / ADMIN_JWT_SECRET  -> admin console
+#   LEARNER_JWT_SECRET                               -> learner portal + LMS
+#   PAYSTACK_SECRET_KEY                              -> online payments
+#   PUBLIC_WEB_URL                                   -> learner-facing links
+#   NEXT_PUBLIC_GA_ID                                -> GA4 (build-time)
+# Leaving one unset keeps that feature cleanly dormant (503), it does not
+# break the stack — but the feature cannot be switched on without it.
 services:
   postgres:
     image: postgres:16-alpine
@@ -60,6 +69,14 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:-}
+      # Learner portal / LMS. Unset => signup, login and password reset 503.
+      LEARNER_JWT_SECRET: ${LEARNER_JWT_SECRET:-}
+      # Origin used to build learner-facing links (reset emails, pay callback).
+      # Left empty the API falls back to the first CORS_ORIGIN entry, which is
+      # NEXT_PUBLIC_SITE_URL here — so only set this when they differ.
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-}
+      # Paystack. Unset => /payments/* stay dormant behind a clean 503.
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY:-}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -87,6 +104,9 @@ services:
         # Inlined into the browser bundle at build time — must be PUBLIC URLs.
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        # GA4 is inlined at build time; a runtime-only value would never reach
+        # the browser bundle.
+        NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
     environment:
       # Server-side reads at runtime (ISR revalidation, internal fetches).
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}

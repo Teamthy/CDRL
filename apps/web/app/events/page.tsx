@@ -7,6 +7,7 @@ import { CalendarDays, MapPin } from 'lucide-react';
 import { getPageContent, getPublishedEvents } from '../../lib/data';
 import JsonLd from '../../components/JsonLd';
 import { pageData } from '../../lib/content';
+import { formatEventDate } from '../../lib/dates';
 
 export const revalidate = 1800;
 
@@ -15,14 +16,6 @@ export const metadata = {
     description: 'Upcoming certification programs, executive briefings, and practitioner masterclasses.',
     alternates: { canonical: '/events' },
 };
-
-function eventDate(iso: string) {
-    const d = new Date(iso);
-    return {
-        day: d.toLocaleDateString('en-NG', { weekday: 'long' }),
-        label: d.toLocaleDateString('en-NG', { dateStyle: 'long' }),
-    };
-}
 
 /** Events published from the admin console. Hidden entirely when none exist. */
 async function PublishedEvents() {
@@ -48,11 +41,19 @@ async function PublishedEvents() {
                         })),
                     }}
                 />
-                <span className="kicker">UPCOMING DATES</span>
-                <h2>Scheduled programs &amp; events</h2>
+                {/* `others.length ? others : events` fell back to the FULL list
+                    when every event was an exam — so each exam rendered here
+                    AND again in the exam strip below. (audit UX-21) */}
+                {others.length > 0 && (
+                    <>
+                        <span className="kicker">UPCOMING DATES</span>
+                        <h2>Scheduled programs &amp; events</h2>
+                    </>
+                )}
+                {others.length > 0 && (
                 <div className="db-events-grid">
-                    {(others.length ? others : events).map((ev) => {
-                        const d = eventDate(ev.startsAt);
+                    {others.map((ev) => {
+                        const d = formatEventDate(ev.startsAt);
                         return (
                             <Reveal key={ev.id}>
                                 <article className="db-event-card">
@@ -68,7 +69,7 @@ async function PublishedEvents() {
                                             </span>
                                         )}
                                         {ev.endsAt && (
-                                            <span>until {eventDate(ev.endsAt).label}</span>
+                                            <span>until {formatEventDate(ev.endsAt).label}</span>
                                         )}
                                     </div>
                                     {ev.registrationUrl ? (
@@ -85,6 +86,7 @@ async function PublishedEvents() {
                         );
                     })}
                 </div>
+                )}
                 {exams.length > 0 && (
                     <div className="exam-strip">
                         <span className="kicker">EXAM SESSIONS</span>
@@ -95,7 +97,7 @@ async function PublishedEvents() {
                         </p>
                         <div className="exam-row-grid">
                             {exams.map((ev) => {
-                                const d = eventDate(ev.startsAt);
+                                const d = formatEventDate(ev.startsAt);
                                 return (
                                     <div key={ev.id} className="exam-card">
                                         <strong>{ev.title}</strong>

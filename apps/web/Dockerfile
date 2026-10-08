@@ -15,8 +15,11 @@ WORKDIR /app
 FROM base AS build
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+# Optional GA4 id. Empty => components/Analytics.tsx renders nothing.
+ARG NEXT_PUBLIC_GA_ID=
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
-    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY apps/web/package.json apps/web/package.json
 RUN pnpm install --frozen-lockfile --filter web...

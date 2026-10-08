@@ -5,8 +5,8 @@ import SiteLayout from '../../components/SiteLayout';
 import PageHero from '../../components/sections/PageHero';
 import CTASection from '../../components/sections/CTASection';
 import JsonLd from '../../components/JsonLd';
-import { getCourses } from '../../lib/data';
-import type { Course } from '../../lib/contracts';
+import { getCourseCards } from '../../lib/data';
+import type { CourseCardView } from '../../lib/contracts';
 
 export const revalidate = 1800;
 
@@ -54,15 +54,15 @@ const FAQS: { q: string; a: string }[] = [
     },
 ];
 
-function famLabel(c: Course) {
+function famLabel(c: CourseCardView) {
     return c.subtitle.replace(' (PECB Certified)', '');
 }
 
 export default async function PecbTrainingNigeriaPage() {
-    const courses = await getCourses();
+    const courses = await getCourseCards();
     const pecb = courses.filter((c) => c.subtitle.includes('PECB'));
 
-    const groups = new Map<string, Course[]>();
+    const groups = new Map<string, CourseCardView[]>();
     for (const c of pecb) {
         const list = groups.get(c.title) ?? [];
         list.push(c);

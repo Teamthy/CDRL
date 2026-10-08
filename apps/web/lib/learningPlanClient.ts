@@ -4,7 +4,9 @@ const SESSION_COOKIE = 'cdrl_session';
 
 export type LearningPlanItem = { courseId: string };
 export type LearningPlan = { items: LearningPlanItem[] };
-export type MutationResult = { ok: boolean };
+/** `reason` lets callers tell "slow down" apart from "that failed" (audit P1-9). */
+export type MutationFailureReason = 'rate-limited' | 'error';
+export type MutationResult = { ok: true } | { ok: false; reason: MutationFailureReason };
 
 function getOrCreateSessionId(): string {
     if (typeof document === 'undefined') return '';
@@ -44,6 +46,45 @@ function readLocalPlan(): LearningPlanItem[] {
 function writeLocalPlan(items: LearningPlanItem[]) {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items));
+    notifyPlanChanged(items.length);
+}
+
+// ── Change notification (audit P1-15) ───────────────────────────────────────
+//
+// The header badge used to re-fetch the plan on every route change, keyed on
+// `pathname`, which cost a request per navigation and — because the count was
+// reset by the async result — flickered to 0 mid-flight. It also could not
+// react to an add that happened without navigating.
+//
+// Mutations funnel through writeLocalPlan, so that is the one place a change
+// can be announced from.
+
+type PlanListener = (count: number) => void;
+const planListeners = new Set<PlanListener>();
+
+function notifyPlanChanged(count: number) {
+    planListeners.forEach((listener) => listener(count));
+}
+
+/** Current item count from the local cache, synchronously. */
+export function localLearningPlanCount(): number {
+    return readLocalPlan().length;
+}
+
+/**
+ * Subscribe to learning-plan changes, including edits made in another tab.
+ * Returns an unsubscribe function.
+ */
+export function subscribeToLearningPlan(listener: PlanListener): () => void {
+    planListeners.add(listener);
+    const onStorage = (event: StorageEvent) => {
+        if (event.key === null || event.key === LOCAL_STORAGE_KEY) listener(localLearningPlanCount());
+    };
+    if (typeof window !== 'undefined') window.addEventListener('storage', onStorage);
+    return () => {
+        planListeners.delete(listener);
+        if (typeof window !== 'undefined') window.removeEventListener('storage', onStorage);
+    };
 }
 
 async function fetchRemotePlan(sessionId: string): Promise<LearningPlan> {
@@ -86,7 +127,9 @@ export async function addLearningPlanItem(courseId: string): Promise<MutationRes
                 writeLocalPlan([...existing, { courseId }]);
                 return { ok: true };
             }
-            return { ok: false };
+            // Do NOT write the local plan here: the server rejected the item, and
+            // caching it locally would show a plan the backend does not have.
+            return { ok: false, reason: res.status === 429 ? 'rate-limited' : 'error' };
         } catch {
             // API unreachable — persist locally so the selection isn't lost
         }
@@ -106,7 +149,8 @@ export async function removeLearningPlanItem(courseId: string): Promise<Mutation
             `${API_BASE}/learning-plan/items/${encodeURIComponent(courseId)}`,
             { method: 'DELETE', headers: { 'x-session-id': sessionId } },
         );
-        return res.ok || res.status === 404 ? { ok: true } : { ok: false };
+        if (res.ok || res.status === 404) return { ok: true };
+        return { ok: false, reason: res.status === 429 ? 'rate-limited' : 'error' };
     } catch {
         // API unreachable — local copy already updated
         return { ok: true };

@@ -14,8 +14,9 @@
  *     on /training/<slug> by ModuleText (markdown-lite).
  *
  * Every row upserts by slug — re-running the seed is always safe, and edits made
- * in the console stay (seed only writes rows whose slug it owns; console edits
- * persist because the admin update path is per-field, not row-replace).
+ * in the console stay: the seed CREATES rows it owns and does not touch existing
+ * ones. Resetting the catalogue back to this file is an explicit opt-in
+ * (`prisma db seed -- --force`). See apps/api/src/seed.ts.
  */
 
 export type SeedCourse = {

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { submitContact, type ContactSubmission } from '../../services/contact';
+import { INTEREST_OPTIONS, resolveInterest } from '../../lib/contactInterest';
 
 type FormState = ContactSubmission & { email: string };
 type Errors = Partial<Record<keyof FormState, string>>;
@@ -19,6 +20,18 @@ export default function ContactForm() {
     const [values, setValues] = useState<FormState>(initial);
     const [errors, setErrors] = useState<Errors>({});
     const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+    /** Why the submission failed, as reported by the service. */
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    /** A referred interest that is not one of the fixed options (e.g. an event). */
+    const [referredInterest, setReferredInterest] = useState<string | null>(null);
+
+    // Prefill from ?interest= — the events page has always sent it (audit UX-17).
+    useEffect(() => {
+        const interest = resolveInterest(new URLSearchParams(window.location.search).get('interest'));
+        if (!interest) return;
+        setValues((prev) => ({ ...prev, interest }));
+        if (!INTEREST_OPTIONS.some((o) => o === interest)) setReferredInterest(interest);
+    }, []);
 
     function set<K extends keyof FormState>(key: K, value: FormState[K]) {
         setValues((prev) => ({ ...prev, [key]: value }));
@@ -40,11 +53,18 @@ export default function ContactForm() {
         e.preventDefault();
         if (!validate()) return;
         setStatus('submitting');
+        setErrorMessage(null);
         try {
+            // submitContact already distinguishes "we could not reach the
+            // server" from "you are being rate limited"; throwing that away and
+            // always printing "Something went wrong" told the user to retry
+            // immediately in the one case where retrying cannot work.
             const result = await submitContact(values);
             setStatus(result.ok ? 'success' : 'error');
+            if (!result.ok) setErrorMessage(result.message ?? null);
         } catch {
             setStatus('error');
+            setErrorMessage(null);
         }
     }
 
@@ -106,10 +126,14 @@ export default function ContactForm() {
                     aria-describedby={errors.interest ? 'err-interest' : undefined}
                 >
                     <option value="">Select an area</option>
-                    <option>Professional Training</option>
-                    <option>Corporate Training</option>
-                    <option>Advisory &amp; Consulting</option>
-                    <option>Partnership</option>
+                    {/* Keeps the referring event on the enquiry instead of
+                        silently dropping it back to "Select an area". */}
+                    {referredInterest && <option value={referredInterest}>{referredInterest}</option>}
+                    {INTEREST_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                            {option}
+                        </option>
+                    ))}
                 </select>
                 {errors.interest && <span id="err-interest" className="error">{errors.interest}</span>}
             </label>
@@ -138,8 +162,8 @@ export default function ContactForm() {
                     <ArrowRight />
                 </button>
                 {status === 'error' && (
-                    <span className="error" style={{ marginLeft: 16 }}>
-                        Something went wrong. Please try again.
+                    <span className="error" style={{ marginLeft: 16 }} role="alert">
+                        {errorMessage ?? 'Something went wrong. Please try again.'}
                     </span>
                 )}
             </div>

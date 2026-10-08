@@ -11,7 +11,7 @@ import {
     type PublicPostListItem,
 } from './api';
 import { courses as localCourses, pageData } from './content';
-import type { Course, PageContent } from './contracts';
+import { toCourseCardViews, type Course, type CourseCardView, type PageContent } from './contracts';
 
 export type { PublicEvent, PublicPost, PublicPostListItem };
 
@@ -33,6 +33,16 @@ export const getCourses = cache(async (): Promise<Course[]> => {
     }
     return localCourses;
 });
+
+/**
+ * Course list trimmed to card fields (audit P1-8).
+ *
+ * Every page that renders a catalogue hands its array to a client component,
+ * so each extra property is paid for twice: once in the API response and again
+ * in the RSC payload. Use this everywhere except /training/<slug>, which needs
+ * the full row from `getCourseBySlug`.
+ */
+export const getCourseCards = cache(async (): Promise<CourseCardView[]> => toCourseCardViews(await getCourses()));
 
 export const getCourseBySlug = cache(async (slug: string): Promise<Course | null> => {
     try {

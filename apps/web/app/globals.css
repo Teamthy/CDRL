@@ -1307,7 +1307,8 @@ a.pecb-badge img { border-radius: 10px; }
 .admin-sub { color: var(--cdrl-text-muted-light); font-size: 13px; max-width: 640px; }
 .admin-sub a { color: var(--cdrl-green); }
 .admin-error { background: rgba(255, 90, 90, 0.12); border: 1px solid rgba(255, 90, 90, 0.35); color: #ff9c9c; border-radius: 10px; padding: 12px 14px; font-size: 13px; max-width: 720px; }
-.admin-notice { background: rgba(112, 242, 80, 0.10); border: 1px solid var(--cdrl-border-dark); color: var(--cdrl-green); border-radius: 10px; padding: 12px 14px; font-size: 13px; max-width: 720px; }
+.admin-notice { background: rgba(112, 242, 80, 0.10); border: 1px solid var(--cdrl-border-dark); color: var(--cdrl-green); border-radius: 10px; padding: 12px 14px; font-size: 13px; max-width: 720px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.admin-notice .admin-ghost.danger { margin-left: auto; color: #b3261e; border-color: rgba(179, 38, 30, 0.4); }
 .admin-hint { margin-top: 26px; color: var(--cdrl-text-muted-light); font-size: 12.5px; }
 .admin-hint a { color: var(--cdrl-green); }
 
@@ -2055,7 +2056,21 @@ button.admin-ghost { background: none; border: 1px solid var(--cdrl-border-dark)
 .admin-search input { flex: 1; border: 0; background: transparent; padding: 9px 0; font: inherit; }
 .admin-search input:focus { outline: none; box-shadow: none; }
 .admin-search:focus-within { border-color: var(--cdrl-green); box-shadow: 0 0 0 3.5px rgba(47, 107, 79, 0.16); }
-.admin-count { font-weight: 600; color: var(--cdrl-green); }
+.admin-count { font-weight: 600; color: var(--cdrl-green); margin-left: auto; font-size: 13px; white-space: nowrap; }
+
+/* Pagination for admin lists (audit P0-3: lists silently showed only 50 rows). */
+.admin-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--cdrl-text-muted-light);
+}
+.admin-pager button { display: inline-flex; align-items: center; gap: 6px; }
+.admin-pager button:disabled { opacity: 0.45; cursor: not-allowed; }
+.admin-pager svg { width: 15px; height: 15px; }
 
 /* ── patch-33: bundles, exam strip, price bands ── */
 .bundle-index { padding: 48px 0 64px; }
@@ -2501,6 +2516,9 @@ button.admin-btn, .admin-pagination button { transition: border-color 140ms ease
 .audit-table .audit-delete { background: rgba(208,58,58,.12); color: #c0392b; }
 .admin-chip-count { font-variant-numeric: tabular-nums; }
 .audit-tr small.admin-mono { font-family: ui-monospace, Consolas, monospace; color: var(--cdrl-text-muted-light); }
+/* Paged audit log footer (audit P1-14) */
+.audit-more { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 14px 15px; background: #fff; border-top: 1px solid var(--cdrl-line,#f1ece1); }
+.audit-more .admin-sub { margin: 0; font-size: 12.5px; }
 
 /* ── patch-48: partnerships portfolio + dedupe CTA + global contrast pins ── */
 

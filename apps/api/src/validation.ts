@@ -88,10 +88,48 @@ export const postUpsertSchema = z.object({
     published: z.boolean().optional().default(false),
 });
 
+/**
+ * Largest page an admin list endpoint will serve. The console asks for bigger
+ * pages than the old max(100) allowed; because every handler used
+ * `q.success ? q.data : { limit: 50 }`, an out-of-range limit did not 400 — it
+ * silently collapsed the page to 50 rows, so the console only ever showed 50 of
+ * 141 courses with no indication anything was missing (audit P0-3).
+ */
+export const LIST_LIMIT_MAX = 200;
+export const LIST_LIMIT_DEFAULT = 50;
+
+/**
+ * Pagination is CLAMPED, never rejected: a silly `?limit=100000` is pinned to
+ * the max rather than discarded into a tiny fallback page. `.catch()` keeps the
+ * parse infallible so the fallback branch in the handlers can no longer bite.
+ */
+/**
+ * Parse list pagination from a query string, with the schema's clamping and a
+ * guaranteed shape (audit P1-14).
+ *
+ * Every admin list used to inline `safeParse` plus its own fallback literal,
+ * and four of them then ignored the result entirely: they hard-coded
+ * `take: 200`/`take: 500` and answered `total: items.length`, so the console
+ * showed "200 learners" whether there were 200 or 20,000 and offered no way to
+ * reach the rest. A shared helper makes the correct thing the easy thing.
+ */
+export function parseListQuery(query: unknown): { limit: number; offset: number; status?: string } {
+    const parsed = listQuerySchema.safeParse(query);
+    return parsed.success ? parsed.data : { limit: LIST_LIMIT_DEFAULT, offset: 0, status: undefined };
+}
+
 export const listQuerySchema = z.object({
-    status: z.string().optional(),
-    limit: z.coerce.number().int().min(1).max(100).optional().default(50),
-    offset: z.coerce.number().int().min(0).optional().default(0),
+    status: z.string().optional().catch(undefined),
+    limit: z.coerce
+        .number()
+        .int()
+        .catch(LIST_LIMIT_DEFAULT)
+        .transform((n) => Math.min(Math.max(n, 1), LIST_LIMIT_MAX)),
+    offset: z.coerce
+        .number()
+        .int()
+        .catch(0)
+        .transform((n) => Math.max(n, 0)),
 });
 
 // ────────────────────────────────────────────────────────────────────────────

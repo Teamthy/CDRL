@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { ArrowRight, ShoppingBag, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getLearningPlan, removeLearningPlanItem } from '../../lib/learningPlanClient';
-import type { Course } from '../../lib/content';
+import type { CourseCardView } from '../../lib/content';
 
-type Props = { courses: Course[] };
+type Props = { courses: CourseCardView[] };
 
 export default function LearningPlanSelected({ courses }: Props) {
     const [ids, setIds] = useState<string[]>([]);

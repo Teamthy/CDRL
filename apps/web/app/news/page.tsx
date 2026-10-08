@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { getPublishedPosts } from '../../lib/data';
+import { formatLongDate } from '../../lib/dates';
 
 export const revalidate = 1800;
 
@@ -45,9 +46,7 @@ export default async function NewsPage() {
                                     <span className="news-meta">
                                         {post.category.toUpperCase()} ·{' '}
                                         <time dateTime={post.publishedAt ?? post.createdAt}>
-                                            {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString('en-NG', {
-                                                dateStyle: 'long',
-                                            })}
+                                            {formatLongDate(post.publishedAt ?? post.createdAt)}
                                         </time>
                                     </span>
                                     <h2>{post.title}</h2>

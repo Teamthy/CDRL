@@ -3,9 +3,9 @@
 import type { Route } from 'next';
 import Link from 'next/link';
 import { Award, Check } from 'lucide-react';
-import type { Course } from '../../lib/content';
+import type { CourseCardView } from '../../lib/content';
 
-type Props = { courses: Course[]; currentSlug: string };
+type Props = { courses: CourseCardView[]; currentSlug: string };
 
 /** PECB-style sibling-level ladder: for a course like "ISO/IEC 27001 Lead Auditor",
  *  shows "ISO/IEC 27001 Foundation · Lead Implementer · Lead Auditor · Transition"

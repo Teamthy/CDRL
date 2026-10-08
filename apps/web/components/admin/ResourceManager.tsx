@@ -1,8 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ListChecks, Pencil, Plus, Search, Trash2, X, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ListChecks, Pencil, Plus, Search, Trash2, X, Eye } from 'lucide-react';
 import { adminFetch, UnauthorizedError, type ListResponse } from '../../lib/adminClient';
+
+/** Rows per page. The API clamps at LIST_LIMIT_MAX (200); this stays scannable. */
+const PAGE_SIZE = 50;
 
 /** Two-click delete: first tap arm it, second confirms. */
 function DeleteButton({ onConfirm }: { onConfirm: () => void }) {
@@ -72,6 +75,9 @@ export default function ResourceManager<T, D>({
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(0);
+    // Set after a soft delete so the admin can still escalate to a real one.
+    const [pendingHardDelete, setPendingHardDelete] = useState<string | null>(null);
 
     // Notices self-clear so stale confirmations never linger.
     useEffect(() => {
@@ -104,12 +110,19 @@ export default function ResourceManager<T, D>({
     const reload = useCallback(async () => {
         setError(null);
         try {
-            setData(await adminFetch<ListResponse<T>>(`${endpoint}?limit=200`));
+            // Ask for one page and tell the server where it starts. The old
+            // `?limit=200` exceeded the API's cap, so the query failed validation
+            // and every list silently served 50 rows with no way to see the rest.
+            setData(
+                await adminFetch<ListResponse<T>>(
+                    `${endpoint}?limit=${PAGE_SIZE}&offset=${page * PAGE_SIZE}`,
+                ),
+            );
             setSelected(new Set());
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
         }
-    }, [endpoint]);
+    }, [endpoint, page]);
 
     async function bulkSetPublished(value: boolean) {
         if (selected.size === 0) return;
@@ -132,6 +145,19 @@ export default function ResourceManager<T, D>({
     useEffect(() => {
         void reload();
     }, [reload]);
+
+    // A different collection starts at its own first page.
+    useEffect(() => {
+        setPage(0);
+    }, [endpoint]);
+
+    // Deleting the last row of the last page must not strand the user on an
+    // empty page with no way back.
+    useEffect(() => {
+        if (data && data.items.length === 0 && data.total > 0 && page > 0) {
+            setPage((p) => Math.max(0, Math.min(p - 1, Math.ceil(data.total / PAGE_SIZE) - 1)));
+        }
+    }, [data, page]);
 
     // ── Autosave drafts (localStorage) ────────────────────────────────────────
     // Any in-progress editor state is snapshotted on every keystroke; on mount
@@ -193,15 +219,40 @@ export default function ResourceManager<T, D>({
         }
     }
 
-    async function remove(id: string) {
+    /**
+     * Delete, or — where the API protects dependent data — retire.
+     *
+     * /admin/courses answers a plain DELETE with `{ archived: true }`: the row is
+     * unpublished, not destroyed, because enrolments, modules, recordings and
+     * progress all cascade from Course. The permanent variant is opt-in and the
+     * API refuses it (409) while learners or purchases reference the course.
+     */
+    async function remove(id: string, hard = false) {
+        setError(null);
         try {
-            await adminFetch(`${endpoint}/${id}`, { method: 'DELETE' });
-            setNotice(`${entityName} deleted.`);
+            const result = await adminFetch<{ archived?: boolean; message?: string } | undefined>(
+                `${endpoint}/${id}${hard ? '?hard=true' : ''}`,
+                { method: 'DELETE' },
+            );
+            if (result?.archived) {
+                setNotice(result.message ?? `${entityName} unpublished.`);
+                setPendingHardDelete(id);
+            } else {
+                setNotice(`${entityName} deleted.`);
+                setPendingHardDelete(null);
+            }
             await reload();
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
         }
     }
+
+    const total = data?.total ?? 0;
+    const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const pageRows = data?.items.length ?? 0;
+    const rangeStart = pageRows === 0 ? 0 : page * PAGE_SIZE + 1;
+    const rangeEnd = page * PAGE_SIZE + pageRows;
+    const paginated = total > PAGE_SIZE;
 
     return (
         <div className="admin-page">
@@ -216,7 +267,30 @@ export default function ResourceManager<T, D>({
             </header>
 
             {error && <p className="admin-error" role="alert">{error}</p>}
-            {notice && <p className="admin-notice" role="status">{notice}</p>}
+            {notice && (
+                <div className="admin-notice" role="status">
+                    <span>{notice}</span>
+                    {pendingHardDelete && (
+                        <button
+                            type="button"
+                            className="admin-ghost danger"
+                            onClick={() => {
+                                if (
+                                    window.confirm(
+                                        `Permanently delete this ${entityName.toLowerCase()}? This cannot be undone. It will be refused if any learner data still references it.`,
+                                    )
+                                ) {
+                                    const id = pendingHardDelete;
+                                    setPendingHardDelete(null);
+                                    void remove(id, true);
+                                }
+                            }}
+                        >
+                            Delete permanently
+                        </button>
+                    )}
+                </div>
+            )}
             {restorableDraft && !editing && (
                 <div className="admin-restore" role="status">
                     <span>A saved draft of a {entityName} exists from a previous session.</span>
@@ -284,10 +358,15 @@ export default function ResourceManager<T, D>({
                             type="search"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder={`Filter ${entityName.toLowerCase()}s…`}
+                            placeholder={paginated ? `Filter this page…` : `Filter ${entityName.toLowerCase()}s…`}
                             aria-label={`Filter ${entityName.toLowerCase()}s`}
                         />
                     </div>
+                    <p className="admin-count" role="status">
+                        {total === 0
+                            ? `No ${entityName.toLowerCase()}s yet`
+                            : `Showing ${rangeStart}–${rangeEnd} of ${total} ${entityName.toLowerCase()}${total === 1 ? '' : 's'}`}
+                    </p>
                 </div>
             )}
 
@@ -338,6 +417,30 @@ export default function ResourceManager<T, D>({
                     <p className="admin-empty">None yet — use “New {entityName}” above.</p>
                 )}
             </div>
+
+            {paginated && (
+                <nav className="admin-pager" aria-label={`${entityName} pagination`}>
+                    <button
+                        type="button"
+                        className="admin-ghost"
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                        disabled={page === 0}
+                    >
+                        <ChevronLeft aria-hidden="true" /> Previous
+                    </button>
+                    <span aria-live="polite">
+                        Page {page + 1} of {pageCount}
+                    </span>
+                    <button
+                        type="button"
+                        className="admin-ghost"
+                        onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                        disabled={page >= pageCount - 1}
+                    >
+                        Next <ChevronRight aria-hidden="true" />
+                    </button>
+                </nav>
+            )}
         </div>
     );
 }

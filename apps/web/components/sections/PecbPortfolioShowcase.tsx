@@ -4,12 +4,12 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Course } from '../../lib/content';
+import type { CourseCardView } from '../../lib/content';
 import { courseImageFor } from '../../lib/courseImages';
 
 const PAGE_SIZE = 12;
 
-type Props = { courses: Course[] };
+type Props = { courses: CourseCardView[] };
 
 /** /partnerships portfolio — PECB course grid with backdrop imagery and pager. */
 export default function PecbPortfolioShowcase({ courses }: Props) {

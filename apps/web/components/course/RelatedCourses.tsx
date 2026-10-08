@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
-import type { Course } from '../../lib/content';
+import type { CourseCardView } from '../../lib/content';
 import { courseImageFor } from '../../lib/courseImages';
 
-type Props = { courses: Course[]; currentSlug: string };
+type Props = { courses: CourseCardView[]; currentSlug: string };
 
 /** Auto-scrolling related-courses rail (PECB-style "More programmes") on course pages.
  *  Related = same track first, then same leading title token (same ISO family), then others. */

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { UserPlus, Link2, Layers } from 'lucide-react';
-import { adminFetch, UnauthorizedError, type ListResponse } from '../../../lib/adminClient';
+import { adminFetch, adminFetchAll, UnauthorizedError } from '../../../lib/adminClient';
 import { Checkbox, Field, TextArea, TextInput } from '../../../components/admin/fields';
 
 type RoleFilter = 'student' | 'tutor';
@@ -75,8 +75,9 @@ function PeopleSection() {
 
     const reload = useCallback(async () => {
         try {
-            const res = await adminFetch<ListResponse<LmsUser>>('/admin/lms/users');
-            setUsers(res.items);
+            // Page through: the endpoint is capped per request, and the console
+            // needs the whole roster to search and act on it. (audit P1-14)
+            setUsers(await adminFetchAll<LmsUser>('/admin/lms/users'));
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
         }
@@ -179,8 +180,8 @@ function EnrollmentsSection() {
 
     const reload = useCallback(async () => {
         try {
-            const res = await adminFetch<ListResponse<EnrollmentRow>>('/admin/lms/enrollments');
-            setRows(res.items);
+            const items = await adminFetchAll<EnrollmentRow>('/admin/lms/enrollments');
+            setRows(items);
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
         }
@@ -314,8 +315,8 @@ function ModulesSection() {
 
     const reload = useCallback(async () => {
         try {
-            const res = await adminFetch<ListResponse<ModuleRowFull>>('/admin/lms/modules');
-            setRows(res.items);
+            const items = await adminFetchAll<ModuleRowFull>('/admin/lms/modules');
+            setRows(items);
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
         }
@@ -487,8 +488,8 @@ function RecordingsSection() {
 
     const reload = useCallback(async () => {
         try {
-            const res = await adminFetch<ListResponse<RecordingRow>>('/admin/lms/recordings');
-            setRows(res.items);
+            const items = await adminFetchAll<RecordingRow>('/admin/lms/recordings');
+            setRows(items);
         } catch (err) {
             if (!(err instanceof UnauthorizedError)) setError((err as Error).message);
         }

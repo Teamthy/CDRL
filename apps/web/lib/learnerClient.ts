@@ -2,7 +2,17 @@
 
 /**
  * Learner session client (LMS Phase 2) — mirrors adminClient.
- * 12h JWT from /api/v1/learner/login|signup lives in localStorage;
+ *
+ * Sessions are two tokens working together:
+ *   · a SHORT-LIVED access JWT (2h, see LEARNER_ACCESS_TTL in the API) kept in
+ *     localStorage and attached as `Authorization: Bearer …`;
+ *   · a 30-day httpOnly refresh cookie the browser stores and replays.
+ *
+ * EVERY request that can receive or send that cookie must set
+ * `credentials: 'include'` — the web app and the API are cross-origin
+ * (Netlify ↔ Render), so without it the browser silently DROPS the
+ * `Set-Cookie` on login/signup and refresh can never work.
+ *
  * 401s clear the session so pages can bounce to /sign-in.
  */
 
@@ -59,6 +69,9 @@ async function post(path: string, body: unknown): Promise<PostResult & { token?:
     try {
         const res = await fetch(`${API_BASE}${path}`, {
             method: 'POST',
+            // Required: login/signup answer with the httpOnly refresh cookie, and a
+            // cross-origin response's Set-Cookie is discarded without this.
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
@@ -98,8 +111,7 @@ export async function learnerResetPassword(token: string, password: string): Pro
     return post('/learner/reset-password', { token, password });
 }
 
-/** Try the refresh cookie → new access token. One retry only. */
-async function tryRefresh(): Promise<boolean> {
+async function requestRefresh(): Promise<boolean> {
     try {
         const res = await fetch(`${API_BASE}/learner/refresh`, { method: 'POST', credentials: 'include' });
         if (!res.ok) return false;
@@ -110,6 +122,23 @@ async function tryRefresh(): Promise<boolean> {
     } catch {
         return false;
     }
+}
+
+/**
+ * Single-flight refresh. Several requests failing with 401 at once (a dashboard
+ * fires /me + /enrollments together) must rotate the cookie ONCE: parallel
+ * rotations present the same cookie twice and used to trip the server's
+ * reuse-detection, logging the user out. Everyone joins the same promise.
+ */
+let refreshInFlight: Promise<boolean> | null = null;
+
+function tryRefresh(): Promise<boolean> {
+    if (!refreshInFlight) {
+        refreshInFlight = requestRefresh().finally(() => {
+            refreshInFlight = null;
+        });
+    }
+    return refreshInFlight;
 }
 
 /** Authed fetch with refresh-on-401 retry (the rotation client half). */
@@ -239,6 +268,22 @@ export async function learnerChangePassword(currentPassword: string, newPassword
     const body = (await res.json().catch(() => ({}))) as PostResult;
     if (!res.ok) return { ok: false, message: body.message ?? `Failed (${res.status})` };
     return { ok: true, message: body.message ?? 'Password changed' };
+}
+
+/**
+ * POST /learner/me/complete-onboarding
+ *
+ * OnboardingFlow used to inline this fetch and then redirect unconditionally
+ * (audit UX-20). Going through authFetch means a 401 triggers the normal
+ * refresh-then-sign-in path instead of a silent failure.
+ */
+export async function learnerCompleteOnboarding(): Promise<PostResult> {
+    const res = await authFetch('/learner/me/complete-onboarding', { method: 'POST' });
+    if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        return { ok: false, message: body.message ?? `Could not save your setup (${res.status}).` };
+    }
+    return { ok: true };
 }
 
 export interface ProgressResult {

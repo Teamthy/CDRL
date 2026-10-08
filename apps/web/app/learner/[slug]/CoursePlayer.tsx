@@ -25,14 +25,35 @@ export default function CoursePlayer({ slug }: { slug: string }) {
     const [progress, setProgress] = useState<number | null>(null);
     const [doneIds, setDoneIds] = useState<string[] | null>(null);
     const [marking, setMarking] = useState<string | null>(null);
+    const [markError, setMarkError] = useState<string | null>(null);
 
+    /**
+     * Mark a module complete.
+     *
+     * The try/finally here had no catch, and the only call site is
+     * `void tick(m.id)` — so a failed request became an unhandled rejection
+     * and the learner saw the spinner stop with the module still unticked and
+     * no explanation. An expired session was indistinguishable from a network
+     * blip. (audit UX-19)
+     */
     async function tick(moduleId: string) {
         if (marking) return;
         setMarking(moduleId);
+        setMarkError(null);
         try {
             const res = await learnerMarkModuleComplete(slug, moduleId);
             setProgress(res.progress);
             setDoneIds((prev) => [...(prev ?? data?.completedModuleIds ?? []), moduleId]);
+        } catch (err) {
+            if (err instanceof LearnerUnauthorizedError) {
+                router.replace('/sign-in');
+                return;
+            }
+            setMarkError(
+                err instanceof NotEnrolledError
+                    ? 'Your enrolment for this course is no longer active.'
+                    : 'Could not save your progress. Please try again.',
+            );
         } finally {
             setMarking(null);
         }
@@ -81,6 +102,12 @@ export default function CoursePlayer({ slug }: { slug: string }) {
             <div className="learn-progress" role="progressbar" aria-valuenow={progress ?? data.enrollment.progress} aria-valuemin={0} aria-valuemax={100}>
                 <span style={{ width: `${progress ?? data.enrollment.progress}%` }} />
             </div>
+
+            {markError && (
+                <p className="auth-error" role="alert">
+                    {markError}
+                </p>
+            )}
 
             {data.modules.length === 0 ? (
                 <div className="learn-card learn-empty">

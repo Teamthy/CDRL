@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next';
 // Revalidate hourly so newly published posts/courses enter the sitemap
 // without requiring a redeploy (ISR instead of build-time baking).
 export const revalidate = 3600;
-import { getCourses, getPublishedPosts } from '../lib/data';
+import { getCourseCards, getPublishedPosts } from '../lib/data';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
@@ -39,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     let courseEntries: MetadataRoute.Sitemap = [];
     try {
-        const courses = await getCourses();
+        const courses = await getCourseCards();
         courseEntries = courses.map((c) => ({
             url: `${SITE_URL}/training/${c.slug}`,
             changeFrequency: 'monthly',

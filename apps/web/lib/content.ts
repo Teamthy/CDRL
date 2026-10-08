@@ -1,6 +1,6 @@
 import type { Course, PageContent } from './contracts';
 
-export type { Course, PageContent } from './contracts';
+export type { Course, CourseCardView, PageContent } from './contracts';
 
 /**
  * Local fallback content — used only when the API is unreachable.

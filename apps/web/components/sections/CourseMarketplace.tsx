@@ -1,13 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import CatalogTools, { type CatalogFilter } from './CatalogTools';
 import CategoryLaunchpad from './CategoryLaunchpad';
 import CourseCard from '../cards/CourseCard';
-import type { Course } from '../../lib/content';
+import { SEARCH_EVENT, searchQueryFromLocation } from '../../lib/siteSearch';
+import type { CourseCardView } from '../../lib/content';
 
-type Props = { courses: Course[] };
+type Props = { courses: CourseCardView[] };
 
 const PAGE_SIZE = 16;   // 4 × 4 per page
 
@@ -15,6 +16,30 @@ export default function CourseMarketplace({ courses }: Props) {
     const [query, setQuery] = useState('');
     const [filter, setFilter] = useState<CatalogFilter>('All');
     const [page, setPage] = useState(1);
+
+    /**
+     * Seed the filter from ?q= so the header search actually lands somewhere
+     * (audit UX-16).
+     *
+     * Read from location rather than useSearchParams deliberately: that hook
+     * would force this component behind a Suspense boundary, and the whole
+     * catalogue would drop out of the statically rendered HTML that /training
+     * ranks on. Reading after hydration keeps the server-rendered grid intact.
+     */
+    useEffect(() => {
+        const apply = (q: string) => {
+            setQuery(q);
+            setPage(1);
+        };
+        const fromUrl = searchQueryFromLocation(window.location.search);
+        if (fromUrl) apply(fromUrl);
+
+        // Searching again from the header while already on /training changes
+        // the URL without remounting, so the query is announced too.
+        const onSearch = (e: Event) => apply((e as CustomEvent<string>).detail ?? '');
+        window.addEventListener(SEARCH_EVENT, onSearch);
+        return () => window.removeEventListener(SEARCH_EVENT, onSearch);
+    }, []);
     const marketRef = { current: null as HTMLDivElement | null };
 
     const shown = useMemo(() => {

@@ -10,7 +10,7 @@ import RelatedCourses from '../../../components/course/RelatedCourses';
 import CourseActionPanel from '../../../components/course/CourseActionPanel';
 import CareerOutcomes from '../../../components/course/CareerOutcomes';
 import WaitlistCTA from '../../../components/course/WaitlistCTA';
-import { getCourseBySlug, getCourses } from '../../../lib/data';
+import { getCourseBySlug, getCourseCards } from '../../../lib/data';
 import { courseJsonLd, SITE_URL } from '../../../lib/jsonld';
 import { courses as localCourses } from '../../../lib/content';
 
@@ -63,7 +63,7 @@ export default async function CourseDetailPage({ params }: Props) {
     const { slug } = await params;
     const course = await getCourseBySlug(slug);
     if (!course) notFound();
-    const courses = await getCourses();
+    const courses = await getCourseCards();
 
     const isPecb = course.subtitle.includes('PECB');
 

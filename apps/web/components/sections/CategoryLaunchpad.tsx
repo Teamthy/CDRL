@@ -2,11 +2,11 @@
 
 import { useMemo } from 'react';
 import { ArrowRight } from 'lucide-react';
-import type { Course } from '../../lib/content';
+import type { CourseCardView } from '../../lib/content';
 import { courseImageFor } from '../../lib/courseImages';
 
 type Props = {
-    courses: Course[];
+    courses: CourseCardView[];
     onPick: (track: string) => void;
 };
 

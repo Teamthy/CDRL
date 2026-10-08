@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import SiteLayout from '../../components/SiteLayout';
-import { getCourses } from '../../lib/data';
+import { getCourseCards } from '../../lib/data';
 import PageHero from '../../components/sections/PageHero';
 import CourseMarketplace from '../../components/sections/CourseMarketplace';
 
@@ -15,7 +15,7 @@ export const metadata = {
 };
 
 export default async function TrainingPage() {
-    const courses = await getCourses();
+    const courses = await getCourseCards();
     return (
         <SiteLayout>
             <PageHero

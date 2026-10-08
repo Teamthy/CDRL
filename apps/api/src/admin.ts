@@ -25,7 +25,7 @@ import {
     enquiryUpdateSchema,
     trainerUpsertSchema,
     eventUpsertSchema,
-    listQuerySchema,
+    parseListQuery,
     postUpsertSchema,
 } from './validation.js';
 
@@ -158,10 +158,11 @@ adminRouter.get(
 adminRouter.get(
     '/audit-log',
     ah(async (req, res) => {
-        const q = listQuerySchema.safeParse(req.query);
-        const limit = q.success ? Math.min(q.data.limit, 200) : 100;
+        const { limit, offset } = listQuery(req);
         const [items, total] = await Promise.all([
-            prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: limit }),
+            // `offset` was parsed and then dropped, so page 2 of the activity
+            // log served page 1 again (audit P1-14).
+            prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: limit, skip: offset }),
             prisma.auditLog.count(),
         ]);
         res.json({ items, total });
@@ -172,11 +173,13 @@ adminRouter.get(
 // CRM: contact enquiries
 // ────────────────────────────────────────────────────────────────────────────
 
+/** Pagination for an admin list endpoint. */
+const listQuery = (req: Request) => parseListQuery(req.query);
+
 adminRouter.get(
     '/enquiries',
     ah(async (req, res) => {
-        const q = listQuerySchema.safeParse(req.query);
-        const { limit, offset, status } = q.success ? q.data : { limit: 50, offset: 0, status: undefined };
+        const { limit, offset, status } = listQuery(req);
         const [items, total] = await Promise.all([
             prisma.contactEnquiry.findMany({
                 where: status ? { status } : {},
@@ -223,8 +226,7 @@ function crudRoutes(path: string, delegate: Delegate, schema: z.ZodObject<z.ZodR
     adminRouter.get(
         `/${path}`,
         ah(async (req, res) => {
-            const q = listQuerySchema.safeParse(req.query);
-            const { limit, offset } = q.success ? q.data : { limit: 50, offset: 0 };
+            const { limit, offset } = listQuery(req);
             const [items, total] = await Promise.all([
                 delegate.findMany({ orderBy, take: limit, skip: offset }),
                 delegate.count(),
@@ -289,6 +291,104 @@ function crudRoutes(path: string, delegate: Delegate, schema: z.ZodObject<z.ZodR
     );
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// Course deletion is NOT the generic delete (audit P0-4).
+//
+// Enrollment, CourseModule, Recording and ModuleCompletion are all
+// `onDelete: Cascade` from Course. A plain DELETE therefore wiped every
+// learner's enrolment and progress for that course, irreversibly, behind a
+// two-click button in the console — and Purchase rows lost their course link.
+//
+// So: DELETE retires the course (unpublish) by default; destroying the row
+// needs ?hard=true AND is refused outright while enrolments or purchases
+// reference it.
+// ────────────────────────────────────────────────────────────────────────────
+
+export function wantsHardDelete(query: Request['query']): boolean {
+    return query.hard === 'true' || query.hard === '1';
+}
+
+export type CourseDeletePlan =
+    | { action: 'archive'; alreadyArchived: boolean }
+    | { action: 'blocked'; blockedBy: string }
+    | { action: 'destroy' };
+
+/**
+ * The whole deletion policy, as a pure decision — so it can be tested without
+ * Express or a database, and so the rule is readable in one place.
+ */
+export function planCourseDelete(input: {
+    hard: boolean;
+    published: boolean;
+    enrollments: number;
+    purchases: number;
+}): CourseDeletePlan {
+    if (!input.hard) return { action: 'archive', alreadyArchived: !input.published };
+    const parts = [
+        input.enrollments > 0 ? `${input.enrollments} enrolment${input.enrollments === 1 ? '' : 's'}` : null,
+        input.purchases > 0 ? `${input.purchases} purchase${input.purchases === 1 ? '' : 's'}` : null,
+    ].filter(Boolean) as string[];
+    if (parts.length > 0) return { action: 'blocked', blockedBy: parts.join(' and ') };
+    return { action: 'destroy' };
+}
+
+adminRouter.delete(
+    '/courses/:id',
+    ah(async (req, res) => {
+        const id = req.params.id;
+        const course = await prisma.course.findUnique({ where: { id } });
+        if (!course) return res.status(404).json({ message: 'Not found' });
+
+        const [enrollments, purchases, modules, recordings] = await Promise.all([
+            prisma.enrollment.count({ where: { courseId: id } }),
+            prisma.purchase.count({ where: { courseId: id } }),
+            prisma.courseModule.count({ where: { courseId: id } }),
+            prisma.recording.count({ where: { courseId: id } }),
+        ]);
+
+        const plan = planCourseDelete({
+            hard: wantsHardDelete(req.query),
+            published: course.published,
+            enrollments,
+            purchases,
+        });
+
+        if (plan.action === 'archive') {
+            // Unpublishing removes it from every public surface immediately —
+            // all public queries filter on `published` — and destroys nothing.
+            if (!plan.alreadyArchived) {
+                await prisma.course.update({ where: { id }, data: { published: false } });
+                void audit(req, 'update', 'courses', id, `Unpublished (soft delete) courses/${course.slug}`);
+            }
+            return res.json({
+                archived: true,
+                alreadyArchived: plan.alreadyArchived,
+                enrollments,
+                purchases,
+                message: `“${course.title}” is unpublished and no longer visible on the site. Learner records are untouched.`,
+            });
+        }
+
+        if (plan.action === 'blocked') {
+            return res.status(409).json({
+                message: `Cannot delete “${course.title}”: ${plan.blockedBy} reference it. Unpublish it instead — deleting would erase learner progress.`,
+                enrollments,
+                purchases,
+            });
+        }
+
+        await prisma.course.delete({ where: { id } });
+        void audit(
+            req,
+            'delete',
+            'courses',
+            id,
+            `Permanently deleted courses/${course.slug} (${modules} modules, ${recordings} recordings)`,
+        );
+        return res.status(204).send();
+    }),
+);
+
 crudRoutes('courses', prisma.course as unknown as Delegate, courseUpsertSchema, { sortOrder: 'asc' });
 
 // patch-33: trainers, course<>trainer links, bundles (with course-membership sync)
@@ -343,8 +443,7 @@ adminRouter.patch(
 adminRouter.get(
     '/bundles',
     ah(async (req, res) => {
-        const q = listQuerySchema.safeParse(req.query);
-        const { limit, offset } = q.success ? q.data : { limit: 50, offset: 0 };
+        const { limit, offset } = listQuery(req);
         const [items, total] = await Promise.all([
             prisma.bundle.findMany({ orderBy: { sortOrder: 'asc' }, take: limit, skip: offset, include: { courses: { include: { course: true } } } }),
             prisma.bundle.count(),
@@ -370,8 +469,7 @@ crudRoutes('posts', prisma.post as unknown as Delegate, postUpsertSchema, { publ
 adminRouter.get(
     '/applications',
     ah(async (req, res) => {
-        const q = listQuerySchema.safeParse(req.query);
-        const { limit, offset, status } = q.success ? q.data : { limit: 50, offset: 0, status: undefined };
+        const { limit, offset, status } = listQuery(req);
         const [items, total] = await Promise.all([
             prisma.application.findMany({
                 where: status ? { status } : {},
@@ -410,12 +508,13 @@ adminRouter.get(
     '/lms/users',
     ah(async (req, res) => {
         const role = typeof req.query.role === 'string' ? req.query.role : undefined;
-        const users = await prisma.lmsUser.findMany({
-            where: role ? { role } : {},
-            orderBy: { createdAt: 'desc' },
-            take: 200,
-        });
-        res.json({ items: users, total: users.length });
+        const { limit, offset } = listQuery(req);
+        const where = role ? { role } : {};
+        const [items, total] = await Promise.all([
+            prisma.lmsUser.findMany({ where, orderBy: { createdAt: 'desc' }, take: limit, skip: offset }),
+            prisma.lmsUser.count({ where }),
+        ]);
+        res.json({ items, total });
     }),
 );
 
@@ -492,17 +591,22 @@ adminRouter.post(
 
 adminRouter.get(
     '/lms/enrollments',
-    ah(async (_req, res) => {
-        const items = await prisma.enrollment.findMany({
-            orderBy: { createdAt: 'desc' },
-            take: 200,
-            include: {
-                student: { select: { name: true, email: true } },
-                tutor: { select: { name: true, email: true } },
-                course: { select: { title: true, slug: true } },
-            },
-        });
-        res.json({ items, total: items.length });
+    ah(async (req, res) => {
+        const { limit, offset } = listQuery(req);
+        const [items, total] = await Promise.all([
+            prisma.enrollment.findMany({
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset,
+                include: {
+                    student: { select: { name: true, email: true } },
+                    tutor: { select: { name: true, email: true } },
+                    course: { select: { title: true, slug: true } },
+                },
+            }),
+            prisma.enrollment.count(),
+        ]);
+        res.json({ items, total });
     }),
 );
 
@@ -585,13 +689,19 @@ adminRouter.get(
     '/lms/modules',
     ah(async (req, res) => {
         const courseSlug = typeof req.query.courseSlug === 'string' ? req.query.courseSlug : undefined;
-        const items = await prisma.courseModule.findMany({
-            where: courseSlug ? { course: { slug: courseSlug } } : {},
-            orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
-            take: 500,
-            include: { course: { select: { slug: true, title: true } } },
-        });
-        res.json({ items, total: items.length });
+        const { limit, offset } = listQuery(req);
+        const where = courseSlug ? { course: { slug: courseSlug } } : {};
+        const [items, total] = await Promise.all([
+            prisma.courseModule.findMany({
+                where,
+                orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
+                take: limit,
+                skip: offset,
+                include: { course: { select: { slug: true, title: true } } },
+            }),
+            prisma.courseModule.count({ where }),
+        ]);
+        res.json({ items, total });
     }),
 );
 
@@ -648,13 +758,19 @@ adminRouter.get(
     '/lms/recordings',
     ah(async (req, res) => {
         const courseSlug = typeof req.query.courseSlug === 'string' ? req.query.courseSlug : undefined;
-        const items = await prisma.recording.findMany({
-            where: courseSlug ? { course: { slug: courseSlug } } : {},
-            orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
-            take: 500,
-            include: { course: { select: { slug: true, title: true } } },
-        });
-        res.json({ items, total: items.length });
+        const { limit, offset } = listQuery(req);
+        const where = courseSlug ? { course: { slug: courseSlug } } : {};
+        const [items, total] = await Promise.all([
+            prisma.recording.findMany({
+                where,
+                orderBy: [{ courseId: 'asc' }, { order: 'asc' }],
+                take: limit,
+                skip: offset,
+                include: { course: { select: { slug: true, title: true } } },
+            }),
+            prisma.recording.count({ where }),
+        ]);
+        res.json({ items, total });
     }),
 );
 
